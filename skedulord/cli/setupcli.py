@@ -1,7 +1,7 @@
 import os
 import uuid
 import json
-import logging
+import shutil
 import pathlib
 import subprocess
 import datetime as dt
@@ -12,40 +12,50 @@ import click
 from skedulord.common import SETTINGS_PATH, CONFIG_PATH, HEARTBEAT_PATH
 
 
+class Logga():
+    def __init__(self):
+        self.i = 0
+
+    def __call__(self, msg):
+        self.i += 1
+        if isinstance(msg, dict):
+            for k, v in msg.items():
+                click.echo(click.style(f"  - {k}: {v}", fg='green' if msg['status'] == 0 else 'red'))
+        else:
+            click.echo(click.style(f"{msg}"))
+
+
+logg = Logga()
+
+
 @click.group()
 def main():
     pass
 
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(message)s',
-)
-logger = logging.getLogger(__name__)
-
-
 @click.command()
 @click.option('--name', prompt='what is the name for this service')
 def setup(name):
+    """setup the skedulord"""
     settings = {"name": name}
-    logger.info(f"creating new settings")
+    logg(f"creating new settings")
     path = pathlib.Path(SETTINGS_PATH)
     path.mkdir(parents=True, exist_ok=True)
     with open(CONFIG_PATH, "w") as f:
         yaml.dump(settings, f, default_flow_style=False)
-    logger.info(f"settings file created: {CONFIG_PATH}")
+    logg(f"settings file created: {CONFIG_PATH}")
     path = pathlib.Path(SETTINGS_PATH) / "logs"
     path.mkdir(parents=True, exist_ok=True)
-    logger.info(f"paths created")
-    logger.info(f"done")
+    logg(f"paths created")
+    logg(f"done")
 
 
 @click.command()
 @click.argument('command')
 def log(command):
+    """log the (cron) command"""
     run_id = str(uuid.uuid4())[:13]
     tic = dt.datetime.now()
-    logger.info(f"about to run '{command}'")
     output = subprocess.run(command.split(" "),
                             cwd=str(pathlib.Path().cwd()),
                             stdout=subprocess.PIPE,
@@ -64,21 +74,30 @@ def log(command):
         "status": output.returncode,
         "log": os.path.join(log_folder, log_file)
     }
-    print(heartbeat)
 
     with open(HEARTBEAT_PATH, "a") as f:
         f.write(json.dumps(heartbeat) + "\n")
-    logger.info(f"heartbeat logged")
 
     pathlib.Path(log_folder).mkdir(parents=True, exist_ok=True)
     with open(heartbeat["log"], "w") as f:
         f.write(output.stdout)
-    logger.info(f"log written at {heartbeat['log']}")
-    logger.info(f"done with `{command}` with status code {output.returncode}")
+    logg(f"log written at {heartbeat['log']}")
+    logg(heartbeat)
+
+
+@click.command()
+def nuke():
+    """hard reset of disk state"""
+    if click.confirm('Do you want to continue?'):
+        shutil.rmtree(SETTINGS_PATH)
+        logg("nuked from orbit!")
+    else:
+        logg("safely aborted!")
 
 
 main.add_command(setup)
 main.add_command(log)
+main.add_command(nuke)
 
 if __name__ == "__main__":
     main()
