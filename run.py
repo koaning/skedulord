@@ -31,5 +31,6 @@ def do_stuff(sec=1):
 
 (Job()
  .pipe(do_stuff, sec=0.25)
- .pipe(do_stuff, sec=0.50)
+ .pipe(do_stuff, sec=1.50)
+ .pipe(do_stuff, sec=1.50)
  .pipe(do_many, n=10))

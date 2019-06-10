@@ -20,8 +20,8 @@ setup(
     install_requires=base_packages,
     entry_points={
         'console_scripts': [
-            f'skedulord = skedulord.cli.logcli:main',
-            f'skedulog = skedulord.cli.setupcli:main'
+            f'skedulord = skedulord.cli.setupcli:main',
+            f'skedulog = skedulord.cli.logcli:main'
         ],
     },
     extras_require={
