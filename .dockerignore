@@ -1,0 +1,4 @@
+.gitignore
+notebooks/*
+.flake8
+.gitlab-ci.yml

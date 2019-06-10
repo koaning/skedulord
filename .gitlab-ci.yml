@@ -1,0 +1,13 @@
+image: python:3.6
+
+stages:
+  - unittest
+
+test:
+  stage: unittest
+  script:
+    - pip3.6 install --upgrade pip
+    - pip3.6 install -e ".[dev]"
+    - pip3.6 install pytest
+    - flake8
+    - pytest --cov=skedulord
