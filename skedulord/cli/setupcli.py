@@ -63,7 +63,7 @@ def log(command):
                             encoding='utf-8',
                             universal_newlines=True)
     toc = dt.datetime.now()
-    log_folder = os.path.join(SETTINGS_PATH, command.replace(" ", "-").replace(".", "-"))
+    log_folder = os.path.join(SETTINGS_PATH, "logs", command.replace(" ", "-").replace(".", "-"))
     log_file = str(tic)[:19].replace(" ", "T") + ".txt"
     heartbeat = {
         "id": run_id,

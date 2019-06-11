@@ -4,7 +4,7 @@ import yaml
 
 SETTINGS_PATH = os.path.join(os.path.expanduser("~/.skedulord"))
 CONFIG_PATH = os.path.join(SETTINGS_PATH, "config.yml")
-HEARTBEAT_PATH = os.path.join(SETTINGS_PATH, "heartbeat.csv")
+HEARTBEAT_PATH = os.path.join(SETTINGS_PATH, "heartbeat.jsonl")
 
 
 def read_settings():
