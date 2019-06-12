@@ -10,11 +10,13 @@ import yaml
 import click
 
 from skedulord.common import SETTINGS_PATH, CONFIG_PATH, HEARTBEAT_PATH
+from skedulord.web.app import create_app
 
 
 class Logga():
     def __init__(self):
         self.i = 0
+        self.lines = []
 
     def __call__(self, msg):
         self.i += 1
@@ -95,9 +97,15 @@ def nuke():
         logg("safely aborted!")
 
 
+@click.command()
+def serve():
+    create_app().run()
+
+
 main.add_command(setup)
 main.add_command(log)
 main.add_command(nuke)
+main.add_command(serve)
 
 if __name__ == "__main__":
     main()

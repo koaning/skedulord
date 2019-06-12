@@ -1,0 +1,114 @@
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="Vincent D. Warmerdam">
+  <title>skedulor</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+  <link href="pricing.css" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  <style>
+  html {
+    font-size: 14px;
+  }
+  @media (min-width: 768px) {
+    html {
+      font-size: 16px;
+    }
+  }
+
+  .container {
+    max-width: 960px;
+  }
+
+  .pricing-header {
+    max-width: 700px;
+  }
+
+  .card-deck .card {
+    min-width: 220px;
+  }
+
+  .bd-placeholder-img {
+    font-size: 1.125rem;
+    text-anchor: middle;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  @media (min-width: 768px) {
+    .bd-placeholder-img-lg {
+      font-size: 3.5rem;
+    }
+  }
+
+  .btn{
+    margin: 2px;
+  }
+  </style>
+</head>
+<body>
+  <div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
+    <h5 class="my-0 mr-md-auto font-weight-normal">skedulor</h5>
+  </div>
+
+  <div class="container">
+
+    {% for key, value in blobs.items()%}
+    <div class="card-deck mb-3 text-center">
+      <div class="card mb-12 shadow-sm">
+        <div class="card-header">
+          <h4 class="my-0 font-weight-normal">{{key}}</h4>
+        </div>
+        <div class="card-body">
+          {% for v in value %}
+          <button type="button" class="btn btn-outline-success btn-sm" data-toggle="modal" data-target="#{{v.id}}">
+            {{v.startime}} {{key}}
+          </button><br>
+
+          <!-- Modal -->
+          <div class="modal fade" id="{{v.id}}" tabindex="-1" role="dialog" aria-labelledby="{{v.id}}Label" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="{{v.id}}">{{key}}</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  {{v.log}}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+
+    <footer class="pt-4 my-md-5 pt-md-5 border-top">
+      <div class="row">
+        <div class="col-12 col-md">
+          <small class="d-block mb-3 text-muted">© 2017-2019</small>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+<script>
+  fetch("http://localhost:5000/glob_logs").then(_ => _.json()).then(_ => console.log(_))
+  fetch("http://localhost:5000/heartbeats")
+    .then(_ => _.json())
+    .then(function(d){
+
+    })
+</script>
+</body>
+</html>
