@@ -1,4 +1,5 @@
 import os
+import time
 import uuid
 import json
 import shutil
@@ -53,19 +54,7 @@ def setup(name):
     logg(f"done")
 
 
-@click.command()
-@click.argument('command')
-def log(command):
-    """log the (cron) command"""
-    run_id = str(uuid.uuid4())[:13]
-    tic = dt.datetime.now()
-    output = subprocess.run(command.split(" "),
-                            cwd=str(pathlib.Path().cwd()),
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.STDOUT,
-                            encoding='utf-8',
-                            universal_newlines=True)
-    toc = dt.datetime.now()
+def add_heartbeat(run_id, command, tic, toc, output):
     log_folder = os.path.join(SETTINGS_PATH, "logs", command.replace(" ", "-").replace(".", "-"))
     log_file = str(tic)[:19].replace(" ", "T") + ".txt"
     heartbeat = {
@@ -78,14 +67,44 @@ def log(command):
         "log": os.path.join(log_folder, log_file).replace(SETTINGS_PATH, "")
     }
 
+    logg(heartbeat)
     with open(HEARTBEAT_PATH, "a") as f:
         f.write(json.dumps(heartbeat) + "\n")
-
-    pathlib.Path(log_folder).mkdir(parents=True, exist_ok=True)
-    with open(os.path.join(log_folder, log_file), "w") as f:
-        f.write(output.stdout)
     logg(f"log written at {heartbeat['log']}")
-    logg(heartbeat)
+
+
+@click.command()
+@click.argument('command')
+@click.option('--attempts', default=1, help='max number of tries')
+@click.option('--wait', default=30, help='seconds between tries')
+def run(command, attempts, wait):
+    """run (and log) the (cron) command, can retry"""
+    tries = 0
+    run_id = str(uuid.uuid4())[:13]
+    tic = dt.datetime.now()
+    log_folder = os.path.join(SETTINGS_PATH, "logs", command.replace(" ", "-").replace(".", "-"))
+    log_file = str(tic)[:19].replace(" ", "T") + ".txt"
+    pathlib.Path(log_folder).mkdir(parents=True, exist_ok=True)
+
+    with open(os.path.join(log_folder, log_file), "w") as f:
+        while tries < attempts:
+            f.write(f"{command} - {run_id} - attempt {tries + 1} - {str(dt.datetime.now())} \n")
+            output = subprocess.run(command.split(" "),
+                                    cwd=str(pathlib.Path().cwd()),
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT,
+                                    encoding='utf-8',
+                                    universal_newlines=True)
+
+            f.write(output.stdout)
+            if output.returncode == 0:
+                tries += attempts
+            else:
+                logg(f"detected failure, re-attempt in {wait} seconds")
+                time.sleep(wait)
+                tries += 1
+    add_heartbeat(run_id, command, tic=tic, toc=dt.datetime.now(), output=output)
+
 
 
 @click.command()
@@ -108,7 +127,7 @@ def serve(host, port):
 
 
 main.add_command(setup)
-main.add_command(log)
+main.add_command(run)
 main.add_command(nuke)
 main.add_command(serve)
 
