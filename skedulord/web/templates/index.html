@@ -53,45 +53,40 @@
   </style>
 </head>
 <body>
-  <div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
-    <h5 class="my-0 mr-md-auto font-weight-normal">skedulor</h5>
-  </div>
-
   <div class="container">
-
-    {% for key, value in blobs.items()%}
-    <div class="card-deck mb-3 text-center">
-      <div class="card mb-12 shadow-sm">
-        <div class="card-header">
-          <h4 class="my-0 font-weight-normal">{{key}}</h4>
-        </div>
-        <div class="card-body">
-          {% for v in value %}
-          <button type="button" class="btn btn-outline-success btn-sm" data-toggle="modal" data-target="#{{v.id}}">
-            {{v.startime}} {{key}}
-          </button><br>
-
-          <!-- Modal -->
-          <div class="modal fade" id="{{v.id}}" tabindex="-1" role="dialog" aria-labelledby="{{v.id}}Label" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="{{v.id}}">{{key}}</h5>
-                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                  </button>
-                </div>
-                <div class="modal-body">
-                  {{v.log}}
-                </div>
-              </div>
-            </div>
-          </div>
+    <br>
+    {% for key, values in blobs.items()%}
+    <h4><pre>{{key}}</pre></h4>
+    <table class="table table-sm">
+    <thead>
+      <tr>
+        <th scope="col"></th>
+        <th scope="col">job</th>
+        <th scope="col">id</th>
+        <th scope="col">starttime</th>
+        <th scope="col">endtime</th>
+        <th scope="col">logs</th>
+      </tr>
+    </thead>
+    <tbody>
+        {% for v in values%}
+        <tr>
+          {% if v.status == 0 %}
+          <td><button class="btn btn-success btn-sm" type="submit" disabled></button></td>
+          {% else %}
+          <td><button class="btn btn-danger btn-sm" type="submit" disabled></button></td>
+          {% endif %}
+          <th scope="row"><pre>{{key}}</pre></th>
+          <td><pre>{{v.id}}</pre></td>
+          <td><pre>{{v.startime}}</pre></td>
+          <td><pre>{{v.endtime}}</pre></td>
+          <td><a href="{{v.log}}" role="button"><pre>logs</pre></a></td>
           {% endfor %}
-        </div>
-      </div>
-    </div>
+        </tr>
+    </tbody>
+    </table>
     {% endfor %}
+
 
     <footer class="pt-4 my-md-5 pt-md-5 border-top">
       <div class="row">

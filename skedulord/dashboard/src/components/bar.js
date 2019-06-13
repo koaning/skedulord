@@ -28,7 +28,7 @@ export default function ControlledExpansionPanels() {
     setExpanded(isExpanded ? panel : false);
   };
 
-  fetch("http://localhost:5000/glob_logs").then(_ => _.json()).then(_ => console.log(_))
+  // fetch("http://localhost:5000/glob_logs").then(_ => _.json()).then(_ => console.log(_))
 
   return (
     <div className={classes.root}>

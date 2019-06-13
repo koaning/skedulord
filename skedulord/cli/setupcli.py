@@ -74,14 +74,14 @@ def log(command):
         "endtime": str(toc)[:19],
         "time": (toc - tic).seconds,
         "status": output.returncode,
-        "log": os.path.join(log_folder, log_file)
+        "log": os.path.join(log_folder, log_file).replace(SETTINGS_PATH, "")
     }
 
     with open(HEARTBEAT_PATH, "a") as f:
         f.write(json.dumps(heartbeat) + "\n")
 
     pathlib.Path(log_folder).mkdir(parents=True, exist_ok=True)
-    with open(heartbeat["log"], "w") as f:
+    with open(os.path.join(log_folder, log_file), "w") as f:
         f.write(output.stdout)
     logg(f"log written at {heartbeat['log']}")
     logg(heartbeat)
