@@ -1,6 +1,7 @@
 flake:
 	flake8 skedulord
 	flake8 tests
+	flake8 setup.py
 
 install:
 	pip install -e ".[dev]"

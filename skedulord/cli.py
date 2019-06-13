@@ -8,6 +8,7 @@ import datetime as dt
 
 import yaml
 import click
+import waitress
 
 from skedulord.common import SETTINGS_PATH, CONFIG_PATH, HEARTBEAT_PATH
 from skedulord.web.app import create_app
@@ -98,8 +99,12 @@ def nuke():
 
 
 @click.command()
-def serve():
-    create_app().run()
+@click.option('--host', '-h', default="0.0.0.0", help='host for the dashboard')
+@click.option('--port', '-p', default=5000, help='port for the dashboard')
+def serve(host, port):
+    """start the simple dashboard"""
+    app = create_app()
+    waitress.serve(app, host=host, port=port)
 
 
 main.add_command(setup)

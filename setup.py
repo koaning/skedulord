@@ -14,14 +14,13 @@ module_name = "skedulord"
 
 setup(
     name=module_name,
-    version="0.0.1",
+    version="0.0.2",
     packages=find_packages(),
     long_description=read('readme.md'),
     install_requires=base_packages,
     entry_points={
         'console_scripts': [
-            f'skedulord = skedulord.cli.setupcli:main',
-            f'skedulog = skedulord.cli.logcli:main'
+            f'skedulord = skedulord.cli:main'
         ],
     },
     extras_require={

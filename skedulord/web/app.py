@@ -18,7 +18,6 @@ def create_app():
             keys = set(_['command'] for _ in data)
             for k in keys:
                 blob[k] = [_ for _ in data if _['command'] == k]
-            print(blob)
             return blob
 
     @app.route('/')
