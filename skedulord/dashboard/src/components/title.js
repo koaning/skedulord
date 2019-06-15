@@ -1,12 +1,15 @@
-import React from "react"
-import { css } from "@emotion/core"
+import React from 'react';
+import PropTypes from 'prop-types';
+import Typography from '@material-ui/core/Typography';
 
-const title = css`
-  text-align: center;
-`
+export default function Title(props) {
+  return (
+    <Typography component="h2" variant="h6" color="primary" gutterBottom>
+      {props.children}
+    </Typography>
+  );
+}
 
-export default ({ children }) => (
-    <div css={title}>
-        <h1>skedulord</h1>
-    </div>
-)
+Title.propTypes = {
+  children: PropTypes.node,
+};

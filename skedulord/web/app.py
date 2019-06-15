@@ -25,25 +25,25 @@ def create_app():
         print(f"{app.static_folder}")
         return app.send_static_file("index.html")
 
-    @app.route("/heartbeats")
+    @app.route("/api/heartbeats")
     @cross_origin()
     def grab():
         with open(HEARTBEAT_PATH, "r") as f:
             return jsonify([json.loads(_) for _ in f.readlines()])
 
-    @app.route("/logs/<job>/<datetime>")
+    @app.route("/api/logs/<job>/<datetime>")
     @cross_origin()
     def fetch_logs(job, datetime):
         path = os.path.join(SETTINGS_PATH, "logs", job, datetime)
         with open(path) as f:
             return f"<pre>{f.read()}</pre>"
 
-    @app.route("/glob_logs")
+    @app.route("/api/glob_logs")
     @cross_origin()
     def glob_logs():
         return jsonify(glob.glob(f"{SETTINGS_PATH}/logs/*/*.txt"))
 
-    @app.route("/mirror", methods=['POST'])
+    @app.route("/api/mirror", methods=['POST'])
     @cross_origin()
     def mirror():
         return jsonify(request.json)
