@@ -9,7 +9,7 @@ from skedulord.common import HEARTBEAT_PATH, SETTINGS_PATH
 
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder='templates', static_url_path='')
 
     def all_data():
         with open(HEARTBEAT_PATH, "r") as f:
@@ -21,9 +21,9 @@ def create_app():
             return blob
 
     @app.route('/')
-    @cross_origin()
-    def index():
-        return render_template('index.html', blobs=all_data())
+    def static_file():
+        print(f"{app.static_folder}")
+        return app.send_static_file("index.html")
 
     @app.route("/heartbeats")
     @cross_origin()
