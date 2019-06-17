@@ -113,3 +113,8 @@ dmypy.json
 # IDE
 .idea
 .vscode
+
+# GATSBY
+
+skedulord/web/templates/*
+skedulord/dashboard/build/*

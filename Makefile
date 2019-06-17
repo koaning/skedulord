@@ -23,6 +23,12 @@ clean:
 	rm -rf notebooks/.ipynb_checkpoints
 	rm -rf skedulord.egg-info
 
+dev:
+	cd skedulord/dashboard && gatsby build
+	cp -r skedulord/dashboard/public/* skedulord/web/templates
+	cd skedulord/dashboard && gatsby clean
+	skedulord serve
+
 build:
 	docker build -t pythoncontainer .
 
