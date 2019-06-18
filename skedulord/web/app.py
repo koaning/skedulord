@@ -31,7 +31,7 @@ def create_app():
         with open(HEARTBEAT_PATH, "r") as f:
             jobs = [json.loads(_) for _ in f.readlines()]
             commands = set([_['command'] for _ in jobs])
-            return jsonify([{'command': c, "jobs": [j for j in jobs if j['command'] == c]} for c in commands])
+            return jsonify([{'command': c, "id": i, "jobs": [j for j in jobs if j['command'] == c]} for i, c in enumerate(commands)])
 
     @app.route("/api/logs/<job>/<datetime>")
     @cross_origin()
