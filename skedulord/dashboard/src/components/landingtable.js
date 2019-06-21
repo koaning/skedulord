@@ -4,8 +4,9 @@ import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
 import Typography from '@material-ui/core/Typography';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import JobPanel from "../components/jobpanel.js"
-import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
-import Button from '@material-ui/core/Button';
+import Container from '@material-ui/core/Container';
+import CssBaseline from '@material-ui/core/CssBaseline';
+import Title from "../components/title.js";
 
 class App extends React.Component {
   constructor() {
@@ -24,21 +25,23 @@ class App extends React.Component {
 
   render(){
       const jobs = this.state.jobs;
-      const commands = jobs
-                        .map(row => row.command)
-                        .reduce((acc, d) => acc.includes(d) ? acc : acc.concat(d), []);
       return (
-        <div>
-            {jobs
-              .map(job => (
-              <ExpansionPanel key={job.id}>
-              <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}
-                aria-controls="panel1a-content" key={job.command}>
-                <Typography key={job.id}><pre><b>{job.command}</b></pre></Typography>
-              </ExpansionPanelSummary>
-              <JobPanel key={job.id} jobs={job.jobs}></JobPanel>
-              </ExpansionPanel>
-            ))}
+        <div style={{ margin: `3rem auto`, maxWidth: 800 }}>
+            <CssBaseline>
+            <Container>
+                <Title></Title>
+                {jobs
+                  .map(job => (
+                  <ExpansionPanel key={job.id}>
+                  <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}
+                    aria-controls="panel1a-content" key={job.command}>
+                    <Typography key={job.id}><b>{job.command}</b></Typography>
+                  </ExpansionPanelSummary>
+                  <JobPanel key={job.id} jobs={job.jobs}></JobPanel>
+                  </ExpansionPanel>
+                ))}
+            </Container>
+            </CssBaseline>
         </div>
       );
   }

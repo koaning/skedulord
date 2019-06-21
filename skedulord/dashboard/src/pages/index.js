@@ -2,7 +2,6 @@ import React from 'react';
 
 import { makeStyles } from '@material-ui/core/styles';
 import LandingTable from '../components/landingtable.js'
-import Logo from '../components/logo.js'
 const drawerWidth = 240;
 
 const useStyles = makeStyles(theme => ({
@@ -33,7 +32,6 @@ export default function App() {
 
   return (
     <div className={classes.root}>
-        <Logo></Logo>
         <LandingTable></LandingTable>
     </div>
   );

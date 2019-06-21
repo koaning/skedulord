@@ -9,21 +9,18 @@ from skedulord.common import HEARTBEAT_PATH, SETTINGS_PATH
 
 
 def create_app():
-    app = Flask(__name__, static_folder='templates', static_url_path='')
-
-    def all_data():
-        with open(HEARTBEAT_PATH, "r") as f:
-            data = [json.loads(_) for _ in f.readlines()]
-            blob = {}
-            keys = set(_['command'] for _ in data)
-            for k in keys:
-                blob[k] = [_ for _ in data if _['command'] == k]
-            return blob
+    app = Flask(__name__, static_folder='static', static_url_path='')
 
     @app.route('/')
     def static_file():
         print(f"{app.static_folder}")
         return app.send_static_file("index.html")
+
+    @app.route('/logo.png')
+    @cross_origin()
+    def logo():
+        print(f"{app.static_folder}")
+        return app.send_static_file("skedulord.png")
 
     @app.route("/api/heartbeats")
     @cross_origin()
@@ -31,7 +28,9 @@ def create_app():
         with open(HEARTBEAT_PATH, "r") as f:
             jobs = [json.loads(_) for _ in f.readlines()]
             commands = set([_['command'] for _ in jobs])
-            return jsonify([{'command': c, "id": i, "jobs": [j for j in jobs if j['command'] == c]} for i, c in enumerate(commands)])
+            return jsonify([{'command': c,
+                             "id": i,
+                             "jobs": [j for j in jobs if j['command'] == c]} for i, c in enumerate(commands)])
 
     @app.route("/api/logs/<job>/<datetime>")
     @cross_origin()
