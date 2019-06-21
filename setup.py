@@ -1,6 +1,8 @@
 import os
 from setuptools import setup, find_packages
 
+from skedulord import version
+
 
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
@@ -14,7 +16,7 @@ module_name = "skedulord"
 
 setup(
     name=module_name,
-    version="0.0.2",
+    version=version,
     packages=find_packages(),
     long_description=read('readme.md'),
     install_requires=base_packages,

@@ -9,7 +9,7 @@ from skedulord.common import HEARTBEAT_PATH, SETTINGS_PATH
 
 
 def create_app():
-    app = Flask(__name__, static_folder='static', static_url_path='')
+    app = Flask(__name__, static_folder='templates', static_url_path='')
 
     @app.route('/')
     def static_file():

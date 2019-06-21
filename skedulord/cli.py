@@ -11,6 +11,7 @@ import yaml
 import click
 import waitress
 
+from skedulord import version
 from skedulord.common import SETTINGS_PATH, CONFIG_PATH, HEARTBEAT_PATH
 from skedulord.web.app import create_app
 
@@ -41,7 +42,7 @@ def main():
 @click.option('--name', prompt='what is the name for this service')
 def setup(name):
     """setup the skedulord"""
-    settings = {"name": name}
+    settings = {"name": name, "version": version}
     logg(f"creating new settings")
     path = pathlib.Path(SETTINGS_PATH)
     path.mkdir(parents=True, exist_ok=True)
@@ -54,11 +55,12 @@ def setup(name):
     logg(f"done")
 
 
-def add_heartbeat(run_id, command, tic, toc, output):
+def add_heartbeat(run_id, name, command, tic, toc, output):
     log_folder = os.path.join(SETTINGS_PATH, "logs", command.replace(" ", "-").replace(".", "-"))
     log_file = str(tic)[:19].replace(" ", "T") + ".txt"
     heartbeat = {
         "id": run_id,
+        "name": name,
         "command": command,
         "startime": str(tic)[:19],
         "endtime": str(toc)[:19],
@@ -75,11 +77,13 @@ def add_heartbeat(run_id, command, tic, toc, output):
 
 @click.command()
 @click.argument('command')
+@click.option('--name', default="", help='give this job a name')
 @click.option('--attempts', default=1, help='max number of tries')
 @click.option('--wait', default=30, help='seconds between tries')
-def run(command, attempts, wait):
+def run(command, name, attempts, wait):
     """run (and log) the (cron) command, can retry"""
     tries = 0
+    name = command if name == "" else name
     run_id = str(uuid.uuid4())[:13]
     tic = dt.datetime.now()
     log_folder = os.path.join(SETTINGS_PATH, "logs", command.replace(" ", "-").replace(".", "-"))
@@ -103,7 +107,7 @@ def run(command, attempts, wait):
                 logg(f"detected failure, re-attempt in {wait} seconds")
                 time.sleep(wait)
                 tries += 1
-    add_heartbeat(run_id, command, tic=tic, toc=dt.datetime.now(), output=output)
+    add_heartbeat(run_id, name, command, tic=tic, toc=dt.datetime.now(), output=output)
 
 
 
