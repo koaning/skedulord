@@ -3,6 +3,8 @@ import { makeStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import Modal from '@material-ui/core/Modal';
 import Button from '@material-ui/core/Button';
+import Icon from '@material-ui/core/Icon';
+import OpenInNew from '@material-ui/icons/OpenInNew';
 
 function rand() {
   return Math.round(Math.random() * 20) - 10;
@@ -30,10 +32,11 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-function SimpleModal() {
+
+function LogModal(log_url) {
   const [open, setOpen] = React.useState(false);
-  // getModalStyle is not a pure function, we roll the style only on the first render
   const [modalStyle] = React.useState(getModalStyle);
+  var url = "/api" + log_url.children.log
 
   const handleOpen = () => {
     setOpen(true);
@@ -46,8 +49,10 @@ function SimpleModal() {
 
   return (
     <div>
-      <Typography gutterBottom>Click to get the full Modal experience!</Typography>
-      <Button onClick={handleOpen}>Open Modal</Button>
+      <Button variant="contained" size="small" href={url} target="_blank">
+        Logs
+        <OpenInNew></OpenInNew>
+        </Button>
       <Modal
         aria-labelledby="simple-modal-title"
         aria-describedby="simple-modal-description"
@@ -56,16 +61,15 @@ function SimpleModal() {
       >
         <div style={modalStyle} className={classes.paper}>
           <Typography variant="h6" id="modal-title">
-            Text in a modal
+            Logs
           </Typography>
           <Typography variant="subtitle1" id="simple-modal-description">
             Duis mollis, est non commodo luctus, nisi erat porttitor ligula.
           </Typography>
-          <SimpleModal />
         </div>
       </Modal>
     </div>
   );
 }
 
-export default SimpleModal;
+export default LogModal;

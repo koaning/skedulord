@@ -6,6 +6,10 @@ import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
+import LogModal from "../components/logbutton.js"
+import SentimentSatisfied from '@material-ui/icons/SentimentSatisfied';
+import SentimentVeryDissatisfied from '@material-ui/icons/SentimentVeryDissatisfied';
+
 
 export default function JobPanel(jobs) {
   console.log(jobs);
@@ -14,6 +18,7 @@ export default function JobPanel(jobs) {
         <Table size="small">
           <TableHead>
             <TableRow>
+              <TableCell></TableCell>
               <TableCell>job id</TableCell>
               <TableCell align="right">start</TableCell>
               <TableCell align="right">end</TableCell>
@@ -23,10 +28,18 @@ export default function JobPanel(jobs) {
           <TableBody>
             {jobs.jobs.map(blob => (
               <TableRow key={blob.id}>
+                <TableCell>
+                  {blob.status == 0 ? (
+                    <SentimentSatisfied></SentimentSatisfied>
+                  ) : (
+                    <SentimentVeryDissatisfied></SentimentVeryDissatisfied>
+                  )}
+
+                </TableCell>
                 <TableCell align="right">{blob.id}</TableCell>
                 <TableCell align="right">{blob.startime}</TableCell>
                 <TableCell align="right">{blob.endtime}</TableCell>
-                <TableCell align="right"><Button variant="contained" size="small" key={blob.id}>logs</Button></TableCell>
+                <TableCell align="right"><LogModal>{blob}</LogModal></TableCell>
               </TableRow>
             ))}
           </TableBody>
