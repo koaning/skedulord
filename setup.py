@@ -10,12 +10,10 @@ def read(fname):
 
 base_packages = ["Click==7.0", "flask"]
 
-dev_packages = ["pip", "pytest-cov", "pytest", "flake8", "mkdocs"]
-
-module_name = "skedulord"
+dev_packages = ["pip", "pytest-cov", "pytest", "flake8", "mkdocs", "mkdocs-material"]
 
 setup(
-    name=module_name,
+    name="skedulord",
     version=version,
     packages=find_packages(),
     long_description=read('readme.md'),

@@ -1,0 +1,4 @@
+site_name: 'skedulord'
+theme:
+  name: 'material'
+  logo: 'images/skedulord.png'
