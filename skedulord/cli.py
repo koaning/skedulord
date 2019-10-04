@@ -1,7 +1,6 @@
 import os
 import time
 import uuid
-import json
 import shutil
 import pathlib
 import subprocess
@@ -12,25 +11,11 @@ import click
 import waitress
 
 from skedulord import version
-from skedulord.common import SETTINGS_PATH, CONFIG_PATH, HEARTBEAT_PATH
+from skedulord.common import SETTINGS_PATH, CONFIG_PATH, read_settings, logg, add_heartbeat
 from skedulord.web.app import create_app
 
 
-class Logga():
-    def __init__(self):
-        self.i = 0
-        self.lines = []
-
-    def __call__(self, msg):
-        self.i += 1
-        if isinstance(msg, dict):
-            for k, v in msg.items():
-                click.echo(click.style(f"  - {k}: {v}", fg='green' if msg['status'] == 0 else 'red'))
-        else:
-            click.echo(click.style(f"{msg}"))
-
-
-logg = Logga()
+SETTINGS = read_settings()
 
 
 @click.group()
@@ -39,10 +24,12 @@ def main():
 
 
 @click.command()
-@click.option('--name', prompt='what is the name for this service')
-def setup(name):
+@click.option('--name', prompt='What is the name for this skedulord instance.')
+@click.option('--attempts', prompt='What number of retries do you want to assume?', default=3)
+@click.option('--wait', prompt='How many seconds between attemps do you assume?', default=60)
+def setup(name, attempts, wait):
     """setup the skedulord"""
-    settings = {"name": name, "version": version}
+    settings = {"name": name, "version": version, "attempts": attempts, "wait": wait}
     logg(f"creating new settings")
     path = pathlib.Path(SETTINGS_PATH)
     path.mkdir(parents=True, exist_ok=True)
@@ -55,35 +42,16 @@ def setup(name):
     logg(f"done")
 
 
-def add_heartbeat(run_id, name, command, tic, toc, output):
-    log_folder = os.path.join(SETTINGS_PATH, "logs", command.replace(" ", "-").replace(".", "-"))
-    log_file = str(tic)[:19].replace(" ", "T") + ".txt"
-    heartbeat = {
-        "id": run_id,
-        "name": name,
-        "command": command,
-        "startime": str(tic)[:19],
-        "endtime": str(toc)[:19],
-        "time": (toc - tic).seconds,
-        "status": output.returncode,
-        "log": os.path.join(log_folder, log_file).replace(SETTINGS_PATH, "")
-    }
-
-    logg(heartbeat)
-    with open(HEARTBEAT_PATH, "a") as f:
-        f.write(json.dumps(heartbeat) + "\n")
-    logg(f"log written at {heartbeat['log']}")
-
-
 @click.command()
 @click.argument('command')
 @click.option('--name', default="", help='give this job a name')
-@click.option('--attempts', default=1, help='max number of tries')
-@click.option('--wait', default=30, help='seconds between tries')
+@click.option('--attempts', default=SETTINGS['attempts'], help='max number of tries')
+@click.option('--wait', default=SETTINGS['wait'], help='seconds between tries')
 def run(command, name, attempts, wait):
     """run (and log) the (cron) command, can retry"""
     tries = 0
     name = command if name == "" else name
+    attempts = attempts
     run_id = str(uuid.uuid4())[:13]
     tic = dt.datetime.now()
     log_folder = os.path.join(SETTINGS_PATH, "logs", command.replace(" ", "-").replace(".", "-"))
@@ -110,13 +78,16 @@ def run(command, name, attempts, wait):
     add_heartbeat(run_id, name, command, tic=tic, toc=dt.datetime.now(), output=output)
 
 
-
 @click.command()
 def nuke():
     """hard reset of disk state"""
     if click.confirm('Do you want to continue?'):
-        shutil.rmtree(SETTINGS_PATH)
-        logg("nuked from orbit!")
+        if click.confirm('Are you **really** sure?'):
+            try:
+                shutil.rmtree(SETTINGS_PATH)
+                logg("nuked from orbit!")
+            except FileNotFoundError:
+                logg("no skedulord files found")
     else:
         logg("safely aborted!")
 
