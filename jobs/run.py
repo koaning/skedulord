@@ -19,7 +19,7 @@ async def timed_wait(sec):
 
 def do_many(n):
     async def collector():
-        await asyncio.gather(*[timed_wait(1) for _ in range(n)])
+        await asyncio.gather(*[timed_wait(0.1) for _ in range(n)])
     stuff = asyncio.run(collector())
     logging.info(f"scores received {stuff}")
 
@@ -30,7 +30,6 @@ def do_stuff(sec=1):
 
 
 (Job()
- .then(do_stuff, sec=0.25)
- .then(do_stuff, sec=1.50)
- .then(do_stuff, sec=1.50)
- .then(do_many, n=10))
+ .then(do_stuff, sec=0.1)
+ .then(do_many, n=10)
+ .then(do_stuff, sec=0.1))

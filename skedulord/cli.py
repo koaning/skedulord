@@ -79,17 +79,16 @@ def run(command, name, attempts, wait):
 
 
 @click.command()
-def nuke():
+@click.option('--sure', prompt=True, is_flag=True)
+@click.option('--really', prompt=True, is_flag=True)
+def nuke(sure, really):
     """hard reset of disk state"""
-    if click.confirm('Do you want to continue?'):
-        if click.confirm('Are you **really** sure?'):
-            try:
-                shutil.rmtree(SETTINGS_PATH)
-                logg("nuked from orbit!")
-            except FileNotFoundError:
-                logg("no skedulord files found")
-    else:
-        logg("safely aborted!")
+    if really and sure:
+        try:
+            shutil.rmtree(SETTINGS_PATH)
+            logg("nuked from orbit!")
+        except FileNotFoundError:
+            logg("no skedulord files found")
 
 
 @click.command()

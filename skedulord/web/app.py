@@ -17,7 +17,6 @@ def create_app():
         return app.send_static_file("index.html")
 
     @app.route('/logo.png')
-    @cross_origin()
     def logo():
         print(f"{app.static_folder}")
         return app.send_static_file("skedulord.png")
@@ -25,6 +24,16 @@ def create_app():
     @app.route("/api/heartbeats")
     @cross_origin()
     def grab():
+        with open(HEARTBEAT_PATH, "r") as f:
+            jobs = [json.loads(_) for _ in f.readlines()]
+            names = set([_['name'] for _ in jobs])
+            return jsonify([{"name": n,
+                             "id": i,
+                             "jobs": [j for j in jobs if j['name'] == n]} for i, n in enumerate(names)])
+
+    @app.route("/api/test_heartbeats")
+    def grab_test():
+        # the @cross_origin is messing up the tests =(
         with open(HEARTBEAT_PATH, "r") as f:
             jobs = [json.loads(_) for _ in f.readlines()]
             names = set([_['name'] for _ in jobs])
