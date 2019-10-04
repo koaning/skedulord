@@ -8,7 +8,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-base_packages = ["Click==7.0"]
+base_packages = ["Click==7.0", "flask"]
 
 dev_packages = ["pip", "pytest-cov", "pytest", "flake8", "mkdocs"]
 
