@@ -1,7 +1,13 @@
+import time
+
+
 class Job:
     def __init__(self):
         pass
 
-    def pipe(self, func, **kwargs):
-        func(**kwargs)
+    def then(self, func, *args, **kwargs):
+        func(*args, **kwargs)
         return self
+
+    def wait(self, seconds):
+        time.sleep(seconds)

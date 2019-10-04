@@ -10,7 +10,7 @@ def read(fname):
 
 base_packages = ["Click==7.0"]
 
-dev_packages = ["pip", "pytest-cov", "pytest", "flake8"]
+dev_packages = ["pip", "pytest-cov", "pytest", "flake8", "mkdocs"]
 
 module_name = "skedulord"
 

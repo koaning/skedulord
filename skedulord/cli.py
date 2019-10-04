@@ -44,7 +44,7 @@ def setup(name, attempts, wait):
 
 @click.command()
 @click.argument('command')
-@click.option('--name', default="", help='give this job a name')
+@click.argument('name')
 @click.option('--attempts', default=SETTINGS['attempts'], help='max number of tries')
 @click.option('--wait', default=SETTINGS['wait'], help='seconds between tries')
 def run(command, name, attempts, wait):
@@ -54,7 +54,7 @@ def run(command, name, attempts, wait):
     attempts = attempts
     run_id = str(uuid.uuid4())[:13]
     tic = dt.datetime.now()
-    log_folder = os.path.join(SETTINGS_PATH, "logs", command.replace(" ", "-").replace(".", "-"))
+    log_folder = os.path.join(SETTINGS_PATH, "logs", name)
     log_file = str(tic)[:19].replace(" ", "T") + ".txt"
     pathlib.Path(log_folder).mkdir(parents=True, exist_ok=True)
 

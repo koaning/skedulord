@@ -27,10 +27,10 @@ def create_app():
     def grab():
         with open(HEARTBEAT_PATH, "r") as f:
             jobs = [json.loads(_) for _ in f.readlines()]
-            commands = set([_['command'] for _ in jobs])
-            return jsonify([{'command': c,
+            names = set([_['name'] for _ in jobs])
+            return jsonify([{"name": n,
                              "id": i,
-                             "jobs": [j for j in jobs if j['command'] == c]} for i, c in enumerate(commands)])
+                             "jobs": [j for j in jobs if j['name'] == n]} for i, n in enumerate(names)])
 
     @app.route("/api/logs/<job>/<datetime>")
     @cross_origin()

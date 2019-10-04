@@ -25,6 +25,7 @@ class App extends React.Component {
 
   render(){
       const jobs = this.state.jobs;
+      console.log(jobs);
       return (
         <div style={{ margin: `3rem auto`, maxWidth: 800 }}>
             <CssBaseline>
@@ -34,8 +35,8 @@ class App extends React.Component {
                   .map(job => (
                   <ExpansionPanel key={job.id}>
                   <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}
-                    aria-controls="panel1a-content" key={job.command}>
-                    <Typography key={job.id}><b>{job.command}</b></Typography>
+                    aria-controls="panel1a-content" key={job.name}>
+                    <Typography key={job.id}><b>{job.name}</b></Typography>
                   </ExpansionPanelSummary>
                   <JobPanel key={job.id} jobs={job.jobs}></JobPanel>
                   </ExpansionPanel>

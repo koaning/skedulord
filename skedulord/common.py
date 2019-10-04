@@ -8,6 +8,9 @@ SETTINGS_PATH = os.path.join(os.path.expanduser("~/.skedulord"))
 CONFIG_PATH = os.path.join(SETTINGS_PATH, "config.yml")
 HEARTBEAT_PATH = os.path.join(SETTINGS_PATH, "heartbeat.jsonl")
 
+BASE_ATTEMPTS_VALUE = 3
+BASE_WAIT_VALUE = 60
+
 
 class Logga():
     def __init__(self):
@@ -34,11 +37,12 @@ def read_settings():
         return res
     except FileNotFoundError:
         logg("no instance of skedulord detected")
-        return {"attempts": 3, "wait": 10}
+        return {"attempts": BASE_ATTEMPTS_VALUE,
+                "wait": BASE_WAIT_VALUE}
 
 
 def add_heartbeat(run_id, name, command, tic, toc, output):
-    log_folder = os.path.join(SETTINGS_PATH, "logs", command.replace(" ", "-").replace(".", "-"))
+    log_folder = os.path.join(SETTINGS_PATH, "logs", name.replace(" ", "-").replace(".", "-"))
     log_file = str(tic)[:19].replace(" ", "T") + ".txt"
     heartbeat = {
         "id": run_id,
