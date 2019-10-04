@@ -22,7 +22,7 @@ def test_basic_heartbeat1(clean_start):
     with open(HEARTBEAT_PATH, "r") as f:
         jobs = [json.loads(_) for _ in f.readlines()]
     assert len(jobs) == 3
-    assert {_['name'] for _ in jobs} == {'foo','bar'}
+    assert {_['name'] for _ in jobs} == {'foo', 'bar'}
 
 
 def test_basic_heartbeat2(clean_start):
