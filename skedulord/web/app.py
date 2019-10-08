@@ -5,7 +5,7 @@ import glob
 from flask import Flask, jsonify, request
 from flask_cors import cross_origin
 
-from skedulord.common import HEARTBEAT_PATH, SETTINGS_PATH
+from skedulord.common import HEARTBEAT_PATH, SKEDULORD_PATH
 
 
 def create_app():
@@ -44,14 +44,14 @@ def create_app():
     @app.route("/api/logs/<job>/<datetime>")
     @cross_origin()
     def fetch_logs(job, datetime):
-        path = os.path.join(SETTINGS_PATH, "logs", job, datetime)
+        path = os.path.join(SKEDULORD_PATH, "logs", job, datetime)
         with open(path) as f:
             return f"<pre>{f.read()}</pre>"
 
     @app.route("/api/glob_logs")
     @cross_origin()
     def glob_logs():
-        return jsonify(glob.glob(f"{SETTINGS_PATH}/logs/*/*.txt"))
+        return jsonify(glob.glob(f"{SKEDULORD_PATH}/logs/*/*.txt"))
 
     @app.route("/api/mirror", methods=['POST'])
     @cross_origin()

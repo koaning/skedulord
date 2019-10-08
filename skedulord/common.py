@@ -1,64 +1,45 @@
 import os
-import json
+from functools import reduce
+
 
 import yaml
-import click
+from skedulord.logger import CliLogger
 
-SETTINGS_PATH = os.path.join(os.path.expanduser("~/.skedulord"))
-CONFIG_PATH = os.path.join(SETTINGS_PATH, "config.yml")
-HEARTBEAT_PATH = os.path.join(SETTINGS_PATH, "heartbeat.jsonl")
+SKEDULORD_PATH = os.path.join(os.path.expanduser("~/.skedulord"))
+CONFIG_PATH = os.path.join(SKEDULORD_PATH, "config.yml")
+HEARTBEAT_PATH = os.path.join(SKEDULORD_PATH, "heartbeat.jsonl")
 
 BASE_ATTEMPTS_VALUE = 3
 BASE_WAIT_VALUE = 60
 
 
-class Logga():
-    def __init__(self):
-        self.i = 0
-        self.lines = []
-
-    def __call__(self, msg):
-        self.i += 1
-        if isinstance(msg, dict):
-            for k, v in msg.items():
-                click.echo(click.style(f"  - {k}: {v}", fg='green' if msg['status'] == 0 else 'red'))
-        else:
-            click.echo(click.style(f"{msg}"))
-
-
-logg = Logga()
-
-
-def read_settings():
-    settings_path = os.path.join(os.path.expanduser("~/.skedulord"), "config.yml")
+def read_settings(settings_path=None):
+    if not settings_path:
+        settings_path = os.path.join(os.path.expanduser("~/.skedulord"), "config.yml")
     try:
         with open(settings_path, "r") as f:
             res = yaml.safe_load(f)
         return res
     except FileNotFoundError:
-        logg("no instance of skedulord detected")
+        logcli("no instance of skedulord detected")
         return {"attempts": BASE_ATTEMPTS_VALUE,
                 "wait": BASE_WAIT_VALUE}
 
 
-def add_heartbeat(run_id, name, command, tic, toc, output):
-    log_folder = os.path.join(SETTINGS_PATH, "logs", name.replace(" ", "-").replace(".", "-"))
-    log_file = str(tic)[:19].replace(" ", "T") + ".txt"
-    heartbeat = {
-        "id": run_id,
-        "name": name,
-        "command": command,
-        "startime": str(tic)[:19],
-        "endtime": str(toc)[:19],
-        "time": (toc - tic).seconds,
-        "status": output.returncode,
-        "log": os.path.join(log_folder, log_file)
-    }
-    logg(heartbeat)
+def consolidate_settings(*filepaths):
+    """Give it filepaths, it outputs a single dictionary."""
+    return reduce(lambda a, b: a.update(b), [read_settings(f) for f in filepaths])
 
-    # we don't want the settings path in the flask server
-    heartbeat['log'] = heartbeat['log'].replace(SETTINGS_PATH, "")
-    with open(HEARTBEAT_PATH, "a") as f:
-        f.write(json.dumps(heartbeat) + "\n")
 
-    logg(f"will be served over {heartbeat['log']}")
+def run_cmd(func, *config_files, **kwargs):
+    configs = reduce(lambda a, b: a.update(b), [read_settings(f) for f in config_files])
+    settings = configs.update(kwargs)
+    return func(**settings)
+
+
+def run_func(func, *config_files, **kwargs):
+    configs = reduce(lambda a, b: a.update(b), [read_settings(f) for f in config_files])
+    settings = configs.update(kwargs)
+    return func(**settings)
+
+

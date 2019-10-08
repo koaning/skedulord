@@ -11,7 +11,8 @@ import click
 import waitress
 
 from skedulord import version
-from skedulord.common import SETTINGS_PATH, CONFIG_PATH, read_settings, logg, add_heartbeat
+from skedulord.common import SKEDULORD_PATH, CONFIG_PATH, read_settings, consolidate_settings
+from skedulord.logger import log_to_disk, logcli
 from skedulord.web.app import create_app
 
 
@@ -27,34 +28,38 @@ def main():
 @click.option('--name', prompt='What is the name for this skedulord instance.')
 @click.option('--attempts', prompt='What number of retries do you want to assume?', default=3)
 @click.option('--wait', prompt='How many seconds between attemps do you assume?', default=60)
-def setup(name, attempts, wait):
+@click.option('--max-logs', prompt='Maximum number of logfiles to keep per jobname.', default=100)
+def setup(name, attempts, wait, max_logs):
     """setup the skedulord"""
-    settings = {"name": name, "version": version, "attempts": attempts, "wait": wait}
-    logg(f"creating new settings")
-    path = pathlib.Path(SETTINGS_PATH)
+    settings = {"name": name, "version": version, "attempts": attempts, "wait": wait, "max_logs": max_logs}
+    logcli(f"creating new settings")
+    path = pathlib.Path(SKEDULORD_PATH)
     path.mkdir(parents=True, exist_ok=True)
     with open(CONFIG_PATH, "w") as f:
         yaml.dump(settings, f, default_flow_style=False)
-    logg(f"settings file created: {CONFIG_PATH}")
-    path = pathlib.Path(SETTINGS_PATH) / "logs"
+    logcli(f"settings file created: {CONFIG_PATH}")
+    path = pathlib.Path(SKEDULORD_PATH) / "jobs"
     path.mkdir(parents=True, exist_ok=True)
-    logg(f"paths created")
-    logg(f"done")
+    logcli(f"paths created")
+    logcli(f"done")
 
 
 @click.command()
-@click.argument('command')
 @click.argument('name')
+@click.argument('command')
 @click.option('--attempts', default=SETTINGS['attempts'], help='max number of tries')
 @click.option('--wait', default=SETTINGS['wait'], help='seconds between tries')
-def run(command, name, attempts, wait):
-    """run (and log) the (cron) command, can retry"""
+def run(name, command, attempts, wait):
+    """run (and log) the command, can retry"""
     tries = 0
-    name = command if name == "" else name
-    attempts = attempts
-    run_id = str(uuid.uuid4())[:13]
+    local_settings = str(pathlib.Path(SKEDULORD_PATH) / "jobs" / 'settings.yml')
+    settings = consolidate_settings(CONFIG_PATH, local_settings)
+    settings = settings.update({'attempts': attempts, 'wait': wait})
+    attempts, wait = settings['attempts'], settings['wait']
+    run_id = str(uuid.uuid4())[:8]
     tic = dt.datetime.now()
-    log_folder = os.path.join(SETTINGS_PATH, "logs", name)
+
+    log_folder = pathlib.Path(SKEDULORD_PATH) / "jobs" / name / "logs"
     log_file = str(tic)[:19].replace(" ", "T") + ".txt"
     pathlib.Path(log_folder).mkdir(parents=True, exist_ok=True)
 
@@ -72,10 +77,10 @@ def run(command, name, attempts, wait):
             if output.returncode == 0:
                 tries += attempts
             else:
-                logg(f"detected failure, re-attempt in {wait} seconds")
+                logcli(f"detected failure, re-attempt in {wait} seconds")
                 time.sleep(wait)
                 tries += 1
-    add_heartbeat(run_id, name, command, tic=tic, toc=dt.datetime.now(), output=output)
+    log_to_disk(run_id, name, command, tic=tic, toc=dt.datetime.now(), output=output)
 
 
 @click.command()
@@ -85,10 +90,10 @@ def nuke(sure, really):
     """hard reset of disk state"""
     if really and sure:
         try:
-            shutil.rmtree(SETTINGS_PATH)
-            logg("nuked from orbit!")
+            shutil.rmtree(SKEDULORD_PATH)
+            logcli("nuked from orbit!")
         except FileNotFoundError:
-            logg("no skedulord files found")
+            logcli("no skedulord files found")
 
 
 @click.command()
@@ -100,10 +105,17 @@ def serve(host, port):
     waitress.serve(app, host=host, port=port)
 
 
+@click.command()
+def clean():
+    """cleans local logs according to settings"""
+    pass
+
+
 main.add_command(setup)
 main.add_command(run)
 main.add_command(nuke)
 main.add_command(serve)
+main.add_command(clean)
 
 if __name__ == "__main__":
     main()

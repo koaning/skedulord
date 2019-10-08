@@ -16,9 +16,9 @@ def clean_start():
 
 
 def test_basic_heartbeat1(clean_start):
-    os.system("skedulord run 'python jobs/run.py' foo")
-    os.system("skedulord run 'python jobs/run.py' bar")
-    os.system("skedulord run 'python jobs/run.py' foo")
+    os.system("skedulord run foo 'python jobs/run.py'")
+    os.system("skedulord run bar 'python jobs/run.py'")
+    os.system("skedulord run foo 'python jobs/run.py'")
     with open(HEARTBEAT_PATH, "r") as f:
         jobs = [json.loads(_) for _ in f.readlines()]
     assert len(jobs) == 3
@@ -26,11 +26,11 @@ def test_basic_heartbeat1(clean_start):
 
 
 def test_basic_heartbeat2(clean_start):
-    os.system("skedulord run 'python jobs/run.py' foo")
-    os.system("skedulord run 'python jobs/run.py' bar")
-    os.system("skedulord run 'python jobs/run.py' foo")
-    os.system("skedulord run 'python jobs/run.py' bar")
-    os.system("skedulord run 'python jobs/run.py' buz")
+    os.system("skedulord run foo 'python jobs/run.py'")
+    os.system("skedulord run bar 'python jobs/run.py'")
+    os.system("skedulord run foo 'python jobs/run.py'")
+    os.system("skedulord run bar 'python jobs/run.py'")
+    os.system("skedulord run buz 'python jobs/run.py'")
     with open(HEARTBEAT_PATH, "r") as f:
         jobs = [json.loads(_) for _ in f.readlines()]
     assert len(jobs) == 5
@@ -38,9 +38,9 @@ def test_basic_heartbeat2(clean_start):
 
 
 def test_basic_heartbeat_server(clean_start):
-    os.system("skedulord run 'python jobs/run.py' foo")
-    os.system("skedulord run 'python jobs/run.py' bar")
-    os.system("skedulord run 'python jobs/run.py' buz")
+    os.system("skedulord run foo 'python jobs/run.py'")
+    os.system("skedulord run bar 'python jobs/run.py'")
+    os.system("skedulord run buz 'python jobs/run.py'")
     test_app = create_app().test_client()
     json_blob = test_app.get("/api/test_heartbeats").get_json()
     print(json_blob)
