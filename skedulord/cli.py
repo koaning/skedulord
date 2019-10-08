@@ -11,7 +11,7 @@ import click
 import waitress
 
 from skedulord import version
-from skedulord.common import SKEDULORD_PATH, CONFIG_PATH, read_settings, consolidate_settings
+from skedulord.common import SKEDULORD_PATH, CONFIG_PATH, read_settings
 from skedulord.logger import log_to_disk, logcli
 from skedulord.web.app import create_app
 
@@ -29,9 +29,11 @@ def main():
 @click.option('--attempts', prompt='What number of retries do you want to assume?', default=3)
 @click.option('--wait', prompt='How many seconds between attemps do you assume?', default=60)
 @click.option('--max-logs', prompt='Maximum number of logfiles to keep per jobname.', default=100)
-def setup(name, attempts, wait, max_logs):
+@click.option('--email', prompt='Where to send an email apon failure.', default="")
+def setup(name, attempts, wait, max_logs, email):
     """setup the skedulord"""
-    settings = {"name": name, "version": version, "attempts": attempts, "wait": wait, "max_logs": max_logs}
+    settings = {"name": name, "version": version, "attempts": attempts,
+                "wait": wait, "max_logs": max_logs, "email": email}
     logcli(f"creating new settings")
     path = pathlib.Path(SKEDULORD_PATH)
     path.mkdir(parents=True, exist_ok=True)
@@ -52,10 +54,6 @@ def setup(name, attempts, wait, max_logs):
 def run(name, command, attempts, wait):
     """run (and log) the command, can retry"""
     tries = 0
-    local_settings = str(pathlib.Path(SKEDULORD_PATH) / "jobs" / 'settings.yml')
-    settings = consolidate_settings(CONFIG_PATH, local_settings)
-    settings = settings.update({'attempts': attempts, 'wait': wait})
-    attempts, wait = settings['attempts'], settings['wait']
     run_id = str(uuid.uuid4())[:8]
     tic = dt.datetime.now()
 

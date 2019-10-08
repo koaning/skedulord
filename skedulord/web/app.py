@@ -44,14 +44,14 @@ def create_app():
     @app.route("/api/logs/<job>/<datetime>")
     @cross_origin()
     def fetch_logs(job, datetime):
-        path = os.path.join(SKEDULORD_PATH, "logs", job, datetime)
+        path = os.path.join(SKEDULORD_PATH, "jobs", job, "logs", datetime)
         with open(path) as f:
             return f"<pre>{f.read()}</pre>"
 
     @app.route("/api/glob_logs")
     @cross_origin()
     def glob_logs():
-        return jsonify(glob.glob(f"{SKEDULORD_PATH}/logs/*/*.txt"))
+        return jsonify(glob.glob(f"{SKEDULORD_PATH}/jobs/*/logs/*.txt"))
 
     @app.route("/api/mirror", methods=['POST'])
     @cross_origin()

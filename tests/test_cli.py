@@ -11,6 +11,7 @@ from skedulord.web.app import create_app
 def clean_start():
     os.system("skedulord nuke --really --sure")
     os.system("skedulord setup --name yoyo --attempts 3 --wait 1")
+    print("created new skedulord env")
     yield 1
     os.system("skedulord nuke --really --sure")
 
