@@ -1,5 +1,6 @@
-import json
 import os
+import json
+import pathlib
 
 import click
 
@@ -23,7 +24,15 @@ class CliLogger():
 logcli = CliLogger()
 
 
-def log_to_disk(run_id, name, command, tic, toc, output):
+def log_output(jobname, tic, output):
+    log_folder = pathlib.Path(SKEDULORD_PATH) / "jobs" / jobname / "logs"
+    log_file = str(tic)[:19].replace(" ", "T") + ".txt"
+    pathlib.Path(log_folder).mkdir(parents=True, exist_ok=True)
+    with open(os.path.join(log_folder, log_file), "w") as f:
+        f.write(output)
+
+
+def log_to_disk(run_id, name, command, tic, toc, status, output, silent=False):
     log_folder = os.path.join(SKEDULORD_PATH, "logs", name.replace(" ", "-").replace(".", "-"))
     log_file = str(tic)[:19].replace(" ", "T") + ".txt"
     heartbeat = {
@@ -33,14 +42,18 @@ def log_to_disk(run_id, name, command, tic, toc, output):
         "startime": str(tic)[:19],
         "endtime": str(toc)[:19],
         "time": (toc - tic).seconds,
-        "status": output.returncode,
+        "status": status,
         "log": os.path.join(log_folder, log_file)
     }
-    logcli(heartbeat)
+    if not silent:
+        logcli(heartbeat)
 
     # we don't want the settings path in the flask server
     heartbeat['log'] = heartbeat['log'].replace(SKEDULORD_PATH, "")
+    # first we log the logfile that belongs to the job
+    log_output(jobname=name, tic=tic, output=output)
+    # then we wrap up by logging the heartbeat to disk
     with open(HEARTBEAT_PATH, "a") as f:
         f.write(json.dumps(heartbeat) + "\n")
-
-    logcli(f"will be served over {heartbeat['log']}")
+    if not silent:
+        logcli(f"will be served over {heartbeat['log']}")

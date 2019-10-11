@@ -2,7 +2,7 @@ import time
 import logging
 import asyncio
 
-from skedulord import Job
+from skedulord.job import JobChain
 
 logging.basicConfig(
     level=logging.INFO,
@@ -29,7 +29,8 @@ def do_stuff(sec=1):
     logging.info(f"slept for {sec}s")
 
 
-(Job()
+(JobChain()
  .then(do_stuff, sec=0.1)
  .then(do_many, n=10)
- .then(do_stuff, sec=0.1))
+ .then(do_stuff, sec=0.1)
+ .run())
