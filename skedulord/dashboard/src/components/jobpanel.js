@@ -7,8 +7,9 @@ import TableCell from '@material-ui/core/TableCell';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import LogModal from "../components/logbutton.js"
-import SentimentSatisfied from '@material-ui/icons/SentimentSatisfied';
-import SentimentVeryDissatisfied from '@material-ui/icons/SentimentVeryDissatisfied';
+import CheckIcon from '@material-ui/icons/Check';
+import BlockIcon from '@material-ui/icons/Block';
+
 
 
 export default function JobPanel(jobs) {
@@ -30,9 +31,9 @@ export default function JobPanel(jobs) {
               <TableRow key={blob.id}>
                 <TableCell>
                   {blob.status == 0 ? (
-                    <SentimentSatisfied></SentimentSatisfied>
+                    <CheckIcon></CheckIcon>
                   ) : (
-                    <SentimentVeryDissatisfied></SentimentVeryDissatisfied>
+                    <BlockIcon color='error'></BlockIcon>
                   )}
 
                 </TableCell>
