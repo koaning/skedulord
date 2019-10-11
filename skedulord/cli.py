@@ -20,9 +20,9 @@ def main():
 
 
 @click.command()
-@click.option('--name', prompt='What is the name for this skedulord instance.')
+@click.option('--name', prompt='What is the name for this skedulord instance.', default="logger")
 @click.option('--attempts', prompt='What number of retries do you want to assume?', default=3)
-@click.option('--wait', prompt='How many seconds between attemps do you assume?', default=60)
+@click.option('--wait', prompt='How many seconds between attemps do you assume?', default=1)
 def setup(name, attempts, wait):
     """setup skedulord"""
     settings = {"name": name, "version": version, "attempts": attempts, "wait": wait}
@@ -60,6 +60,8 @@ def nuke(sure, really):
             logcli("nuked from orbit!")
         except FileNotFoundError:
             logcli("no skedulord files found")
+    else:
+        logcli("crisis averted.")
 
 
 @click.command()
@@ -80,7 +82,7 @@ def summary():
     click.echo(f"{name:>10} {count:>5} {n_fail:>6} {time:>11}")
     for name, count in Counter([_['name'] for _ in jobs]).items():
         subset = [_ for _ in jobs if _['name'] == name]
-        n_fail = sum([1 - _['status'] for _ in jobs if _['name'] == name])
+        n_fail = sum([1 - _['succeed'] for _ in jobs if _['name'] == name])
         avg_time = sum(_['time'] for _ in subset)/len(subset)
         click.echo(f"{name:>10} {count:>5} {n_fail:>6} {avg_time:>11}")
 

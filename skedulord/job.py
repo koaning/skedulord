@@ -27,17 +27,17 @@ class JobChain:
         tic = dt.datetime.now()
         with redirect_stdout(f):
             for func, args, kwargs in self.steps:
-                i = 0
+                tries = 0
                 stop = False
                 while not stop:
                     try:
-                        msg = f"attempt {i + 1} - about to run {func.__name__} args:{args}, kwargs:{kwargs}"
+                        msg = f"attempt {tries + 1} - about to run {func.__name__} args:{args}, kwargs:{kwargs}"
                         click.echo(msg)
                         func(*args, **kwargs)
                         stop = True
                     except:
-                        i += 1
-                        if i >= self.attemps:
+                        tries += 1
+                        if tries >= self.attemps:
                             raise RuntimeError("max attempts reached")
                         time.sleep(self.wait)
         tock = dt.datetime.now()
@@ -46,7 +46,7 @@ class JobChain:
                     command="jobchain",
                     tic=tic,
                     toc=tock,
-                    status=int(not stop),
+                    succeed=(tries < (self.attemps + 1)),
                     output=f.getvalue(),
                     silent=True)
         return self
@@ -64,17 +64,17 @@ class JobRunner:
         f = io.StringIO()
         tic = dt.datetime.now()
         with redirect_stdout(f):
-            i = 0
+            tries = 0
             stop = False
             while not stop:
                 try:
-                    msg = f"attempt {i + 1} - about to run {func.__name__} args:{args}, kwargs:{kwargs}"
+                    msg = f"attempt {tries + 1} - about to run {func.__name__} args:{args}, kwargs:{kwargs}"
                     click.echo(msg)
                     func(*args, **kwargs)
                     stop = True
                 except:
-                    i += 1
-                    if i >= self.attemps:
+                    tries += 1
+                    if tries >= self.attemps:
                         raise RuntimeError("max attempts reached")
                     time.sleep(self.wait)
         tock = dt.datetime.now()
@@ -83,19 +83,20 @@ class JobRunner:
                     command=f"{func.__name__}-{args}-{kwargs}",
                     tic=tic,
                     toc=tock,
-                    status=int(not stop),
+                    succeed=tries < (self.attemps + 1),
                     output=f.getvalue(),
                     silent=True)
         return self
 
     def cmd(self, name, command):
-        tries = 0
+        tries = 1
         tic = dt.datetime.now()
         run_id = str(uuid.uuid4())[:8]
-
+        stop = False
         logs = ""
-        while tries < self.attemps:
-            logs += f"{command} - {run_id} - attempt {tries + 1} - {str(dt.datetime.now())} \n"
+
+        while not stop:
+            logs += f"{command} - {run_id} - attempt {tries} - {str(dt.datetime.now())} \n"
             output = subprocess.run(command.split(" "),
                                     cwd=str(pathlib.Path().cwd()),
                                     stdout=subprocess.PIPE,
@@ -105,17 +106,18 @@ class JobRunner:
 
             logs += output.stdout
             if output.returncode == 0:
-                tries += self.attemps
+                stop = True
             else:
-                logcli(f"detected failure, re-attempt in {self.wait} seconds")
-                time.sleep(self.wait)
                 tries += 1
+                time.sleep(self.wait)
+                if tries > self.attemps:
+                    stop = True
         log_to_disk(run_id=run_id,
                     name=name,
                     command=command,
                     tic=tic,
                     toc=dt.datetime.now(),
-                    status=int(not (tries == self.attemps)),
+                    succeed=(tries < (self.attemps + 1)),
                     output=logs)
         return self
 

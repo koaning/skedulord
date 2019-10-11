@@ -16,7 +16,7 @@ class CliLogger():
         self.i += 1
         if isinstance(msg, dict):
             for k, v in msg.items():
-                click.echo(click.style(f"  - {k}: {v}", fg='green' if msg['status'] == 0 else 'red'))
+                click.echo(click.style(f"  - {k}: {v}", fg='green' if msg['succeed'] else 'red'))
         else:
             click.echo(click.style(f"{msg}", fg=color))
 
@@ -24,17 +24,19 @@ class CliLogger():
 logcli = CliLogger()
 
 
-def log_output(jobname, tic, output):
-    log_folder = pathlib.Path(SKEDULORD_PATH) / "jobs" / jobname / "logs"
+def joblog_path(jobname, tic):
+    log_folder = pathlib.Path(SKEDULORD_PATH) / "jobs" / jobname
     log_file = str(tic)[:19].replace(" ", "T") + ".txt"
     pathlib.Path(log_folder).mkdir(parents=True, exist_ok=True)
-    with open(os.path.join(log_folder, log_file), "w") as f:
+    return os.path.join(log_folder, log_file)
+
+
+def log_output(jobname, tic, output):
+    with open(joblog_path(jobname, tic), "w") as f:
         f.write(output)
 
 
-def log_to_disk(run_id, name, command, tic, toc, status, output, silent=False):
-    log_folder = os.path.join(SKEDULORD_PATH, "logs", name.replace(" ", "-").replace(".", "-"))
-    log_file = str(tic)[:19].replace(" ", "T") + ".txt"
+def log_to_disk(run_id, name, command, tic, toc, succeed, output, silent=False):
     heartbeat = {
         "id": run_id,
         "name": name,
@@ -42,8 +44,8 @@ def log_to_disk(run_id, name, command, tic, toc, status, output, silent=False):
         "startime": str(tic)[:19],
         "endtime": str(toc)[:19],
         "time": (toc - tic).seconds,
-        "status": status,
-        "log": os.path.join(log_folder, log_file)
+        "succeed": succeed,
+        "log": joblog_path(jobname=name, tic=tic)
     }
     if not silent:
         logcli(heartbeat)
@@ -55,5 +57,3 @@ def log_to_disk(run_id, name, command, tic, toc, status, output, silent=False):
     # then we wrap up by logging the heartbeat to disk
     with open(HEARTBEAT_PATH, "a") as f:
         f.write(json.dumps(heartbeat) + "\n")
-    if not silent:
-        logcli(f"will be served over {heartbeat['log']}")

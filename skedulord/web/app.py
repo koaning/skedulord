@@ -39,17 +39,18 @@ def create_app():
                              "id": i,
                              "jobs": [j for j in jobs if j['name'] == n]} for i, n in enumerate(names)])
 
-    @app.route("/api/logs/<job>/<datetime>")
+    @app.route("/api/jobs/<job>/<datetime>")
     @cross_origin()
     def fetch_logs(job, datetime):
-        path = os.path.join(SKEDULORD_PATH, "jobs", job, "logs", datetime)
+        path = os.path.join(SKEDULORD_PATH, "jobs", job, datetime)
+        print(f"{path}")
         with open(path) as f:
             return f"<pre>{f.read()}</pre>"
 
     @app.route("/api/glob_logs")
     @cross_origin()
     def glob_logs():
-        return jsonify(glob.glob(f"{SKEDULORD_PATH}/jobs/*/logs/*.txt"))
+        return jsonify([_.replace(SKEDULORD_PATH, "") for _ in glob.glob(f"{SKEDULORD_PATH}/jobs/*/*.txt")])
 
     @app.route("/api/mirror", methods=['POST'])
     @cross_origin()
