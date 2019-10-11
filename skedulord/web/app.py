@@ -13,19 +13,17 @@ def create_app():
 
     @app.route('/')
     def static_file():
-        print(f"{app.static_folder}")
         return app.send_static_file("index.html")
 
     @app.route('/logo.png')
     def logo():
-        print(f"{app.static_folder}")
         return app.send_static_file("skedulord.png")
 
     @app.route("/api/heartbeats")
     @cross_origin()
     def grab():
         with open(HEARTBEAT_PATH, "r") as f:
-            jobs = [json.loads(_) for _ in f.readlines()]
+            jobs = sorted([json.loads(_) for _ in f.readlines()], key=lambda d: d['startime'], reverse=True)
             names = set([_['name'] for _ in jobs])
             return jsonify([{"name": n,
                              "id": i,
@@ -35,7 +33,7 @@ def create_app():
     def grab_test():
         # the @cross_origin is messing up the tests =(
         with open(HEARTBEAT_PATH, "r") as f:
-            jobs = [json.loads(_) for _ in f.readlines()]
+            jobs = sorted([json.loads(_) for _ in f.readlines()], key=lambda d: d['startime'], reverse=True)
             names = set([_['name'] for _ in jobs])
             return jsonify([{"name": n,
                              "id": i,
