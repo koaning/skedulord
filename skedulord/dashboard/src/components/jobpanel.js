@@ -30,7 +30,7 @@ export default function JobPanel(jobs) {
             {jobs.jobs.map(blob => (
               <TableRow key={blob.id}>
                 <TableCell>
-                  {blob.status == 0 ? (
+                  {blob.succeed ? (
                     <CheckIcon></CheckIcon>
                   ) : (
                     <BlockIcon color='error'></BlockIcon>
