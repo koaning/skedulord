@@ -21,6 +21,7 @@ export default function JobPanel(jobs) {
             <TableRow>
               <TableCell></TableCell>
               <TableCell>job id</TableCell>
+              <TableCell align="right">retries</TableCell>
               <TableCell align="right">start</TableCell>
               <TableCell align="right">end</TableCell>
               <TableCell align="right">logs</TableCell>
@@ -38,6 +39,7 @@ export default function JobPanel(jobs) {
 
                 </TableCell>
                 <TableCell align="right">{blob.id}</TableCell>
+                <TableCell align="right">{blob.tries}</TableCell>
                 <TableCell align="right">{blob.startime}</TableCell>
                 <TableCell align="right">{blob.endtime}</TableCell>
                 <TableCell align="right"><LogModal>{blob}</LogModal></TableCell>

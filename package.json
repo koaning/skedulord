@@ -1,0 +1,27 @@
+{
+  "name": "skedulord",
+  "version": "1.0.0",
+  "description": "![](skedulord/web/templates/skedulord.png)",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "dependencies": {
+    "cypress": "^3.4.1",
+    "http-server": "^0.11.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/koaning/skedulord.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/koaning/skedulord/issues"
+  },
+  "homepage": "https://gitlab.com/koaning/skedulord#readme"
+}

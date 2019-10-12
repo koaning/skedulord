@@ -118,3 +118,6 @@ dmypy.json
 
 skedulord/web/templates/*
 skedulord/dashboard/build/*
+
+package-lock.json
+node_modules/*

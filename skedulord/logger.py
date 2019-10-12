@@ -36,10 +36,11 @@ def log_output(jobname, tic, output):
         f.write(output)
 
 
-def log_to_disk(run_id, name, command, tic, toc, succeed, output, silent=False):
+def log_to_disk(run_id, name, command, tic, toc, succeed, output, tries, silent=False):
     heartbeat = {
         "id": run_id,
         "name": name,
+        "tries": tries,
         "command": command,
         "startime": str(tic)[:19],
         "endtime": str(toc)[:19],
