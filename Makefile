@@ -29,6 +29,18 @@ dev:
 	cd skedulord/dashboard && gatsby clean
 	skedulord serve
 
+reset:
+	lord nuke --sure --really
+	lord setup --name logger --wait 1 --attempts 3
+	lord run pyjob1 "python jobs/badpyjob.py" --wait 1
+	lord run pyjob1 "python jobs/badpyjob.py" --wait 1
+	lord run pyjob1 "python jobs/pyjob.py" --wait 1
+	lord run pyjob2 "python jobs/pyjob.py" --wait 1
+	lord run pyjob2 "python jobs/pyjob.py" --wait 1
+
+test-frontend:
+	skedulord serve & ./node_modules/.bin/cypress run
+
 build:
 	docker build -t pythoncontainer .
 

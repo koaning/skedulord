@@ -121,3 +121,4 @@ skedulord/dashboard/build/*
 
 package-lock.json
 node_modules/*
+cypress/videos/*
