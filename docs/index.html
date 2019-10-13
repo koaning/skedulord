@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>skedulord docs</title>
+        <meta charset="utf-8">
+        <!-- include the termynal stylesheet -->
+        <link rel="stylesheet" href="termynal.css">
+        <!-- some custom styles for the page -->
+        <link href="https://fonts.googleapis.com/css?family=Fira+Mono">
+        <style>
+            body {
+                padding: 0;
+                background: #1a1e24;
+                margin: 0 auto;
+                width: 45vw;
+            }
+        </style>
+    </head>
+    <body>
+
+        <h1 style="text-align: center">skedulord documentation</h1>
+
+        <p>The goal of this project is to offer a lightweight method
+           of organising log files for jobs that run from the command line.
+           It offers a command line app that can be used from cron as
+           well as a small visualisation server. </p>
+        <h2>How do I use <b>skedulord</b>?</h2>
+        <div id="termynal1" data-termynal>
+            <span data-ty="input">lord init</span>
+            <span data-ty="input">lord run pyjob "python goodjob.py"</span>
+            <span data-ty data-ty-delay="0" class="blob green">
+            - id: c67d713a <br>
+            - name: pyjob <br>
+            - tries: 1 <br>
+            - command: python goodjob.py <br>
+            - startime: 2019-10-13 21:11:03 <br>
+            - endtime: 2019-10-13 21:11:08 <br>
+            - time: 5 <br>
+            - succeed: True <br>
+            - log: ~/.skedulord/jobs/pyjob/2019-10-13T21:11:03.txt
+            </span>
+            <span data-ty="input">lord run pyjob "python badjob.py"</span>
+            <span data-ty data-ty-delay="0" class="blob red">
+            - id: c67d713a <br>
+            - name: pyjob <br>
+            - tries: 3 <br>
+            - command: python badjob.py <br>
+            - startime: 2019-10-13 21:11:11 <br>
+            - endtime: 2019-10-13 21:11:15 <br>
+            - time: 5 <br>
+            - succeed: True <br>
+            - log: ~/.skedulord/jobs/pyjob/2019-10-13T21:11:11.txt
+            </span>
+            <span data-ty="input">ls ~/.skedulord/jobs/pyjob</span>
+            <span data-ty data-ty-delay="0">2019-10-13T21:11:03.txt 2019-10-13T21:11:11.txt</span>
+            <span data-ty="input">lord serve --host 0.0.0.0 --port 8080</span>
+            <span data-ty data-ty-delay="0">Serving logs over at 0.0.0.0:8080.</span>
+        </div>
+        <p>This last command will start a simple web overview.</p>
+
+        <h2>What does <b>skedulord</b> do?</h2>
+
+        <p>Skedulord will:</p>
+        <ol>
+            <li>run your command</li>
+            <li>capture all the stdout</li>
+            <li>save this into a file at <span class="green">~/.skedulord/[jobname]/[timestamp].txt</span></li>
+            <li>log monitoring metadata at <span class="green">~/.skedulord/heartbeats.jsonl</span></li>
+        </ol>
+
+        <p>There's some extra settings you can add to a job though.</p>
+
+        <div id="termynal2" data-termynal>
+            <span data-ty="input">lord run job1 "python goodjob.py" --retry 3 --wait 5</span>
+            <span data-ty="input">lord run job2 "python badjob.py" --retry 5 --wait 60</span>
+        </div>
+
+        <p>These jobs will be retried should they fail. The first job will attempt 3 tries in total
+            and will wait 5 seconds between each attempt. The second job will attempt 5 tries and wait
+            60 seconds between each go.</p>
+
+        <p>There's some extra commands that can inspected by adding the `--help` flag.</p>
+        <div id="termynal2" data-termynal>
+            <span data-ty="input">lord --help</span>
+        </div>
+
+        <h2>What does skedulord not do?</h2>
+        <p>Skedulord does not:</p>
+        <ol>
+            <li>schedule jobs for you, this is what <span class="green">cron</span> is for</li>
+            <li>integrate with cloud services on your behalf</li>
+            <li>write your jobs for you</li>
+        </ol>
+        <h2>What are the main usecases?</h2>
+        <p>Lot's of ETL jobs are simple and only need a VMschedulord makes it easy to run them automatically.</p>
+        <h2>Food for Thought</h2>
+        <ul>
+            <li>You could schedule a cronjob that will sync the local log files to cloud storage for a backup.</li>
+            <li>You could provision cronjobs automatically using ansible. This can be part of you CI/CD pipeline.</li>
+            <li>You could consider using the cron server as a scheduling server and running your jobs someplace else.
+                Running a docker container can be done in the cloud.</li>
+        </ul>
+        <br>
+        <br>
+        <br>
+        <br>
+        <br>
+
+        <!-- include and initialise termynal.js -->
+        <script src="termynal.js" data-termynal-container="#termynal1|#termynal2"></script>
+    </body>
+</html>
