@@ -12,18 +12,25 @@ test:
     - pytest --cov=skedulord
 
 
-frontend:
-  stage: unittest
-  script:
-    - pip3.6 install --upgrade pip
-    - pip3.6 install -e .
-    - curl -sL https://deb.nodesource.com/setup_10.x | bash
-    - apt install nodejs
-    - npm install
-    - lord setup --name logger --wait 1 --attempts 3
-    - lord run pyjob1 "python jobs/badpyjob.py" --wait 1
-    - lord run pyjob1 "python jobs/badpyjob.py" --wait 1
-    - lord run pyjob1 "python jobs/pyjob.py" --wait 1
-    - lord run pyjob2 "python jobs/pyjob.py" --wait 1
-    - lord run pyjob2 "python jobs/pyjob.py" --wait 1
-    - skedulord serve & ./node_modules/.bin/cypress run
+#frontend:
+#  image: markadams/chromium-xvfb-py3
+#  stage: unittest
+#  script:
+#    - apt-get update && apt-get install -y python3 python3-pip curl unzip libgconf-2-4
+#    - export CHROMEDRIVER_VERSION=2.36
+#    - export CHROMEDRIVER_SHA256=2461384f541346bb882c997886f8976edc5a2e7559247c8642f599acd74c21d4
+#    - curl -SLO "https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver_linux64.zip" \
+#      && echo "$CHROMEDRIVER_SHA256  chromedriver_linux64.zip" | sha256sum -c - \
+#      && unzip "chromedriver_linux64.zip" -d /usr/local/bin \
+#      && rm "chromedriver_linux64.zip"
+#    - pip3 install -e .
+#    - curl -sL https://deb.nodesource.com/setup_10.x | bash
+#    - apt install nodejs
+#    - npm install
+#    - lord setup --name logger --wait 1 --attempts 3
+#    - lord run pyjob1 "python jobs/badpyjob.py" --wait 1
+#    - lord run pyjob1 "python jobs/badpyjob.py" --wait 1
+#    - lord run pyjob1 "python jobs/pyjob.py" --wait 1
+#    - lord run pyjob2 "python jobs/pyjob.py" --wait 1
+#    - lord run pyjob2 "python jobs/pyjob.py" --wait 1
+#    - skedulord serve & ./node_modules/.bin/cypress run
