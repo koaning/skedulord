@@ -17,11 +17,8 @@ frontend:
   script:
     - pip3.6 install --upgrade pip
     - pip3.6 install -e .
-    - curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
-    - export NVM_DIR="$HOME/.nvm"
-    - [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-    - [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-    - nvm install 10.15.3
+    - curl -sL https://deb.nodesource.com/setup_10.x | bash
+    - apt install nodejs
     - npm install
     - lord setup --name logger --wait 1 --attempts 3
     - lord run pyjob1 "python jobs/badpyjob.py" --wait 1
