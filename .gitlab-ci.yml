@@ -9,7 +9,6 @@ test:
     - pip3.6 install --upgrade pip
     - pip3.6 install -e ".[dev]"
     - pip3.6 install pytest
-    - flake8
     - pytest --cov=skedulord
 
 
@@ -19,6 +18,7 @@ frontend:
     - pip3.6 install --upgrade pip
     - pip3.6 install -e .
     - curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.34.0/install.sh | bash
+    - nvm install 10.15.3
     - npm install
     - lord setup --name logger --wait 1 --attempts 3
     - lord run pyjob1 "python jobs/badpyjob.py" --wait 1
