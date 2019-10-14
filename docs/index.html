@@ -10,21 +10,23 @@
         <style>
             body {
                 padding: 0;
-                background: #1a1e24;
+
                 margin: 0 auto;
                 width: 45vw;
             }
         </style>
     </head>
     <body>
+        <br>
+        <br>
 
-        <h1 style="text-align: center">skedulord documentation</h1>
+        <img style="margin:0 auto; display: block;" src="skedulord.png" width="300">
 
         <p>The goal of this project is to offer a lightweight method
            of organising log files for jobs that run from the command line.
            It offers a command line app that can be used from cron as
            well as a small visualisation server. </p>
-        <h2>How do I use <b>skedulord</b>?</h2>
+        <h2 class="h">How do I use <b>skedulord</b>?</h2>
         <div id="termynal1" data-termynal>
             <span data-ty="input">lord init</span>
             <span data-ty="input">lord run pyjob "python goodjob.py"</span>
@@ -58,7 +60,7 @@
         </div>
         <p>This last command will start a simple web overview.</p>
 
-        <h2>What does <b>skedulord</b> do?</h2>
+        <h2 class="h">What does <b>skedulord</b> do?</h2>
 
         <p>Skedulord will:</p>
         <ol>
@@ -84,21 +86,23 @@
             <span data-ty="input">lord --help</span>
         </div>
 
-        <h2>What does skedulord not do?</h2>
+        <h2 class="h">What does skedulord not do?</h2>
         <p>Skedulord does not:</p>
         <ol>
             <li>schedule jobs for you, this is what <span class="green">cron</span> is for</li>
-            <li>integrate with cloud services on your behalf</li>
+            <li>integrate with your compute services on your behalf</li>
             <li>write your jobs for you</li>
         </ol>
-        <h2>What are the main usecases?</h2>
-        <p>Lot's of ETL jobs are simple and only need a VMschedulord makes it easy to run them automatically.</p>
-        <h2>Food for Thought</h2>
+        <h2 class="h">What are the main usecases?</h2>
+        <p>Lot's of ETL jobs are simple and only need a VM. Skedulord makes it easy to run them automatically.
+            Once your jobs become highly dependant then you'll need something more elaborate (like <a href="https://airflow.apache.org/">airflow</a>).</p>
+        <h2 class="h">Food for Thought</h2>
+        <p>How you run your ETL jobs depends on the problems that you have. But there are a few things you might like to consider.</p>
         <ul>
-            <li>You could schedule a cronjob that will sync the local log files to cloud storage for a backup.</li>
+            <li>You could schedule a cronjob that will sync the local log files to cloud storage for a backup. You could also schedule a job that will ensure that the disk space is kept at bay.</li>
             <li>You could provision cronjobs automatically using ansible. This can be part of you CI/CD pipeline.</li>
             <li>You could consider using the cron server as a scheduling server and running your jobs someplace else.
-                Running a docker container can be done in the cloud.</li>
+                Running a docker container can be done in the cloud from the command line.</li>
         </ul>
         <br>
         <br>

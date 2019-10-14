@@ -9,9 +9,12 @@
 body {
     font-size: 18px;
     font-family: 'Fira Mono', Consolas, Menlo, Monaco, 'Courier New', Courier, monospace;
-    color: white;
+    color: black;
 }
 
+.h{
+    text-align: center;
+}
 :root {
     --color-bg: #252a33;
     --color-text: #eee;
