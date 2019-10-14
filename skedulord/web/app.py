@@ -23,7 +23,7 @@ def create_app():
     @cross_origin()
     def grab():
         with open(HEARTBEAT_PATH, "r") as f:
-            jobs = sorted([json.loads(_) for _ in f.readlines()], key=lambda d: d['startime'], reverse=True)
+            jobs = sorted([json.loads(_) for _ in f.readlines()], key=lambda d: d['start'], reverse=True)
             names = set([_['name'] for _ in jobs])
             return jsonify([{"name": n,
                              "id": i,
@@ -33,7 +33,7 @@ def create_app():
     def grab_test():
         # the @cross_origin is messing up the tests =(
         with open(HEARTBEAT_PATH, "r") as f:
-            jobs = sorted([json.loads(_) for _ in f.readlines()], key=lambda d: d['startime'], reverse=True)
+            jobs = sorted([json.loads(_) for _ in f.readlines()], key=lambda d: d['start'], reverse=True)
             names = set([_['name'] for _ in jobs])
             return jsonify([{"name": n,
                              "id": i,

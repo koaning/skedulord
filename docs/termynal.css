@@ -22,7 +22,7 @@ body {
 }
 
 [data-termynal] {
-    width: 750px;
+    width: 100%;
     max-width: 100%;
     background: var(--color-bg);
     color: var(--color-text);
@@ -108,6 +108,10 @@ body {
 
 .red{
     color: #ff5e61;
+}
+
+.gray{
+    color: #959595;
 }
 
 /* Cursor animation */

@@ -40,8 +40,8 @@ export default function JobPanel(jobs) {
                 </TableCell>
                 <TableCell align="right">{blob.id}</TableCell>
                 <TableCell align="right">{blob.tries}</TableCell>
-                <TableCell align="right">{blob.startime}</TableCell>
-                <TableCell align="right">{blob.endtime}</TableCell>
+                <TableCell align="right">{blob.start}</TableCell>
+                <TableCell align="right">{blob.end}</TableCell>
                 <TableCell align="right"><LogModal>{blob}</LogModal></TableCell>
               </TableRow>
             ))}

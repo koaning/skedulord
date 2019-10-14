@@ -37,7 +37,6 @@
             - command: python goodjob.py <br>
             - startime: 2019-10-13 21:11:03 <br>
             - endtime: 2019-10-13 21:11:08 <br>
-            - time: 5 <br>
             - succeed: True <br>
             - log: ~/.skedulord/jobs/pyjob/2019-10-13T21:11:03.txt
             </span>
@@ -49,14 +48,13 @@
             - command: python badjob.py <br>
             - startime: 2019-10-13 21:11:11 <br>
             - endtime: 2019-10-13 21:11:15 <br>
-            - time: 5 <br>
-            - succeed: True <br>
+            - succeed: False <br>
             - log: ~/.skedulord/jobs/pyjob/2019-10-13T21:11:11.txt
             </span>
             <span data-ty="input">ls ~/.skedulord/jobs/pyjob</span>
-            <span data-ty data-ty-delay="0">2019-10-13T21:11:03.txt 2019-10-13T21:11:11.txt</span>
+            <span data-ty data-ty-delay="0" class="gray">2019-10-13T21:11:03.txt 2019-10-13T21:11:11.txt</span>
             <span data-ty="input">lord serve --host 0.0.0.0 --port 8080</span>
-            <span data-ty data-ty-delay="0">Serving logs over at 0.0.0.0:8080.</span>
+            <span data-ty data-ty-delay="0" class="gray">Serving logs over at 0.0.0.0:8080.</span>
         </div>
         <p>This last command will start a simple web overview.</p>
 
@@ -103,6 +101,7 @@
             <li>You could provision cronjobs automatically using ansible. This can be part of you CI/CD pipeline.</li>
             <li>You could consider using the cron server as a scheduling server and running your jobs someplace else.
                 Running a docker container can be done in the cloud from the command line.</li>
+            <li>You could read the `~/.skedulord/heartbeats` file with pandas if you're interested in analysing.</li>
         </ul>
         <br>
         <br>

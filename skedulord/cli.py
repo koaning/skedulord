@@ -1,41 +1,43 @@
+import os
 import json
 import shutil
 import pathlib
+import datetime as dt
 from collections import Counter
 
-import yaml
 import click
 import waitress
+from prettytable import PrettyTable
 
 from skedulord import version
 from skedulord.logger import logcli
 from skedulord.job import JobRunner
 from skedulord.web.app import create_app
-from skedulord.common import SKEDULORD_PATH, CONFIG_PATH, HEARTBEAT_PATH
+from skedulord.common import SKEDULORD_PATH, HEARTBEAT_PATH
 
 
 @click.group()
 def main():
+    """
+    SKEDULORD:
+    keeps track of logs so you don't have to.
+    """
     pass
 
 
 @click.command()
-@click.option('--name', prompt='What is the name for this skedulord instance.', default="logger")
-@click.option('--attempts', prompt='What number of retries do you want to assume?', default=3)
-@click.option('--wait', prompt='How many seconds between attemps do you assume?', default=1)
-def setup(name, attempts, wait):
+def version():
+    """confirm the version"""
+    click.echo(version)
+
+
+@click.command()
+def init():
     """setup skedulord"""
-    settings = {"name": name, "version": version, "attempts": attempts, "wait": wait}
-    logcli(f"creating new settings")
     path = pathlib.Path(SKEDULORD_PATH)
+    if os.path.exists(SKEDULORD_PATH):
+        click.echo(f"{SKEDULORD_PATH} allready exists")
     path.mkdir(parents=True, exist_ok=True)
-    with open(CONFIG_PATH, "w") as f:
-        yaml.dump(settings, f, default_flow_style=False)
-    logcli(f"settings file created: {CONFIG_PATH}")
-    path = pathlib.Path(SKEDULORD_PATH) / "jobs"
-    path.mkdir(parents=True, exist_ok=True)
-    logcli(f"paths created")
-    logcli(f"done")
 
 
 @click.command()
@@ -76,22 +78,56 @@ def serve(host, port):
 @click.command()
 def summary():
     """shows a summary of the logs"""
+    def convert_dt(b):
+        d1, d2 = b['start'], b['end']
+        return (dt.datetime.fromisoformat(d1) - dt.datetime.fromisoformat(d2)).total_seconds()
+
     with open(HEARTBEAT_PATH, "r") as f:
         jobs = [json.loads(_) for _ in f.readlines()]
-    name, count, n_fail, time = 'name', 'total', 'n_fail', 'avg seconds'
-    click.echo(f"{name:>10} {count:>5} {n_fail:>6} {time:>11}")
+    tbl = PrettyTable()
+    tbl.field_names = ["jobname", "runs", "fails", "duration"]
+
     for name, count in Counter([_['name'] for _ in jobs]).items():
         subset = [_ for _ in jobs if _['name'] == name]
         n_fail = sum([1 - _['succeed'] for _ in jobs if _['name'] == name])
-        avg_time = sum(_['time'] for _ in subset)/len(subset)
-        click.echo(f"{name:>10} {count:>5} {n_fail:>6} {avg_time:>11}")
+
+        avg_time = sum(convert_dt(_) for _ in subset)/len(subset)
+        tbl.add_row([name, count, n_fail, round(avg_time, 2)])
+    click.echo(tbl)
 
 
-main.add_command(setup)
+@click.command()
+@click.option('--rows', '-r', default=False, help='maximum number of rows to show')
+@click.option('--failures', '-d', default=False, help='only show the failures')
+@click.option('--date', '-d', default=None, help='only show specific date')
+@click.option('--jobname', '-j', default=None, help='only show specific jobname')
+def history(rows, failures, date, jobname):
+    """shows a summary of the logs"""
+    with open(HEARTBEAT_PATH, "r") as f:
+        jobs = [json.loads(_) for _ in f.readlines()]
+    jobs = sorted(jobs, key=lambda d: d['startime'], reverse=True)
+    if failures:
+        jobs = [j for j in jobs if not j['succeed']]
+    if jobname:
+        jobs = [j for j in jobs if not j['name'] == jobname]
+    if date:
+        jobs = [j for j in jobs if j['starttime'][:10] == date]
+    if rows:
+        jobs = jobs[:rows]
+    tbl = PrettyTable()
+    tbl.field_names = ["stat", "jobname", "logfile"]
+    for j in jobs:
+        tbl.add_row(['✅' if j['succeed'] else '❌', j["name"], j["log"], ])
+    click.echo(tbl)
+
+
 main.add_command(run)
+main.add_command(init)
 main.add_command(nuke)
 main.add_command(serve)
+main.add_command(version)
 main.add_command(summary)
+main.add_command(history)
 
 if __name__ == "__main__":
     main()

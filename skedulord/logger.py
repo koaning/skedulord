@@ -42,9 +42,8 @@ def log_to_disk(run_id, name, command, tic, toc, succeed, output, tries, silent=
         "name": name,
         "tries": tries,
         "command": command,
-        "startime": str(tic)[:19],
-        "endtime": str(toc)[:19],
-        "time": (toc - tic).seconds,
+        "start": str(tic)[:19],
+        "end": str(toc)[:19],
         "succeed": succeed,
         "log": joblog_path(jobname=name, tic=tic)
     }
