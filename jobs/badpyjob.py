@@ -1,1 +1,1 @@
-raise ValueError("this is a bad example")
+1 + '1'

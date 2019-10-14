@@ -17,7 +17,7 @@ def create_app():
 
     @app.route('/logo.png')
     def logo():
-        return app.send_static_file("skedulord.png")
+        return app.send_static_file("logo.png")
 
     @app.route("/api/heartbeats")
     @cross_origin()

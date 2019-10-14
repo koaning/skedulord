@@ -111,9 +111,10 @@ class JobRunner:
                 stop = True
             else:
                 tries += 1
-                time.sleep(self.wait)
                 if tries > self.attemps:
                     stop = True
+                else:
+                    time.sleep(self.wait)
         log_to_disk(run_id=run_id,
                     name=name,
                     command=command,

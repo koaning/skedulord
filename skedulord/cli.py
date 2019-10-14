@@ -43,7 +43,7 @@ def init():
 @click.command()
 @click.argument('name')
 @click.argument('command')
-@click.option('--attempts', default=3, help='max number of tries')
+@click.option('--attempts', default=1, help='max number of tries')
 @click.option('--wait', default=60, help='seconds between tries')
 def run(name, command, attempts, wait):
     """run (and log) the command, can retry"""
@@ -102,16 +102,16 @@ def summary():
 @click.option('--date', '-d', default=None, help='only show specific date')
 @click.option('--jobname', '-j', default=None, help='only show specific jobname')
 def history(rows, failures, date, jobname):
-    """shows a summary of the logs"""
+    """show historical log overview"""
     with open(HEARTBEAT_PATH, "r") as f:
         jobs = [json.loads(_) for _ in f.readlines()]
-    jobs = sorted(jobs, key=lambda d: d['startime'], reverse=True)
+    jobs = sorted(jobs, key=lambda d: d['start'], reverse=True)
     if failures:
         jobs = [j for j in jobs if not j['succeed']]
     if jobname:
         jobs = [j for j in jobs if not j['name'] == jobname]
     if date:
-        jobs = [j for j in jobs if j['starttime'][:10] == date]
+        jobs = [j for j in jobs if j['start'][:10] == date]
     if rows:
         jobs = jobs[:rows]
     tbl = PrettyTable()

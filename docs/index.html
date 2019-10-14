@@ -20,12 +20,11 @@
         <br>
         <br>
 
-        <img style="margin:0 auto; display: block;" src="skedulord.png" width="300">
+        <img style="margin:0 auto; display: block;" src="logo.png" width="300">
 
         <p>The goal of this project is to offer a lightweight method
            of organising log files for jobs that run from the command line.
-           It offers a command line app that can be used from cron as
-           well as a small visualisation server. </p>
+           It offers a command line app that can be used from <b>cron</b> to help with maintaining an overview. </p>
         <h2 class="h">How do I use <b>skedulord</b>?</h2>
         <div id="termynal1" data-termynal>
             <span data-ty="input">lord init</span>
@@ -52,17 +51,20 @@
             - log: ~/.skedulord/jobs/pyjob/2019-10-13T21:11:11.txt
             </span>
             <span data-ty="input">ls ~/.skedulord/jobs/pyjob</span>
+            <span data-ty data-ty-delay="0" class="gray">heartbeats.jsonl jobs</span>
+            <span data-ty="input">ls ~/.skedulord/jobs/pyjob</span>
             <span data-ty data-ty-delay="0" class="gray">2019-10-13T21:11:03.txt 2019-10-13T21:11:11.txt</span>
             <span data-ty="input">lord serve --host 0.0.0.0 --port 8080</span>
             <span data-ty data-ty-delay="0" class="gray">Serving logs over at 0.0.0.0:8080.</span>
         </div>
-        <p>This last command will start a simple web overview.</p>
+
+        <p>This starts a small website with a dashboard of all the jobs.</p>
 
         <h2 class="h">What does <b>skedulord</b> do?</h2>
 
         <p>Skedulord will:</p>
         <ol>
-            <li>run your command</li>
+            <li>run your command via `lord run [jobname] "[command"`</li>
             <li>capture all the stdout</li>
             <li>save this into a file at <span class="green">~/.skedulord/[jobname]/[timestamp].txt</span></li>
             <li>log monitoring metadata at <span class="green">~/.skedulord/heartbeats.jsonl</span></li>
@@ -79,9 +81,35 @@
             and will wait 5 seconds between each attempt. The second job will attempt 5 tries and wait
             60 seconds between each go.</p>
 
-        <p>There's some extra commands that can inspected by adding the `--help` flag.</p>
+        <h2 class="h">Skedulord commands.</h2>
+
+        <p>There's some extra helpers in there too.</p>
+
         <div id="termynal2" data-termynal>
             <span data-ty="input">lord --help</span>
+            <span data-ty data-ty-delay="0" class="blob gray">
+            Usage: lord [OPTIONS] COMMAND [ARGS]...<br>
+            <br>
+              SKEDULORD: keeps track of logs so you don't have to. <br>
+            <br>
+            Options:<br>
+              --help  Show this message and exit.<br>
+            <br>
+            Commands:<br>
+            &nbsp;&nbsp;history&nbsp;&nbsp;show historical log overview<br>
+            &nbsp;&nbsp;init&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;setup skedulord<br>
+            &nbsp;&nbsp;nuke&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;hard reset of disk state<br>
+            &nbsp;&nbsp;run&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;run (and log) the command, can retry<br>
+            &nbsp;&nbsp;serve&nbsp;&nbsp;&nbsp;&nbsp;start the simple dashboard<br>
+            &nbsp;&nbsp;summary&nbsp;&nbsp;shows a summary of the logs<br>
+            &nbsp;&nbsp;version&nbsp;&nbsp;confirm the version<br>
+            </span>
+        </div>
+
+        <h2 class="h">How do I install it?</h2>
+
+        <div id="termynal2" data-termynal>
+            <span data-ty="input">pip install skedulord</span>
         </div>
 
         <h2 class="h">What does skedulord not do?</h2>
@@ -92,8 +120,11 @@
             <li>write your jobs for you</li>
         </ol>
         <h2 class="h">What are the main usecases?</h2>
-        <p>Lot's of ETL jobs are simple and only need a VM. Skedulord makes it easy to run them automatically.
-            Once your jobs become highly dependant then you'll need something more elaborate (like <a href="https://airflow.apache.org/">airflow</a>).</p>
+        <p>Lot's of ETL jobs are plain and simple; you just want to make it easy to find logs
+            of jobs that failed. Skedulord adds retry mechanics as well as an overview.
+            Once your jobs become highly dependant then you'll need something more elaborate (like <a href="https://airflow.apache.org/">airflow</a>).
+            There's a barrier to entry and maintenance for those tools though so if you don't need it
+            you might prefer this simpler tool.</p>
         <h2 class="h">Food for Thought</h2>
         <p>How you run your ETL jobs depends on the problems that you have. But there are a few things you might like to consider.</p>
         <ul>
@@ -110,6 +141,6 @@
         <br>
 
         <!-- include and initialise termynal.js -->
-        <script src="termynal.js" data-termynal-container="#termynal1|#termynal2"></script>
+        <script src="termynal.js" data-termynal-container="#termynal1"></script>
     </body>
 </html>
