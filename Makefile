@@ -10,7 +10,7 @@ develop: install
 	python setup.py develop
 
 test:
-	pytest --cov=skedulord
+	pytest --cov=skedulord tests
 
 check: flake test clean
 

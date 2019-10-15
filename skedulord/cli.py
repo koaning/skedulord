@@ -11,7 +11,7 @@ import click
 import waitress
 from prettytable import PrettyTable
 
-from skedulord import version
+from skedulord import version as lord_version
 from skedulord.logger import logcli
 from skedulord.job import JobRunner
 from skedulord.web.app import create_app
@@ -40,7 +40,7 @@ def main():
 @click.command()
 def version():
     """confirm the version"""
-    click.echo(version)
+    click.echo(lord_version)
 
 
 @click.command()
@@ -73,11 +73,8 @@ def run(name, command, attempts, wait):
 def nuke(sure, really):
     """hard reset of disk state"""
     if really and sure:
-        try:
             shutil.rmtree(SKEDULORD_PATH)
             logcli("nuked from orbit!")
-        except FileNotFoundError:
-            logcli("no skedulord files found")
     else:
         logcli("crisis averted.")
 
@@ -99,10 +96,6 @@ def summary():
     def convert_dt(b):
         d1, d2 = b['start'], b['end']
         return (dt.datetime.fromisoformat(d1) - dt.datetime.fromisoformat(d2)).total_seconds()
-
-    if not os.path.exists(SKEDULORD_PATH):
-        click.echo("You need to run `lord init` first.")
-        return 0
 
     with open(HEARTBEAT_PATH, "r") as f:
         jobs = [json.loads(_) for _ in f.readlines()]

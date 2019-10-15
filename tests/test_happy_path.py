@@ -6,7 +6,8 @@ from click.testing import CliRunner
 
 from skedulord.common import HEARTBEAT_PATH
 from skedulord.web.app import create_app
-from skedulord.cli import history, summary
+from skedulord.cli import history, summary, version
+from skedulord import version as lord_version
 
 
 @pytest.fixture()
@@ -97,3 +98,10 @@ def test_adv_heartbeat_server(dirty_start_small):
     json_blob = test_app.get("/api/test_heartbeats").get_json()
     assert len(json_blob) == 2
     assert {_['name'] for _ in json_blob} == {'buz', 'bad'}
+
+
+def test_version():
+    runner = CliRunner()
+    result = runner.invoke(version)
+    assert result.exit_code == 0
+    assert result.output == lord_version

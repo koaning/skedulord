@@ -8,7 +8,6 @@ test:
   script:
     - pip3.6 install --upgrade pip
     - pip3.6 install -e ".[dev]"
-    - pip3.6 install pytest
     - pytest --cov=skedulord
 
 
