@@ -2,7 +2,7 @@ import os
 import json
 import glob
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 from flask_cors import cross_origin
 
 from skedulord.common import HEARTBEAT_PATH, SKEDULORD_PATH

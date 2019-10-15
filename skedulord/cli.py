@@ -1,8 +1,10 @@
 import os
+import sys
 import json
 import shutil
 import pathlib
 import datetime as dt
+from functools import wraps
 from collections import Counter
 
 import click
@@ -14,6 +16,16 @@ from skedulord.logger import logcli
 from skedulord.job import JobRunner
 from skedulord.web.app import create_app
 from skedulord.common import SKEDULORD_PATH, HEARTBEAT_PATH
+
+
+def needs_init(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if not os.path.exists(SKEDULORD_PATH):
+            click.echo("You need to run `lord init` first.")
+            return sys.exit(1)
+        return f(*args, **kwargs)
+    return wrapper
 
 
 @click.group()
@@ -37,7 +49,9 @@ def init():
     path = pathlib.Path(SKEDULORD_PATH)
     if os.path.exists(SKEDULORD_PATH):
         click.echo(f"{SKEDULORD_PATH} allready exists")
-    path.mkdir(parents=True, exist_ok=True)
+    else:
+        path.mkdir(parents=True, exist_ok=True)
+        (pathlib.Path(SKEDULORD_PATH) / 'heartbeat.jsonl').touch()
 
 
 @click.command()
@@ -45,8 +59,9 @@ def init():
 @click.argument('command')
 @click.option('--attempts', default=1, help='max number of tries')
 @click.option('--wait', default=60, help='seconds between tries')
+@needs_init
 def run(name, command, attempts, wait):
-    """run (and log) the command, can retry"""
+    """run (and log) a command, can retry"""
     runner = JobRunner(attemps=attempts, wait=wait)
     runner.cmd(name=name, command=command)
 
@@ -54,6 +69,7 @@ def run(name, command, attempts, wait):
 @click.command()
 @click.option('--sure', prompt=True, is_flag=True)
 @click.option('--really', prompt=True, is_flag=True)
+@needs_init
 def nuke(sure, really):
     """hard reset of disk state"""
     if really and sure:
@@ -69,6 +85,7 @@ def nuke(sure, really):
 @click.command()
 @click.option('--host', '-h', default="0.0.0.0", help='host for the dashboard')
 @click.option('--port', '-p', default=5000, help='port for the dashboard')
+@needs_init
 def serve(host, port):
     """start the simple dashboard"""
     app = create_app()
@@ -76,11 +93,16 @@ def serve(host, port):
 
 
 @click.command()
+@needs_init
 def summary():
     """shows a summary of the logs"""
     def convert_dt(b):
         d1, d2 = b['start'], b['end']
         return (dt.datetime.fromisoformat(d1) - dt.datetime.fromisoformat(d2)).total_seconds()
+
+    if not os.path.exists(SKEDULORD_PATH):
+        click.echo("You need to run `lord init` first.")
+        return 0
 
     with open(HEARTBEAT_PATH, "r") as f:
         jobs = [json.loads(_) for _ in f.readlines()]
@@ -101,8 +123,12 @@ def summary():
 @click.option('--failures', '-d', default=False, help='only show the failures')
 @click.option('--date', '-d', default=None, help='only show specific date')
 @click.option('--jobname', '-j', default=None, help='only show specific jobname')
+@needs_init
 def history(rows, failures, date, jobname):
     """show historical log overview"""
+    if not os.path.exists(SKEDULORD_PATH):
+        click.echo("You need to run `lord init` first.")
+        return 0
     with open(HEARTBEAT_PATH, "r") as f:
         jobs = [json.loads(_) for _ in f.readlines()]
     jobs = sorted(jobs, key=lambda d: d['start'], reverse=True)
