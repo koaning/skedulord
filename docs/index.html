@@ -20,7 +20,9 @@
         <br>
         <br>
 
-        <img style="margin:0 auto; display: block;" src="logo.png" width="300">
+        <img style="margin:0 auto; display: block;" src="skedulord.png" width="300">
+        <h1 class="h">skedulord</h1>
+        <h4 class="h">v0.2.0</h4>
 
         <p>The goal of this project is to offer a lightweight method
            of organising log files for jobs that run from the command line.
@@ -50,27 +52,40 @@
             - succeed: False <br>
             - log: ~/.skedulord/jobs/pyjob/2019-10-13T21:11:11.txt
             </span>
-            <span data-ty="input">ls ~/.skedulord/jobs/pyjob</span>
-            <span data-ty data-ty-delay="0" class="gray">heartbeats.jsonl jobs</span>
-            <span data-ty="input">ls ~/.skedulord/jobs/pyjob</span>
-            <span data-ty data-ty-delay="0" class="gray">2019-10-13T21:11:03.txt 2019-10-13T21:11:11.txt</span>
+            <span data-ty="input">tree ~/.skedulord</span>
+            <span data-ty data-ty-delay="0" class="blob gray">
+            ├── heartbeat.jsonl<br>
+            └── jobs<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;└── pyjob<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── 2019-10-13T21:11:03.txt<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── 2019-10-13T21:11:11.txt<br>
+            </span>
             <span data-ty="input">lord serve --host 0.0.0.0 --port 8080</span>
             <span data-ty data-ty-delay="0" class="gray">Serving logs over at 0.0.0.0:8080.</span>
         </div>
 
-        <p>This starts a small website with a dashboard of all the jobs.</p>
+        <p>This starts a small website with a dashboard of all the jobs. It is easy to find the failed job from here and inspect the logs.</p>
 
         <h2 class="h">What does <b>skedulord</b> do?</h2>
 
-        <p>Skedulord will:</p>
+        <p>When you run this command a few things happen.</p>
+
+        <div id="termynal2" data-termynal>
+            <span data-ty="input">lord run job1 "python goodjob.py"</span>
+        </div>
+
         <ol>
-            <li>run your command via `lord run [jobname] "[command"`</li>
-            <li>capture all the stdout</li>
-            <li>save this into a file at <span class="green">~/.skedulord/[jobname]/[timestamp].txt</span></li>
-            <li>log monitoring metadata at <span class="green">~/.skedulord/heartbeats.jsonl</span></li>
+            <li>It will run `python goodjob.py` and it will assume that `job1` is the name that describes the job.</li>
+            <li>It will then capture all the stdout that the job produces.</li>
+            <li>This will be saved at <span class="green">~/.skedulord/[jobname]/[timestamp].txt</span>.</li>
+            <li>Then the job metadata appended to <span class="green">~/.skedulord/heartbeats.jsonl</span>.</li>
         </ol>
 
-        <p>There's some extra settings you can add to a job though.</p>
+        <p>When logfiles are nicely stored it becomes easy to view them. Skedulord offers tools to
+            quickly find jobs that failed and locate their logfiles. When combined
+            with cron you suddenly get a lot of features that makes running jobs less scary.</p>
+
+        <p>There's some extra settings you can add to a job too.</p>
 
         <div id="termynal2" data-termynal>
             <span data-ty="input">lord run job1 "python goodjob.py" --retry 3 --wait 5</span>

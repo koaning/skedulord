@@ -41,8 +41,11 @@ reset:
 test-frontend:
 	skedulord serve & ./node_modules/.bin/cypress run
 
-build:
-	docker build -t pythoncontainer .
-
 test-gitlab:
 	gitlab-runner exec docker test
+
+push:
+	rm -rf dist
+	python setup.py sdist
+	python setup.py bdist_wheel --universal
+	twine upload dist/*
