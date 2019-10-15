@@ -41,8 +41,8 @@ def test_basic_heartbeat_file(clean_start_small):
 def test_basic_summary(clean_start_small):
     runner = CliRunner()
     result = runner.invoke(summary)
-    assert result.exit_code == 0
     assert len(result.output.split("\n")) == 8
+    assert result.exit_code == 0
     assert 'foo' in result.output
     assert 'bar' in result.output
     assert 'buz' in result.output
@@ -104,4 +104,4 @@ def test_version():
     runner = CliRunner()
     result = runner.invoke(version)
     assert result.exit_code == 0
-    assert result.output == lord_version
+    assert lord_version in result.output

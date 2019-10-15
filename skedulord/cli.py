@@ -94,8 +94,9 @@ def serve(host, port):
 def summary():
     """shows a summary of the logs"""
     def convert_dt(b):
+        fmt = "%Y-%m-%d %H:%M:%S"
         d1, d2 = b['start'], b['end']
-        return (dt.datetime.fromisoformat(d1) - dt.datetime.fromisoformat(d2)).total_seconds()
+        return (dt.datetime.strptime(d1, fmt) - dt.datetime.strptime(d2, fmt)).total_seconds()
 
     with open(HEARTBEAT_PATH, "r") as f:
         jobs = [json.loads(_) for _ in f.readlines()]
@@ -119,9 +120,6 @@ def summary():
 @needs_init
 def history(rows, failures, date, jobname):
     """show historical log overview"""
-    if not os.path.exists(SKEDULORD_PATH):
-        click.echo("You need to run `lord init` first.")
-        return 0
     with open(HEARTBEAT_PATH, "r") as f:
         jobs = [json.loads(_) for _ in f.readlines()]
     jobs = sorted(jobs, key=lambda d: d['start'], reverse=True)
