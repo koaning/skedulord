@@ -43,7 +43,6 @@ def create_app():
     @cross_origin()
     def fetch_logs(job, datetime):
         path = os.path.join(SKEDULORD_PATH, "jobs", job, datetime)
-        print(f"{path}")
         with open(path) as f:
             return f"<pre>{f.read()}</pre>"
 
@@ -51,11 +50,6 @@ def create_app():
     @cross_origin()
     def glob_logs():
         return jsonify([_.replace(SKEDULORD_PATH, "") for _ in glob.glob(f"{SKEDULORD_PATH}/jobs/*/*.txt")])
-
-    @app.route("/api/mirror", methods=['POST'])
-    @cross_origin()
-    def mirror():
-        return jsonify(request.json)
 
     return app
 
