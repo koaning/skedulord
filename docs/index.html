@@ -20,14 +20,15 @@
         <br>
         <br>
 
-        <img style="margin:0 auto; display: block;" src="skedulord.png" width="300">
         <h1 class="h">skedulord</h1>
         <h4 class="h">v0.2.0</h4>
+        <p>Make cron a bit more use-able by helping with</p>
+        <ol>
+            <li>logging the jobs</li>
+            <li>finding broken jobs</li>
+        </ol>
+        <p style="text-align: center">Here's how it works.</p>
 
-        <p>The goal of this project is to offer a lightweight method
-           of organising log files for jobs that run from the command line.
-           It offers a command line app that can be used from <b>cron</b> to help with maintaining an overview. </p>
-        <h2 class="h">How do I use <b>skedulord</b>?</h2>
         <div id="termynal1" data-termynal>
             <span data-ty="input">lord init</span>
             <span data-ty="input">lord run pyjob "python goodjob.py"</span>
@@ -64,7 +65,16 @@
             <span data-ty data-ty-delay="0" class="gray">Serving logs over at 0.0.0.0:8080.</span>
         </div>
 
-        <p>This starts a small website with a dashboard of all the jobs. It is easy to find the failed job from here and inspect the logs.</p>
+        <p>This starts a small website with a dashboard of all the jobs. It is easy to find the
+            failed job from here and inspect the logs.</p>
+
+        <img src="endres.gif" style="background-color: white;" width="100%">
+
+        <p>The goal of this project is to offer a lightweight method
+           of organising log files for jobs that run from the command line.
+           It offers a command line app that can be used from <b>cron</b> to help with maintaining an overview. </p>
+
+
 
         <h2 class="h">What does <b>skedulord</b> do?</h2>
 

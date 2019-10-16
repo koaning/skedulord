@@ -27,16 +27,13 @@ dev:
 	cd skedulord/dashboard && gatsby build
 	cp -r skedulord/dashboard/public/* skedulord/web/templates
 	cd skedulord/dashboard && gatsby clean
-	skedulord serve
+	lord serve
 
 reset:
 	lord nuke --sure --really
 	lord init
-	lord run pyjob1 "python jobs/badpyjob.py" --wait 1
-	lord run pyjob1 "python jobs/badpyjob.py" --wait 1
-	lord run pyjob1 "python jobs/pyjob.py" --wait 1
-	lord run pyjob2 "python jobs/pyjob.py" --wait 1
-	lord run pyjob2 "python jobs/pyjob.py" --wait 1
+	lord run pyjob "python jobs/pyjob.py" --wait 1
+	lord run pyjob "python jobs/badpyjob.py" --wait 1
 
 test-frontend:
 	skedulord serve & ./node_modules/.bin/cypress run
