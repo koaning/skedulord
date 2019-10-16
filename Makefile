@@ -23,10 +23,12 @@ clean:
 	rm -rf notebooks/.ipynb_checkpoints
 	rm -rf skedulord.egg-info
 
-dev:
+build:
 	cd skedulord/dashboard && gatsby build
 	cp -r skedulord/dashboard/public/* skedulord/web/templates
 	cd skedulord/dashboard && gatsby clean
+
+dev: build
 	lord serve
 
 reset:
@@ -41,7 +43,7 @@ test-frontend:
 test-gitlab:
 	gitlab-runner exec docker test
 
-push:
+push: build reset test-frontend
 	rm -rf dist
 	python setup.py sdist
 	python setup.py bdist_wheel --universal
