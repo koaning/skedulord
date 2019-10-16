@@ -17,7 +17,7 @@ setup(
     name="skedulord",
     version=version,
     packages=find_packages(),
-    long_description=read('readme.md'),
+    long_description="it helps with logging",
     install_requires=base_packages,
     entry_points={
         'console_scripts': [

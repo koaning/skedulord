@@ -114,6 +114,10 @@ body {
     color: #959595;
 }
 
+.modest{
+    font-size: 16px;
+}
+
 /* Cursor animation */
 
 @-webkit-keyframes blink {

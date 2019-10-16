@@ -150,9 +150,48 @@
             <li>You could read the `~/.skedulord/heartbeats` file with pandas if you're interested in analysing.</li>
         </ul>
         <br>
-        <br>
-        <br>
-        <br>
+        <h2 class="h">Tips on Cron</h2>
+        <p>Cron documentation can be a bit annoying to find so we've made a small guide here.
+            Note that some of the things we mention here depend on your flavor of linux. So your
+            milage might vary. That said: you can edit the cron on a VM by typing the command
+            `crontab -e`. This will then allow you to write a file in the terminal. There's an
+            example of such a file below:</p>
+        <div id="termynal2" data-termynal>
+            <span data-ty="input">crontab -e</span>
+            <span data-ty data-ty-delay="0" class="blob gray modest">
+            SHELL=/bin/sh <br>
+            PATH=/home/unixuser/.local/bin <br>
+            * * * * * lord run test "date >> /tmp/foobar.txt"<br>
+            * * * * * lord run job "/usr/bin/python3 /path/job.py"<br>
+            </span>
+        </div>
+        <p>There's a few things that are important to note:</p>
+        <ul>
+            <li>The user that the cron service uses might be different that yours. This means that should not assume
+            that settings like paths and environment variables will be placed automatically. These need to be placed
+            at the top of the cron file. Depending on your system SHELL needs to be equal to /bin/sh or /bin/bash.</li>
+            <li>It makes sense to set the path to the SHELL as well as the user PATH that cron will assume.</li>
+            <li>It is certainly a good idea to run a test job that is supposed to append to a file very minute.</li>
+            <li>The python path is explicitly mentioned. This can be a good idea since it ensures that you run
+                the right packages from the right environment.</li>
+        </ul>
+        <p>There's an alternative though.</p>
+        <div id="termynal2" data-termynal>
+            <span data-ty="input">crontab -e</span>
+            <span data-ty data-ty-delay="0" class="blob gray modest">
+            SHELL=/bin/bash <br>
+            * * * * * /path/to/cron_job.sh<br>
+            </span>
+            <span data-ty data-ty-delay="0" class="blob gray modest"><br></span>
+            <span data-ty="input">cat /path/to/cron_job.sh</span>
+            <span data-ty data-ty-delay="0" class="blob gray modest">
+                source /path/to/.bash_profile <br>
+                lord run download-job "python /path/to/job.py"
+            </span>
+        </div>
+        <p>This might be a nicer idea since it offers you a bit more of an overview. The
+        bash shell also contains the logic for dependencies which could also contain environment variables
+        and other settings like those that are in .bash_profile.</p>
         <br>
 
         <!-- include and initialise termynal.js -->
