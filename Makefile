@@ -38,7 +38,7 @@ reset:
 	lord run pyjob "python jobs/badpyjob.py" --wait 1
 
 test-frontend:
-	skedulord serve & ./node_modules/.bin/cypress run
+	lord serve & ./node_modules/.bin/cypress run
 
 test-gitlab:
 	gitlab-runner exec docker test
