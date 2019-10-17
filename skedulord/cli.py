@@ -113,8 +113,8 @@ def summary():
 
 
 @click.command()
-@click.option('--rows', '-r', default=False, help='maximum number of rows to show')
-@click.option('--failures', '-d', default=False, help='only show the failures')
+@click.option('--rows', '-r', default=None, type=int, help='maximum number of rows to show')
+@click.option('--failures', default=False, is_flag=True, help='only show the failures')
 @click.option('--date', '-d', default=None, help='only show specific date')
 @click.option('--jobname', '-j', default=None, help='only show specific jobname')
 @needs_init
@@ -126,7 +126,7 @@ def history(rows, failures, date, jobname):
     if failures:
         jobs = [j for j in jobs if not j['succeed']]
     if jobname:
-        jobs = [j for j in jobs if not j['name'] == jobname]
+        jobs = [j for j in jobs if j['name'] == jobname]
     if date:
         jobs = [j for j in jobs if j['start'][:10] == date]
     if rows:
