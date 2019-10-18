@@ -80,7 +80,7 @@ def nuke(sure, really):
 
 
 @click.command()
-@click.option('--host', '-h', default="0.0.0.0", help='host for the dashboard')
+@click.option('--host', '-h', default="localhost", help='host for the dashboard')
 @click.option('--port', '-p', default=5000, help='port for the dashboard')
 @needs_init
 def serve(host, port):
