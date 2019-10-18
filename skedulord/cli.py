@@ -90,31 +90,8 @@ def serve(host, port):
 
 
 @click.command()
-@needs_init
-def summary():
-    """shows a summary of the logs"""
-    def convert_dt(b):
-        fmt = "%Y-%m-%d %H:%M:%S"
-        d1, d2 = b['start'], b['end']
-        return (dt.datetime.strptime(d1, fmt) - dt.datetime.strptime(d2, fmt)).total_seconds()
-
-    with open(HEARTBEAT_PATH, "r") as f:
-        jobs = [json.loads(_) for _ in f.readlines()]
-    tbl = PrettyTable()
-    tbl.field_names = ["jobname", "runs", "fails", "duration"]
-
-    for name, count in Counter([_['name'] for _ in jobs]).items():
-        subset = [_ for _ in jobs if _['name'] == name]
-        n_fail = sum([1 - _['succeed'] for _ in jobs if _['name'] == name])
-
-        avg_time = sum(convert_dt(_) for _ in subset)/len(subset)
-        tbl.add_row([name, count, n_fail, round(avg_time, 2)])
-    click.echo(tbl)
-
-
-@click.command()
-@click.option('--rows', '-r', default=None, type=int, help='maximum number of rows to show')
 @click.option('--failures', default=False, is_flag=True, help='only show the failures')
+@click.option('--rows', '-r', default=None, type=int, help='maximum number of rows to show')
 @click.option('--date', '-d', default=None, help='only show specific date')
 @click.option('--jobname', '-j', default=None, help='only show specific jobname')
 @needs_init
@@ -135,6 +112,29 @@ def history(rows, failures, date, jobname):
     tbl.field_names = ["stat", "jobname", "logfile"]
     for j in jobs:
         tbl.add_row(['✅' if j['succeed'] else '❌', j["name"], j["log"], ])
+    click.echo(tbl)
+
+
+@click.command()
+@needs_init
+def summary():
+    """shows a summary of the logs"""
+    def convert_dt(b):
+        fmt = "%Y-%m-%d %H:%M:%S"
+        d1, d2 = b['start'], b['end']
+        return (dt.datetime.strptime(d1, fmt) - dt.datetime.strptime(d2, fmt)).total_seconds()
+
+    with open(HEARTBEAT_PATH, "r") as f:
+        jobs = [json.loads(_) for _ in f.readlines()]
+    tbl = PrettyTable()
+    tbl.field_names = ["jobname", "runs", "fails", "duration"]
+
+    for name, count in Counter([_['name'] for _ in jobs]).items():
+        subset = [_ for _ in jobs if _['name'] == name]
+        n_fail = sum([1 - _['succeed'] for _ in jobs if _['name'] == name])
+
+        avg_time = sum(convert_dt(_) for _ in subset)/len(subset)
+        tbl.add_row([name, count, n_fail, round(avg_time, 2)])
     click.echo(tbl)
 
 

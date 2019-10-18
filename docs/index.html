@@ -22,7 +22,7 @@
         <br>
         <br>
 
-        <h1 class="h">skedulord</h1>
+        <img src="logo.png" alt="" width="100%">
         <h4 class="h">v0.2.1</h4>
         <p>Make cron a bit more use-able by helping with</p>
         <ol>
@@ -70,7 +70,7 @@
         <p>This starts a small website with a dashboard of all the jobs. It is easy to find the
             failed job from here and inspect the logs.</p>
 
-        <img src="endres.gif" style="background-color: white;" width="100%">
+        <img src="loop.gif" style="background-color: white;" width="100%">
 
         <p>The goal of this project is to offer a lightweight method
            of organising log files for jobs that run from the command line.
@@ -130,6 +130,36 @@
             &nbsp;&nbsp;serve&nbsp;&nbsp;&nbsp;&nbsp;start the simple dashboard<br>
             &nbsp;&nbsp;summary&nbsp;&nbsp;shows a summary of the logs<br>
             &nbsp;&nbsp;version&nbsp;&nbsp;confirm the version<br>
+            </span>
+        </div>
+
+        <p>In particular the `history` command can really help find logs.</p>
+
+        <div id="termynal2" data-termynal>
+            <span data-ty="input">lord history</span>
+            <span data-ty data-ty-delay="0" class="blob gray">
+            +------+---------+-------------------------------------+<br>
+            | stat | jobname |&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;logfile&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
+            +------+---------+-------------------------------------+<br>
+            |&nbsp;&nbsp;<span class="green">x</span>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;pyjob&nbsp;&nbsp;| /jobs/pyjob/2019-10-18T14:44:30.txt |<br>
+            |&nbsp;&nbsp;<span class="red">x</span>&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;pyjob&nbsp;&nbsp;| /jobs/pyjob/2019-10-18T14:44:30.txt |<br>
+            +------+---------+-------------------------------------+<br>
+            </span>
+        </div>
+
+        <p>There's many settings that can help find the logs you need.</p>
+        <div id="termynal2" data-termynal>
+            <span data-ty="input">lord history --help</span>
+            <span data-ty data-ty-delay="0" class="blob gray">
+            Usage: lord history [OPTIONS]<br>
+            <br>
+            &nbsp;&nbsp;show historical log overview<br>
+            <br>
+            Options:<br>
+            &nbsp;&nbsp;--failures&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;only show the failures<br>
+            &nbsp;&nbsp;-r, --rows INTEGER&nbsp;&nbsp;maximum number of rows to show<br>
+            &nbsp;&nbsp;-d, --date TEXT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;only show specific date<br>
+            &nbsp;&nbsp;-j, --jobname TEXT&nbsp;&nbsp;only show specific jobname<br>
             </span>
         </div>
 

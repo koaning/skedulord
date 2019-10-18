@@ -23,15 +23,14 @@ clean:
 	rm -rf notebooks/.ipynb_checkpoints
 	rm -rf skedulord.egg-info
 
-build:
+dev:
 	cd skedulord/dashboard && gatsby build
 	cp -r skedulord/dashboard/public/* skedulord/web/templates
 	cd skedulord/dashboard && gatsby clean
-
-dev: build
 	lord serve
 
 reset:
+	lord init
 	lord nuke --sure --really
 	lord init
 	lord run pyjob "python jobs/pyjob.py" --wait 1
