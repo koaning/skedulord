@@ -20,3 +20,5 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -e ".[dev]"
+    - name: pytest
+      run: pytest --disable-warnings --cov=sklego
