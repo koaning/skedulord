@@ -12,23 +12,23 @@ from skedulord import version as lord_version
 
 @pytest.fixture()
 def clean_start_small():
-    os.system("lord nuke --really --sure")
+    os.system("lord nuke --really --yes")
     os.system("lord init")
     os.system("lord run foo 'python jobs/pyjob.py'")
     os.system("lord run bar 'python jobs/pyjob.py'")
     os.system("lord run buz 'python jobs/pyjob.py'")
     yield 1
-    os.system("lord nuke --really --sure")
+    os.system("lord nuke --really --yes")
 
 
 @pytest.fixture()
 def dirty_start_small():
-    os.system("lord nuke --really --sure")
+    os.system("lord nuke --yes --really")
     os.system("lord init")
     os.system("lord run buz 'python jobs/pyjob.py'")
     os.system("lord run bad 'python jobs/badpyjob.py'")
     yield 1
-    os.system("lord nuke --really --sure")
+    os.system("lord nuke --yes --really")
 
 
 def test_basic_heartbeat_file(clean_start_small):
@@ -41,6 +41,7 @@ def test_basic_heartbeat_file(clean_start_small):
 def test_basic_summary(clean_start_small):
     runner = CliRunner()
     result = runner.invoke(summary)
+    print(result.output)
     assert len(result.output.split("\n")) == 8
     assert result.exit_code == 0
     assert 'foo' in result.output

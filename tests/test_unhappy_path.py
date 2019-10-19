@@ -8,9 +8,9 @@ from skedulord.cli import init
 
 @pytest.fixture()
 def clean_slate():
-    os.system("lord nuke --really --sure")
+    os.system("lord nuke --really --yes")
     yield 1
-    os.system("lord nuke --really --sure")
+    os.system("lord nuke --really --yes")
 
 
 @pytest.fixture()
