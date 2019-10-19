@@ -10,239 +10,247 @@
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
         <style>
-            body {
-                padding: 0;
-
+            .inside {
+                padding: 0px 25px 0px 25px;
                 margin: 0 auto;
-                width: 45vw;
+                width: 55vw;
+                background-color:white;
+            }
+            body{
+                margin: 0px;
+                background-image: url(alpha-background.png);
             }
         </style>
     </head>
     <body>
-        <br>
-        <br>
-
-        <img src="logo.png" alt="" width="100%">
-        <p><b>Skedulord</b> makes cron a bit more use-able by;</p>
-        <ol>
-            <li>logging the jobs predictably</li>
-            <li>help with finding broken jobs</li>
-            <li>adding a retry mechanic</li>
-        </ol>
-        <br>
-        <h3 style="text-align: center">Here's what it does.</h3>
-
-        <div id="termynal1" data-termynal>
-            <span data-ty="input">lord init</span>
-            <span data-ty="input">lord run pyjob "python goodjob.py"</span>
-            <span data-ty data-ty-delay="0" class="blob green">
-            - id: c67d713a <br>
-            - name: pyjob <br>
-            - tries: 1 <br>
-            - command: python goodjob.py <br>
-            - startime: 2019-10-13 21:11:03 <br>
-            - endtime: 2019-10-13 21:11:08 <br>
-            - succeed: True <br>
-            - log: ~/.skedulord/jobs/pyjob/2019-10-13T21:11:03.txt
-            </span>
-            <span data-ty="input">lord run pyjob "python badjob.py"</span>
-            <span data-ty data-ty-delay="0" class="blob red">
-            - id: c67d713a <br>
-            - name: pyjob <br>
-            - tries: 3 <br>
-            - command: python badjob.py <br>
-            - startime: 2019-10-13 21:11:11 <br>
-            - endtime: 2019-10-13 21:11:15 <br>
-            - succeed: False <br>
-            - log: ~/.skedulord/jobs/pyjob/2019-10-13T21:11:11.txt
-            </span>
-            <span data-ty="input">tree ~/.skedulord</span>
-            <span data-ty data-ty-delay="0" class="blob gray">
-            ├── heartbeat.jsonl<br>
-            └── jobs<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;└── pyjob<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── 2019-10-13T21:11:03.txt<br>
-            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── 2019-10-13T21:11:11.txt<br>
-            </span>
-            <span data-ty="input">lord serve --host 0.0.0.0 --port 8080</span>
-            <span data-ty data-ty-delay="0" class="gray">Serving logs over at 0.0.0.0:8080.</span>
-        </div>
-
-        <p>This starts a small website with a dashboard of all the jobs. It is easy to find the
-            failed job from here and inspect the logs.</p>
-
-        <img src="loop.gif" style="background-color: white;" width="100%">
-
-        <p>The goal of this project is to offer a lightweight method
-           of organising log files for jobs that run from the command line.
-           It offers a command line app that can be used from <b>cron</b> to help with maintaining an overview. </p>
-
-
-
-        <h2 class="h">What does <b>skedulord</b> do?</h2>
-
-        <p>When you run this command a few things happen.</p>
-
-        <div id="termynal2" data-termynal>
-            <span data-ty="input">lord run job1 "python goodjob.py"</span>
-        </div>
-
-        <ol>
-            <li>It will run `python goodjob.py` and it will assume that `job1` is the name that describes the job.</li>
-            <li>It will then capture all the stdout that the job produces.</li>
-            <li>This will be saved at <span class="green">~/.skedulord/[jobname]/[timestamp].txt</span>.</li>
-            <li>Then the job metadata appended to <span class="green">~/.skedulord/heartbeats.jsonl</span>.</li>
-        </ol>
-
-        <p>When logfiles are nicely stored it becomes easy to view them. Skedulord offers tools to
-            quickly find jobs that failed and locate their logfiles. When combined
-            with cron you suddenly get a lot of features that makes running jobs less scary.</p>
-
-        <p>There's some extra settings you can add to a job too.</p>
-
-        <div id="termynal2" data-termynal>
-            <span data-ty="input">lord run job1 "python goodjob.py" --retry 3 --wait 5</span>
-            <span data-ty="input">lord run job2 "python badjob.py" --retry 5 --wait 60</span>
-        </div>
-
-        <p>These jobs will be retried should they fail. The first job will attempt 3 tries in total
-            and will wait 5 seconds between each attempt. The second job will attempt 5 tries and wait
-            60 seconds between each go.</p>
-
-        <h2 class="h">Skedulord commands.</h2>
-
-        <p>There's some extra helpers in there too.</p>
-
-        <div id="termynal2" data-termynal>
-            <span data-ty="input">lord --help</span>
-            <span data-ty data-ty-delay="0" class="blob gray">
-            Usage: lord [OPTIONS] COMMAND [ARGS]...<br>
+        <div class="inside">
             <br>
-              SKEDULORD: keeps track of logs so you don't have to. <br>
             <br>
-            Options:<br>
-              --help  Show this message and exit.<br>
+
+            <img src="logo.png" alt="" width="100%">
+            <p><b>Skedulord</b> makes cron a bit more use-able by;</p>
+            <ol style="margin: 0px 0px 0px 50px;">
+                <li>logging the jobs predictably</li>
+                <li>help with finding broken jobs</li>
+                <li>adding a retry mechanic</li>
+            </ol>
             <br>
-            Commands:<br>
-            &nbsp;&nbsp;history&nbsp;&nbsp;show historical log overview<br>
-            &nbsp;&nbsp;init&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;setup skedulord<br>
-            &nbsp;&nbsp;nuke&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;hard reset of disk state<br>
-            &nbsp;&nbsp;run&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;run (and log) a command, can retry<br>
-            &nbsp;&nbsp;serve&nbsp;&nbsp;&nbsp;&nbsp;start the simple dashboard<br>
-            &nbsp;&nbsp;summary&nbsp;&nbsp;shows a summary of the logs<br>
-            &nbsp;&nbsp;version&nbsp;&nbsp;confirm the version<br>
-            </span>
-        </div>
+            <h3 style="text-align: center">Here's what it does.</h3>
 
-        <p>In particular the `history` command can really help find logs.</p>
+            <div id="termynal1" data-termynal>
+                <span data-ty="input">lord init</span>
+                <span data-ty="input">lord run pyjob "python goodjob.py"</span>
+                <span data-ty data-ty-delay="0" class="blob green">
+                - id: c67d713a <br>
+                - name: pyjob <br>
+                - tries: 1 <br>
+                - command: python goodjob.py <br>
+                - startime: 2019-10-13 21:11:03 <br>
+                - endtime: 2019-10-13 21:11:08 <br>
+                - succeed: True <br>
+                - log: ~/.skedulord/jobs/pyjob/2019-10-13T21:11:03.txt
+                </span>
+                <span data-ty="input">lord run pyjob "python badjob.py"</span>
+                <span data-ty data-ty-delay="0" class="blob red">
+                - id: c67d713a <br>
+                - name: pyjob <br>
+                - tries: 3 <br>
+                - command: python badjob.py <br>
+                - startime: 2019-10-13 21:11:11 <br>
+                - endtime: 2019-10-13 21:11:15 <br>
+                - succeed: False <br>
+                - log: ~/.skedulord/jobs/pyjob/2019-10-13T21:11:11.txt
+                </span>
+                <span data-ty="input">tree ~/.skedulord</span>
+                <span data-ty data-ty-delay="0" class="blob gray">
+                ├── heartbeat.jsonl<br>
+                └── jobs<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;└── pyjob<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── 2019-10-13T21:11:03.txt<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── 2019-10-13T21:11:11.txt<br>
+                </span>
+                <span data-ty="input">lord serve --host 0.0.0.0 --port 8080</span>
+                <span data-ty data-ty-delay="0" class="gray">Serving logs over at 0.0.0.0:8080.</span>
+            </div>
 
-        <div id="termynal2" data-termynal>
-            <span data-ty="input">lord history</span>
-            <span data-ty data-ty-delay="0" class="blob gray">
-            +------+-------+----------------------------+<br>
-            | stat | name &nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;logfile&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
-            +------+-------+----------------------------+<br>
-            |&nbsp;&nbsp;<span class="green">x</span>&nbsp;&nbsp;&nbsp;|&nbsp;pyjob&nbsp;| ../2019-10-18T14:44:30.txt |<br>
-            |&nbsp;&nbsp;<span class="red">x</span>&nbsp;&nbsp;&nbsp;|&nbsp;pyjob&nbsp;| ../2019-10-18T14:44:30.txt |<br>
-            +------+-------+----------------------------+<br>
-            </span>
-        </div>
+            <p>This starts a small website with a dashboard of all the jobs. It is easy to find the
+                failed job from here and inspect the logs.</p>
 
-        <p>There's many settings that can help find the logs you need.</p>
-        <div id="termynal2" data-termynal>
-            <span data-ty="input">lord history --help</span>
-            <span data-ty data-ty-delay="0" class="blob gray">
-            Usage: lord history [OPTIONS]<br>
+            <img src="loop.gif" style="background-color: white;" width="100%">
+
+            <p>The goal of this project is to offer a lightweight method
+               of organising log files for jobs that run from the command line.
+               It offers a command line app that can be used from <b>cron</b> to help with maintaining an overview. </p>
+
+
+
+            <h2 class="h">What does <b>skedulord</b> do?</h2>
+
+            <p>When you run this command a few things happen.</p>
+
+            <div id="termynal2" data-termynal>
+                <span data-ty="input">lord run job1 "python goodjob.py"</span>
+            </div>
+
+            <ol>
+                <li>It will run `python goodjob.py` and it will assume that `job1` is the name that describes the job.</li>
+                <li>It will then capture all the stdout that the job produces.</li>
+                <li>This will be saved at <span class="green">~/.skedulord/[jobname]/[timestamp].txt</span>.</li>
+                <li>Then the job metadata appended to <span class="green">~/.skedulord/heartbeats.jsonl</span>.</li>
+            </ol>
+
+            <p>When logfiles are nicely stored it becomes easy to view them. Skedulord offers tools to
+                quickly find jobs that failed and locate their logfiles. When combined
+                with cron you suddenly get a lot of features that makes running jobs less scary.</p>
+
+            <p>There's some extra settings you can add to a job too.</p>
+
+            <div id="termynal2" data-termynal>
+                <span data-ty="input">lord run job1 "python goodjob.py" --retry 3 --wait 5</span>
+                <span data-ty="input">lord run job2 "python badjob.py" --retry 5 --wait 60</span>
+            </div>
+
+            <p>These jobs will be retried should they fail. The first job will attempt 3 tries in total
+                and will wait 5 seconds between each attempt. The second job will attempt 5 tries and wait
+                60 seconds between each go.</p>
+
+            <h2 class="h">Skedulord commands.</h2>
+
+            <p>There's some extra helpers in there too.</p>
+
+            <div id="termynal2" data-termynal>
+                <span data-ty="input">lord --help</span>
+                <span data-ty data-ty-delay="0" class="blob gray">
+                Usage: lord [OPTIONS] COMMAND [ARGS]...<br>
+                <br>
+                  SKEDULORD: keeps track of logs so you don't have to. <br>
+                <br>
+                Options:<br>
+                  --help  Show this message and exit.<br>
+                <br>
+                Commands:<br>
+                &nbsp;&nbsp;history&nbsp;&nbsp;show historical log overview<br>
+                &nbsp;&nbsp;init&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;setup skedulord<br>
+                &nbsp;&nbsp;nuke&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;hard reset of disk state<br>
+                &nbsp;&nbsp;run&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;run (and log) a command, can retry<br>
+                &nbsp;&nbsp;serve&nbsp;&nbsp;&nbsp;&nbsp;start the simple dashboard<br>
+                &nbsp;&nbsp;summary&nbsp;&nbsp;shows a summary of the logs<br>
+                &nbsp;&nbsp;version&nbsp;&nbsp;confirm the version<br>
+                </span>
+            </div>
+
+            <p>In particular the `history` command can really help find logs.</p>
+
+            <div id="termynal2" data-termynal>
+                <span data-ty="input">lord history</span>
+                <span data-ty data-ty-delay="0" class="blob gray">
+                +------+-------+----------------------------+<br>
+                | stat | name &nbsp;|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;logfile&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
+                +------+-------+----------------------------+<br>
+                |&nbsp;&nbsp;<span class="green">x</span>&nbsp;&nbsp;&nbsp;|&nbsp;pyjob&nbsp;| ../2019-10-18T14:44:30.txt |<br>
+                |&nbsp;&nbsp;<span class="red">x</span>&nbsp;&nbsp;&nbsp;|&nbsp;pyjob&nbsp;| ../2019-10-18T14:44:30.txt |<br>
+                +------+-------+----------------------------+<br>
+                </span>
+            </div>
+
+            <p>There's many settings that can help find the logs you need.</p>
+            <div id="termynal2" data-termynal>
+                <span data-ty="input">lord history --help</span>
+                <span data-ty data-ty-delay="0" class="blob gray">
+                Usage: lord history [OPTIONS]<br>
+                <br>
+                &nbsp;&nbsp;show historical log overview<br>
+                <br>
+                Options:<br>
+                &nbsp;&nbsp;--failures&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;only show the failures<br>
+                &nbsp;&nbsp;-r, --rows INTEGER&nbsp;&nbsp;maximum number of rows to show<br>
+                &nbsp;&nbsp;-d, --date TEXT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;only show specific date<br>
+                &nbsp;&nbsp;-j, --jobname TEXT&nbsp;&nbsp;only show specific jobname<br>
+                </span>
+            </div>
+
+            <h2 class="h">How do I install it?</h2>
+
+            <div id="termynal2" data-termynal>
+                <span data-ty="input">pip install skedulord</span>
+            </div>
+
+            <h2 class="h">What does skedulord not do?</h2>
+            <p>Skedulord does not:</p>
+            <ol>
+                <li>schedule jobs for you, this is what <span class="green">cron</span> is for</li>
+                <li>integrate with your compute services on your behalf</li>
+                <li>write your jobs for you</li>
+            </ol>
+            <h2 class="h">What are the main usecases?</h2>
+            <p>Lot's of ETL jobs are plain and simple; you just want to make it easy to find logs
+                of jobs that failed. Skedulord adds retry mechanics as well as an overview.
+                Once your jobs become highly dependant then you'll need something more elaborate (like <a href="https://airflow.apache.org/">airflow</a>).
+                There's a barrier to entry and maintenance for those tools though so if you don't need it
+                you might prefer this simpler tool.</p>
+            <h2 class="h">Food for Thought</h2>
+            <p>How you run your ETL jobs depends on the problems that you have. But there are a few things you might like to consider.</p>
+            <ul>
+                <li>You could schedule a cronjob that will sync the local log files to cloud storage for a backup. You could also schedule a job that will ensure that the disk space is kept at bay.</li>
+                <li>You could provision cronjobs automatically using ansible. This can be part of you CI/CD pipeline.</li>
+                <li>You could consider using the cron server as a scheduling server and running your jobs someplace else.
+                    Running a docker container can be done in the cloud from the command line.</li>
+                <li>You could read the `~/.skedulord/heartbeats` file with pandas if you're interested in analysing.</li>
+            </ul>
             <br>
-            &nbsp;&nbsp;show historical log overview<br>
+            <h2 class="h">Tips on Cron</h2>
+            <p>Cron documentation can be a bit annoying to find so we've made a small guide here.
+                Note that some of the things we mention here depend on your flavor of linux. So your
+                milage might vary. That said: you can edit the cron on a VM by typing the command
+                `crontab -e`. This will then allow you to write a file in the terminal. There's an
+                example of such a file below:</p>
+            <div id="termynal2" data-termynal>
+                <span data-ty="input">crontab -e</span>
+                <span data-ty data-ty-delay="0" class="blob gray modest">
+                SHELL=/bin/sh <br>
+                PATH=/home/unixuser/.local/bin <br>
+                * * * * * lord run test "date >> /tmp/foobar.txt"<br>
+                * * * * * lord run job "/usr/bin/python3 /path/job.py"<br>
+                </span>
+            </div>
+            <p>There's a few things that are important to note:</p>
+            <ul>
+                <li>The user that the cron service uses might be different that yours. This means that should not assume
+                that settings like paths and environment variables will be placed automatically. These need to be placed
+                at the top of the cron file. Depending on your system SHELL needs to be equal to /bin/sh or /bin/bash.</li>
+                <li>It makes sense to set the path to the SHELL as well as the user PATH that cron will assume.</li>
+                <li>It is certainly a good idea to run a test job that is supposed to append to a file very minute.</li>
+                <li>The python path is explicitly mentioned. This can be a good idea since it ensures that you run
+                    the right packages from the right environment.</li>
+            </ul>
+            <p>There's an alternative though.</p>
+            <div id="termynal2" data-termynal>
+                <span data-ty="input">crontab -e</span>
+                <span data-ty data-ty-delay="0" class="blob gray modest">
+                SHELL=/bin/bash <br>
+                * * * * * /path/to/cron_job.sh<br>
+                </span>
+                <span data-ty data-ty-delay="0" class="blob gray modest"><br></span>
+                <span data-ty="input">cat /path/to/cron_job.sh</span>
+                <span data-ty data-ty-delay="0" class="blob gray modest">
+                    source /path/to/.bash_profile <br>
+                    lord run download-job "python /path/to/job.py"
+                </span>
+            </div>
+            <p>This might be a nicer idea since it offers you a bit more of an overview. The
+            bash shell also contains the logic for dependencies which could also contain environment variables
+            and other settings like those that are in .bash_profile. You can also add all sorts of other logic
+            that might connect to extenal sources or cloud compute.</p>
             <br>
-            Options:<br>
-            &nbsp;&nbsp;--failures&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;only show the failures<br>
-            &nbsp;&nbsp;-r, --rows INTEGER&nbsp;&nbsp;maximum number of rows to show<br>
-            &nbsp;&nbsp;-d, --date TEXT&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;only show specific date<br>
-            &nbsp;&nbsp;-j, --jobname TEXT&nbsp;&nbsp;only show specific jobname<br>
-            </span>
+            <hr>
+            <small><p>
+                <p>Make with love by <a href="http://koaniing.io">koaning.io</a>. Github is <a href="https://github.com/koaning/skedulord">here</a>.</p>
+                <p>Docs made with <a href="https://github.com/ines/termynal">termynal.js</a>.</p>
+            </p></small>
+            <br>
+            <br>
+            <br>
         </div>
-
-        <h2 class="h">How do I install it?</h2>
-
-        <div id="termynal2" data-termynal>
-            <span data-ty="input">pip install skedulord</span>
-        </div>
-
-        <h2 class="h">What does skedulord not do?</h2>
-        <p>Skedulord does not:</p>
-        <ol>
-            <li>schedule jobs for you, this is what <span class="green">cron</span> is for</li>
-            <li>integrate with your compute services on your behalf</li>
-            <li>write your jobs for you</li>
-        </ol>
-        <h2 class="h">What are the main usecases?</h2>
-        <p>Lot's of ETL jobs are plain and simple; you just want to make it easy to find logs
-            of jobs that failed. Skedulord adds retry mechanics as well as an overview.
-            Once your jobs become highly dependant then you'll need something more elaborate (like <a href="https://airflow.apache.org/">airflow</a>).
-            There's a barrier to entry and maintenance for those tools though so if you don't need it
-            you might prefer this simpler tool.</p>
-        <h2 class="h">Food for Thought</h2>
-        <p>How you run your ETL jobs depends on the problems that you have. But there are a few things you might like to consider.</p>
-        <ul>
-            <li>You could schedule a cronjob that will sync the local log files to cloud storage for a backup. You could also schedule a job that will ensure that the disk space is kept at bay.</li>
-            <li>You could provision cronjobs automatically using ansible. This can be part of you CI/CD pipeline.</li>
-            <li>You could consider using the cron server as a scheduling server and running your jobs someplace else.
-                Running a docker container can be done in the cloud from the command line.</li>
-            <li>You could read the `~/.skedulord/heartbeats` file with pandas if you're interested in analysing.</li>
-        </ul>
-        <br>
-        <h2 class="h">Tips on Cron</h2>
-        <p>Cron documentation can be a bit annoying to find so we've made a small guide here.
-            Note that some of the things we mention here depend on your flavor of linux. So your
-            milage might vary. That said: you can edit the cron on a VM by typing the command
-            `crontab -e`. This will then allow you to write a file in the terminal. There's an
-            example of such a file below:</p>
-        <div id="termynal2" data-termynal>
-            <span data-ty="input">crontab -e</span>
-            <span data-ty data-ty-delay="0" class="blob gray modest">
-            SHELL=/bin/sh <br>
-            PATH=/home/unixuser/.local/bin <br>
-            * * * * * lord run test "date >> /tmp/foobar.txt"<br>
-            * * * * * lord run job "/usr/bin/python3 /path/job.py"<br>
-            </span>
-        </div>
-        <p>There's a few things that are important to note:</p>
-        <ul>
-            <li>The user that the cron service uses might be different that yours. This means that should not assume
-            that settings like paths and environment variables will be placed automatically. These need to be placed
-            at the top of the cron file. Depending on your system SHELL needs to be equal to /bin/sh or /bin/bash.</li>
-            <li>It makes sense to set the path to the SHELL as well as the user PATH that cron will assume.</li>
-            <li>It is certainly a good idea to run a test job that is supposed to append to a file very minute.</li>
-            <li>The python path is explicitly mentioned. This can be a good idea since it ensures that you run
-                the right packages from the right environment.</li>
-        </ul>
-        <p>There's an alternative though.</p>
-        <div id="termynal2" data-termynal>
-            <span data-ty="input">crontab -e</span>
-            <span data-ty data-ty-delay="0" class="blob gray modest">
-            SHELL=/bin/bash <br>
-            * * * * * /path/to/cron_job.sh<br>
-            </span>
-            <span data-ty data-ty-delay="0" class="blob gray modest"><br></span>
-            <span data-ty="input">cat /path/to/cron_job.sh</span>
-            <span data-ty data-ty-delay="0" class="blob gray modest">
-                source /path/to/.bash_profile <br>
-                lord run download-job "python /path/to/job.py"
-            </span>
-        </div>
-        <p>This might be a nicer idea since it offers you a bit more of an overview. The
-        bash shell also contains the logic for dependencies which could also contain environment variables
-        and other settings like those that are in .bash_profile. You can also add all sorts of other logic
-        that might connect to extenal sources or cloud compute.</p>
-        <br>
-        <hr>
-        <small><p>
-            Make with love by <a href="http://koaniing.io">koaning.io</a>.
-            Docs made with <a href="https://github.com/ines/termynal">termynal.js</a>.
-            Github is <a href="https://github.com/koaning/skedulord">here</a>.
-        </p></small>
         <!-- include and initialise termynal.js -->
         <script src="termynal.js" data-termynal-container="#termynal1"></script>
 
