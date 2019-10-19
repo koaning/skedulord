@@ -31,10 +31,10 @@ dev:
 
 reset:
 	lord init
-	lord nuke --sure --really
+	lord nuke --yes --really
 	lord init
-	lord run pyjob "python jobs/pyjob.py" --wait 1
-	lord run pyjob "python jobs/badpyjob.py" --wait 1
+	lord run pyjob "python jobs/pyjob.py" --retry 1 --wait 1
+	lord run pyjob "python jobs/badpyjob.py" --retry 3 --wait 1
 
 test-frontend:
 	lord serve & ./node_modules/.bin/cypress run

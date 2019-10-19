@@ -57,22 +57,22 @@ def init():
 @click.command()
 @click.argument('name')
 @click.argument('command')
-@click.option('--attempts', default=1, help='max number of tries')
+@click.option('--retry', default=1, help='max number of tries')
 @click.option('--wait', default=60, help='seconds between tries')
 @needs_init
-def run(name, command, attempts, wait):
+def run(name, command, retry, wait):
     """run (and log) a command, can retry"""
-    runner = JobRunner(attemps=attempts, wait=wait)
+    runner = JobRunner(retry=retry, wait=wait)
     runner.cmd(name=name, command=command)
 
 
 @click.command()
-@click.option('--sure', prompt=True, is_flag=True)
+@click.option('--yes', prompt=True, is_flag=True)
 @click.option('--really', prompt=True, is_flag=True)
 @needs_init
-def nuke(sure, really):
+def nuke(yes, really):
     """hard reset of disk state"""
-    if really and sure:
+    if yes and really:
             shutil.rmtree(SKEDULORD_PATH)
             logcli("nuked from orbit!")
     else:
