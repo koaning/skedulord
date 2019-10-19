@@ -12,13 +12,13 @@ from skedulord import version as lord_version
 
 @pytest.fixture()
 def clean_start_small():
-    os.system("lord nuke --really --sure")
+    os.system("lord nuke --really --yes")
     os.system("lord init")
     os.system("lord run foo 'python jobs/pyjob.py'")
     os.system("lord run bar 'python jobs/pyjob.py'")
     os.system("lord run buz 'python jobs/pyjob.py'")
     yield 1
-    os.system("lord nuke --really --sure")
+    os.system("lord nuke --really --yes")
 
 
 @pytest.fixture()
