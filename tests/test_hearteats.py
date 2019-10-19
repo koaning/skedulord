@@ -11,7 +11,7 @@ from skedulord.logger import log_to_disk
 
 @pytest.fixture()
 def clean_start_small():
-    os.system("lord nuke --really --sure")
+    os.system("lord nuke --really --yes")
     os.system("lord init")
     for date in ["2019-01-01", "2019-01-02"]:
         log_to_disk(run_id="a", name="goodjob", command="cmd",
@@ -22,7 +22,7 @@ def clean_start_small():
                     tic=f"{date} 00:00:00", toc=f"{date} 00:00:00",
                     succeed=False, tries=1, silent=True, output="no")
     yield 1
-    os.system("lord nuke --really --sure")
+    os.system("lord nuke --really --yes")
 
 
 def test_history_failures(clean_start_small):
