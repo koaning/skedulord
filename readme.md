@@ -29,5 +29,13 @@ Commands:
   version  confirm the version
 ```
 
+The project comes with cool features too. 
+
+## It has a small server! 
+
+![](docs/loop.gif)
+
+
+
 If you want to see a quick overview of what this tool can do
-then head on over to the [documentation]().
+then head on over to the [documentation](https://koaning.github.io/skedulord/).
