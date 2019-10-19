@@ -31,11 +31,21 @@ Commands:
 
 The project comes with cool features too. 
 
-## It has a small server! 
+![](docs/ss0.png)
+
+## It allows you to run jobs! 
+
+![](docs/ss1.png)
+
+## It makes it easy to find the failed ones
+
+![](docs/ss2.png)
+
+## It has a web interface too! 
 
 ![](docs/loop.gif)
 
-
+## Combine it with Cron! 
 
 If you want to see a quick overview of what this tool can do
 then head on over to the [documentation](https://koaning.github.io/skedulord/).

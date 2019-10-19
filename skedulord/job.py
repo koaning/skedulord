@@ -54,8 +54,8 @@ class JobChain:
 
 
 class JobRunner:
-    def __init__(self, attemps=3, wait=60):
-        self.attemps = attemps
+    def __init__(self, retry=3, wait=60):
+        self.retry = retry
         self.wait = wait
 
     def sleep(self, s=60):
@@ -75,7 +75,7 @@ class JobRunner:
                     stop = True
                 except:
                     tries += 1
-                    if tries >= self.attemps:
+                    if tries >= self.retry:
                         raise RuntimeError("max attempts reached")
                     time.sleep(self.wait)
         tock = dt.datetime.now()
@@ -85,7 +85,7 @@ class JobRunner:
                     tic=tic,
                     tries=tries,
                     toc=tock,
-                    succeed=tries < (self.attemps + 1),
+                    succeed=tries < (self.retry + 1),
                     output=f.getvalue(),
                     silent=True)
         return self
@@ -111,7 +111,7 @@ class JobRunner:
                 stop = True
             else:
                 tries += 1
-                if tries > self.attemps:
+                if tries > self.retry:
                     stop = True
                 else:
                     time.sleep(self.wait)
@@ -121,7 +121,7 @@ class JobRunner:
                     tries=tries,
                     tic=tic,
                     toc=dt.datetime.now(),
-                    succeed=(tries < (self.attemps + 1)),
+                    succeed=(tries < (self.retry + 1)),
                     output=logs)
         return self
 
