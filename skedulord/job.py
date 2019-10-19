@@ -58,9 +58,6 @@ class JobRunner:
         self.retry = retry
         self.wait = wait
 
-    def sleep(self, s=60):
-        time.sleep(s)
-
     def run(self, jobname, func, *args, **kwargs):
         f = io.StringIO()
         tic = dt.datetime.now()
