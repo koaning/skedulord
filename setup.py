@@ -13,11 +13,14 @@ base_packages = ["Click>=7.0", "prettytable>=0.7.2", "Flask>=1.0.3",
 
 dev_packages = ["pytest", "pytest-cov"]
 
+
 setup(
     name="skedulord",
     version=version,
     packages=find_packages(),
-    long_description="it helps with logging",
+    long_description=read('readme.md'),
+    url="https://koaning.github.io/skedulord/",
+    author='Vincent D. Warmerdam',
     install_requires=base_packages,
     entry_points={
         'console_scripts': [
@@ -26,5 +29,9 @@ setup(
     },
     extras_require={
         "dev": dev_packages
-    }
+    },
+    classifiers=['Programming Language :: Python :: 3',
+                 'Programming Language :: Python :: 3.6',
+                 'Programming Language :: Python :: 3.7',
+                 'License :: OSI Approved :: MIT License',]
 )
