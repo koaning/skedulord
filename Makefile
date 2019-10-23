@@ -42,7 +42,7 @@ test-frontend:
 test-gitlab:
 	gitlab-runner exec docker test
 
-push: build reset test-frontend
+pypi:
 	rm -rf dist
 	python setup.py sdist
 	python setup.py bdist_wheel --universal
