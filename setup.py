@@ -19,6 +19,7 @@ setup(
     version=version,
     packages=find_packages(),
     long_description=read('readme.md'),
+    long_description_content_type='text/markdown',
     url="https://koaning.github.io/skedulord/",
     author='Vincent D. Warmerdam',
     install_requires=base_packages,

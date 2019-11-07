@@ -1,4 +1,4 @@
-![](docs/logo.png)
+![](https://github.com/koaning/skedulord/raw/master/docs/logo.png)
 
 ## Installation 
 
@@ -31,19 +31,19 @@ Commands:
 
 The project comes with cool features too. 
 
-![](docs/ss0.png)
+![](https://github.com/koaning/skedulord/raw/master/docs/ss0.png)
 
 ## It allows you to run jobs! 
 
-![](docs/ss1.png)
+![](https://github.com/koaning/skedulord/raw/master/docs/ss1.png)
 
 ## It makes it easy to find the failed ones
 
-![](docs/ss2.png)
+![](https://github.com/koaning/skedulord/raw/master/docs/ss2.png)
 
 ## It has a web interface too! 
 
-![](docs/loop.gif)
+![](https://github.com/koaning/skedulord/raw/master/docs/loop.gif)
 
 ## Combine it with Cron! 
 
