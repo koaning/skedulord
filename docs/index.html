@@ -214,7 +214,7 @@
                 that settings like paths and environment variables will be placed automatically. These need to be placed
                 at the top of the cron file. Depending on your system SHELL needs to be equal to /bin/sh or /bin/bash.</li>
                 <li>It makes sense to set the path to the SHELL as well as the user PATH that cron will assume.</li>
-                <li>It is certainly a good idea to run a test job that is supposed to append to a file very minute.</li>
+                <li>It is certainly a good idea to run a mock job that is supposed to append to a file every minute to make sure you got cron running the right way.</li>
                 <li>The python path is explicitly mentioned. This can be a good idea since it ensures that you run
                     the right packages from the right environment.</li>
             </ul>
@@ -237,6 +237,24 @@
             and other settings like those that are in .bash_profile. You can also add all sorts of other logic
             that might connect to extenal sources or cloud compute.</p>
             <br>
+            <h2 class="h">On a Raspberry?</h2>
+            <p>If you can't figure out why cron is not running the right way. Consider installing postfix and also make sure that you're running everything from <b>python 3</b>.</p>
+            <div id="termynal2" data-termynal>
+                <span data-ty="input">pip3 install skedulord</span>
+                <span data-ty="input">sudo apt-get install postfix</span>
+            </div>
+            <p>Once this is installed you can set postfix up for local mail. Once this is done you can find error messages from cron.</p>
+            <div id="termynal2" data-termynal>
+                <span data-ty="input">cat /var/mail/pi</span>
+            </div>
+            <p>My typical setup is something shown below.</p>
+            <div id="termynal2" data-termynal>
+                <span data-ty="input">crontab -e</span>
+                <span data-ty data-ty-delay="0" class="blob gray modest">
+                30 * * * * /home/pi/.local/lord run jobname1 "/usr/bin/python3 /path/to/job1.py"<br>
+                */4 * * * * /home/pi/.local/lord run jobname2 "/usr/bin/python3 /path/to/job2.py"<br>
+                </span>
+            </div>
             <hr>
             <small><p>
                 <p>Make with love by <a href="http://koaning.io">koaning.io</a>. Github is <a href="https://github.com/koaning/skedulord">here</a>.</p>
