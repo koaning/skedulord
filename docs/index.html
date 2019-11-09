@@ -27,7 +27,7 @@
             <br>
 
             <img src="logo.png" alt="" width="100%">
-            <p><b>Skedulord</b> is an attempt to add useful features to cron without inventing the wheel.
+            <p><b>Skedulord</b> is an attempt to add useful features to cron without reinventing the wheel.
             It adds a retry mechanic, structured logging and helpful tools to find broken jobs.</p>
             <br>
             <h3 style="text-align: center">Here's what it does.</h3>
@@ -91,7 +91,7 @@
                 <li>It will run `python goodjob.py` and it will assume that `job1` is the name that describes the job.</li>
                 <li>It will then capture all the stdout that the job produces.</li>
                 <li>This will be saved at <span class="green">~/.skedulord/[jobname]/[timestamp].txt</span>.</li>
-                <li>Then the job metadata appended to <span class="green">~/.skedulord/heartbeats.jsonl</span>.</li>
+                <li>Then the job metadata is added to <span class="green">~/.skedulord/heartbeats.jsonl</span>.</li>
             </ol>
 
             <p>When logfiles are nicely stored it becomes easy to view them. Skedulord offers tools to
