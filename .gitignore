@@ -116,7 +116,7 @@ dmypy.json
 
 # GATSBY
 
-skedulord/web/templates/*
+# skedulord/web/templates/*
 skedulord/dashboard/build/*
 
 package-lock.json

@@ -49,3 +49,18 @@ The project comes with cool features too.
 
 If you want to see a quick overview of what this tool can do
 then head on over to the [documentation](https://koaning.github.io/skedulord/).
+
+
+# Development
+
+Before continuing, make sure you have `npm` installed.
+
+* Clone it :  `git clone ... `
+
+* Go inside : `cd skedulord`
+
+* Create virtual environment : `python3 -m venv .venv`
+
+* Install python dependencies : `make develop`
+
+* Install npm dependencies : `cd skedulord/dashboard && npm install`
