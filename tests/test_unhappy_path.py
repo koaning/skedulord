@@ -3,7 +3,7 @@ import os
 import pytest
 from click.testing import CliRunner
 
-from skedulord.cli import init
+from skedulord.__main__ import init
 
 
 @pytest.fixture()
