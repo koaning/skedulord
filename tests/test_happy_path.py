@@ -5,8 +5,7 @@ import pytest
 from click.testing import CliRunner
 
 from skedulord.common import HEARTBEAT_PATH
-from skedulord.web.app import create_app
-from skedulord.cli import history, summary, version
+from skedulord.__main__ import history, summary, version
 from skedulord import version as lord_version
 
 
@@ -60,13 +59,6 @@ def test_basic_history(clean_start_small):
     assert '✅' in result.output
 
 
-def test_basic_heartbeat_server(clean_start_small):
-    test_app = create_app().test_client()
-    json_blob = test_app.get("/api/test_heartbeats").get_json()
-    assert len(json_blob) == 3
-    assert {_['name'] for _ in json_blob} == {'foo', 'bar', 'buz'}
-
-
 def test_adv_heartbeat_file(dirty_start_small):
     with open(HEARTBEAT_PATH, "r") as f:
         jobs = [json.loads(_) for _ in f.readlines()]
@@ -92,13 +84,6 @@ def test_adv_summary(dirty_start_small):
     assert len(result.output.split("\n")) == 7
     assert 'bad' in result.output
     assert 'buz' in result.output
-
-
-def test_adv_heartbeat_server(dirty_start_small):
-    test_app = create_app().test_client()
-    json_blob = test_app.get("/api/test_heartbeats").get_json()
-    assert len(json_blob) == 2
-    assert {_['name'] for _ in json_blob} == {'buz', 'bad'}
 
 
 def test_version():

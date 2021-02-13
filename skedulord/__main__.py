@@ -80,16 +80,6 @@ def nuke(yes, really):
 
 
 @click.command()
-@click.option('--host', '-h', default="localhost", help='host for the dashboard')
-@click.option('--port', '-p', default=5000, help='port for the dashboard')
-@needs_init
-def serve(host, port):
-    """start the simple dashboard"""
-    app = create_app()
-    waitress.serve(app, host=host, port=port)
-
-
-@click.command()
 @click.option('--failures', default=False, is_flag=True, help='only show the failures')
 @click.option('--rows', '-r', default=None, type=int, help='maximum number of rows to show')
 @click.option('--date', '-d', default=None, help='only show specific date')

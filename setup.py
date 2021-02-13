@@ -25,7 +25,7 @@ setup(
     install_requires=base_packages,
     entry_points={
         'console_scripts': [
-            f'lord = skedulord.cli:main'
+            'lord = skedulord.__main__:main'
         ],
     },
     extras_require={

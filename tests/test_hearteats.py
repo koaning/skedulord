@@ -5,7 +5,7 @@ import pytest
 from click.testing import CliRunner
 
 
-from skedulord.cli import history
+from skedulord.__main__ import history
 from skedulord.logger import log_to_disk
 
 
