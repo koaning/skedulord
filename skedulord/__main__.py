@@ -1,31 +1,14 @@
-import os
-import sys
-import json
 import shutil
-import pathlib
-import datetime as dt
-from functools import wraps
-from collections import Counter
 
 import click
-import waitress
-from prettytable import PrettyTable
+from rich import print
+from rich.table import Table
+from clumper import Clumper
 
 from skedulord import version as lord_version
-from skedulord.logger import logcli
 from skedulord.job import JobRunner
-from skedulord.web.app import create_app
-from skedulord.common import SKEDULORD_PATH, HEARTBEAT_PATH
-
-
-def needs_init(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if not os.path.exists(SKEDULORD_PATH):
-            click.echo("You need to run `lord init` first.")
-            return sys.exit(1)
-        return f(*args, **kwargs)
-    return wrapper
+from skedulord.common import SKEDULORD_PATH, heartbeat_path
+from skedulord.cron import set_new_cron, clean_cron
 
 
 @click.group()
@@ -40,26 +23,14 @@ def main():
 @click.command()
 def version():
     """confirm the version"""
-    click.echo(lord_version)
+    print(lord_version)
 
 
 @click.command()
-def init():
-    """setup skedulord"""
-    path = pathlib.Path(SKEDULORD_PATH)
-    if os.path.exists(SKEDULORD_PATH):
-        click.echo(f"{SKEDULORD_PATH} allready exists")
-    else:
-        path.mkdir(parents=True, exist_ok=True)
-        (pathlib.Path(SKEDULORD_PATH) / 'heartbeat.jsonl').touch()
-
-
-@click.command()
-@click.argument('name')
-@click.argument('command')
-@click.option('--retry', default=1, help='max number of tries')
-@click.option('--wait', default=60, help='seconds between tries')
-@needs_init
+@click.argument("name")
+@click.argument("command")
+@click.option("--retry", default=1, help="max number of tries")
+@click.option("--wait", default=60, help="seconds between tries")
 def run(name, command, retry, wait):
     """run (and log) a command, can retry"""
     runner = JobRunner(retry=retry, wait=wait)
@@ -67,74 +38,66 @@ def run(name, command, retry, wait):
 
 
 @click.command()
-@click.option('--yes', prompt=True, is_flag=True)
-@click.option('--really', prompt=True, is_flag=True)
-@needs_init
-def nuke(yes, really):
+@click.argument("config")
+@click.option("--clean", default=False, is_flag=True)
+def schedule(config, clean):
+    """(re)schedule cron jobs"""
+    if clean:
+        clean_cron(config)
+    else:
+        set_new_cron(config)
+
+
+@click.command()
+@click.option("--yes", prompt=True, is_flag=True)
+@click.option("--really", prompt=True, is_flag=True)
+def clean(yes, really):
     """hard reset of disk state"""
     if yes and really:
-            shutil.rmtree(SKEDULORD_PATH)
-            logcli("nuked from orbit!")
+        shutil.rmtree(SKEDULORD_PATH)
+        print("Disk state has been cleaned.")
     else:
-        logcli("crisis averted.")
+        print("Crisis averted.")
 
 
 @click.command()
-@click.option('--failures', default=False, is_flag=True, help='only show the failures')
-@click.option('--rows', '-r', default=None, type=int, help='maximum number of rows to show')
-@click.option('--date', '-d', default=None, help='only show specific date')
-@click.option('--jobname', '-j', default=None, help='only show specific jobname')
-@needs_init
+@click.option("--failures", default=False, is_flag=True, help="only show the failures")
+@click.option(
+    "--rows", "-r", default=None, type=int, help="maximum number of rows to show"
+)
+@click.option("--date", "-d", default=None, help="only show specific date")
+@click.option("--jobname", "-j", default=None, help="only show specific jobname")
 def history(rows, failures, date, jobname):
     """show historical log overview"""
-    with open(HEARTBEAT_PATH, "r") as f:
-        jobs = [json.loads(_) for _ in f.readlines()]
-    jobs = sorted(jobs, key=lambda d: d['start'], reverse=True)
+    clump = Clumper.read_jsonl(heartbeat_path()).sort(lambda d: d["start"], reverse=True)
     if failures:
-        jobs = [j for j in jobs if not j['succeed']]
+        clump = clump.keep(lambda d: d['status'] != 'success')
     if jobname:
-        jobs = [j for j in jobs if j['name'] == jobname]
+        clump = clump.keep(lambda d: d['name'] != jobname)
     if date:
-        jobs = [j for j in jobs if j['start'][:10] == date]
+        clump = clump.keep(lambda d: d['start'][:10] != date)
     if rows:
-        jobs = jobs[:rows]
-    tbl = PrettyTable()
-    tbl.field_names = ["stat", "jobname", "logfile"]
-    for j in jobs:
-        tbl.add_row(['✅' if j['succeed'] else '❌', j["name"], j["log"], ])
-    click.echo(tbl)
-
-
-@click.command()
-@needs_init
-def summary():
-    """shows a summary of the logs"""
-    def convert_dt(b):
-        fmt = "%Y-%m-%d %H:%M:%S"
-        d1, d2 = b['start'], b['end']
-        return (dt.datetime.strptime(d1, fmt) - dt.datetime.strptime(d2, fmt)).total_seconds()
-
-    with open(HEARTBEAT_PATH, "r") as f:
-        jobs = [json.loads(_) for _ in f.readlines()]
-    tbl = PrettyTable()
-    tbl.field_names = ["jobname", "runs", "fails", "duration"]
-
-    for name, count in Counter([_['name'] for _ in jobs]).items():
-        subset = [_ for _ in jobs if _['name'] == name]
-        n_fail = sum([1 - _['succeed'] for _ in jobs if _['name'] == name])
-
-        avg_time = sum(convert_dt(_) for _ in subset)/len(subset)
-        tbl.add_row([name, count, n_fail, round(avg_time, 2)])
-    click.echo(tbl)
+        clump = clump.head(rows)
+    table = Table(title=None)
+    table.add_column("status")
+    table.add_column("date")
+    table.add_column("name")
+    table.add_column("logfile")
+    for d in clump.collect():
+        table.add_row(
+                f"[{'red' if d['status'] == 'fail' else 'green'}]{d['status']}[/]",
+                d["start"],
+                d["name"],
+                d["logpath"]
+        )
+    print(table)
 
 
 main.add_command(run)
-main.add_command(init)
-main.add_command(nuke)
-main.add_command(serve)
+main.add_command(clean)
 main.add_command(version)
-main.add_command(summary)
 main.add_command(history)
+main.add_command(schedule)
 
 if __name__ == "__main__":
     main()
