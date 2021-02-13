@@ -5,7 +5,7 @@ from rich import print
 from rich.table import Table
 from clumper import Clumper
 
-from skedulord import version as lord_version
+from skedulord import __version__ as lord_version
 from skedulord.job import JobRunner
 from skedulord.common import SKEDULORD_PATH, heartbeat_path
 from skedulord.cron import set_new_cron, clean_cron

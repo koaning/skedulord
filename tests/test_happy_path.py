@@ -6,7 +6,7 @@ from click.testing import CliRunner
 
 from skedulord.common import HEARTBEAT_PATH
 from skedulord.__main__ import history, summary, version
-from skedulord import version as lord_version
+from skedulord import __version__ as lord_version
 
 
 @pytest.fixture()

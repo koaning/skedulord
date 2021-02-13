@@ -1,7 +1,7 @@
 import os
 from setuptools import setup, find_packages
 
-from skedulord import version
+from skedulord import __version__
 
 
 def read(fname):
@@ -15,7 +15,7 @@ dev_packages = ["pytest", "pytest-cov"]
 
 setup(
     name="skedulord",
-    version=version,
+    version=__version__,
     packages=find_packages(),
     long_description=read('readme.md'),
     long_description_content_type='text/markdown',
