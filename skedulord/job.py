@@ -15,16 +15,21 @@ class JobRunner:
     def __init__(self, retry=3, wait=60):
         self.retry = retry
         self.wait = wait
-        self.console = Console(record=True, file=io.StringIO(), width=120, log_path=False)
+        self.fancy_console = Console(record=True, file=io.StringIO(), width=120, log_path=False)
+        self.basic_console = Console(record=True, file=io.StringIO(), width=120, log_path=False, log_time=False)
+
+    def logline(self, stuff):
+        self.fancy_console.log(stuff)
+        self.basic_console.log(stuff)
 
     def _attempt_cmd(self, command, name, run_id):
         tries = 1
         stop = False
         while not stop:
-            self.console.log(f"run_id={run_id}")
-            self.console.log(f"name={name}")
-            self.console.log(f"command={command}")
-            self.console.log(f"attempt={tries}")
+            self.logline(f"run_id={run_id}")
+            self.logline(f"name={name}")
+            self.logline(f"command={command}")
+            self.logline(f"attempt={tries}")
             output = subprocess.run(
                 command.split(" "),
                 cwd=str(pathlib.Path().cwd()),
@@ -34,7 +39,7 @@ class JobRunner:
                 universal_newlines=True,
             )
             for line in output.stdout.split("\n"):
-                self.console.log(line)
+                self.logline(line)
             if output.returncode == 0:
                 stop = True
             else:
@@ -64,6 +69,6 @@ class JobRunner:
             toc=endtime,
             logpath=str(job_name_path(name) / f"{filename}.txt"),
         )
-        self.console.save_text(job_name_path(name) / f"{filename}.txt", clear=False)
-        self.console.save_html(job_name_path(name) / f"{filename}.html", clear=False)
+        self.basic_console.save_text(job_name_path(name) / f"{filename}.txt", clear=False)
+        self.fancy_console.save_html(job_name_path(name) / f"{filename}.html", clear=False)
         return self

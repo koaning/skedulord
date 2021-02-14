@@ -3,14 +3,12 @@ import os
 import pytest
 from click.testing import CliRunner
 
-from skedulord.__main__ import init
-
 
 @pytest.fixture()
 def clean_slate():
-    os.system("lord nuke --really --yes")
+    os.system("lord wipe disk --really --yes")
     yield 1
-    os.system("lord nuke --really --yes")
+    os.system("lord wipe disk --really --yes")
 
 
 @pytest.fixture()
@@ -32,12 +30,3 @@ def test_summary_without_init(clean_slate, cli):
 
 def test_serve_without_init(clean_slate, cli):
     assert os.system('lord serve"') != 0
-
-
-def test_init_complains(clean_slate, cli):
-    # let us initialize first
-    result = cli.invoke(init)
-    # and check if we get a notification after
-    result = cli.invoke(init)
-    print(result.output)
-    assert ".skedulord allready exists" in result.output

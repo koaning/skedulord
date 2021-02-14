@@ -4,8 +4,8 @@ import json
 import pytest
 from click.testing import CliRunner
 
-from skedulord.common import HEARTBEAT_PATH
-from skedulord.__main__ import history, summary, version
+from skedulord.common import heartbeat_path
+from skedulord.__main__ import history, version
 from skedulord import __version__ as lord_version
 
 
@@ -31,21 +31,10 @@ def dirty_start_small():
 
 
 def test_basic_heartbeat_file(clean_start_small):
-    with open(HEARTBEAT_PATH, "r") as f:
+    with open(heartbeat_path(), "r") as f:
         jobs = [json.loads(_) for _ in f.readlines()]
     assert len(jobs) == 3
     assert {_['name'] for _ in jobs} == {'foo', 'bar', 'buz'}
-
-
-def test_basic_summary(clean_start_small):
-    runner = CliRunner()
-    result = runner.invoke(summary)
-    print(result.output)
-    assert len(result.output.split("\n")) == 8
-    assert result.exit_code == 0
-    assert 'foo' in result.output
-    assert 'bar' in result.output
-    assert 'buz' in result.output
 
 
 def test_basic_history(clean_start_small):
@@ -60,7 +49,7 @@ def test_basic_history(clean_start_small):
 
 
 def test_adv_heartbeat_file(dirty_start_small):
-    with open(HEARTBEAT_PATH, "r") as f:
+    with open(heartbeat_path(), "r") as f:
         jobs = [json.loads(_) for _ in f.readlines()]
     assert len(jobs) == 2
     assert {_['name'] for _ in jobs} == {'buz', 'bad'}
