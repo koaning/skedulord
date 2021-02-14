@@ -105,10 +105,6 @@ def history(
             d["name"],
             d["logpath"],
         )
-    from rich.console import Console
-    console = Console(record=True)
-    console.print(table)
-    console.save_text("demo.txt")
 
 
 @app.command(name="build")

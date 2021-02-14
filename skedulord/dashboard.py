@@ -10,12 +10,12 @@ from skedulord.common import heartbeat_path
 
 def generate_color_link_to_log(jobdata):
     result = "x" if jobdata["status"] == "fail" else "o"
+    result = f"[link={heartbeat_path() / jobdata['logpath'].replace('txt', 'html')}]{result}[/link]"
     result = (
         f"[red]{result}[/red]"
         if jobdata["status"] == "fail"
         else f"[green]{result}[/green]"
     )
-    result = f"[link={heartbeat_path() / jobdata['logpath'].replace('txt', 'html')}]{result}[/link]"
     return result
 
 
