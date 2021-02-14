@@ -1,12 +1,15 @@
 ![](docs/full-logo.png)
 
-Skedulord is a tool that automates scheduling and logging of jobs. It's a 
-layer on top of cron meant for python users. 
+> Skedulord is a tool that automates scheduling and logging of jobs. It's a 
+layer on top of cron. It's mainly meant for python users but it can also be
+used for other tools launched from the command line. 
+
+If you're new, check out the [getting started guide](https://koaning.github.io/skedulord/getting-started.html). 
 
 ## Installation 
 
 ```python
-> pip install skedulord
+pip install skedulord
 ```
 
 ## Usage 

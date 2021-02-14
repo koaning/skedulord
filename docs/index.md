@@ -4,7 +4,7 @@
 layer on top of cron. It's mainly meant for python users but it can also be
 used for other tools launched from the command line. 
 
-If you're new, check out the [getting started guide]().
+If you're new, check out the [getting started guide](https://koaning.github.io/skedulord/getting-started.html).
 
 ## Commands
 
