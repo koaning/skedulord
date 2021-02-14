@@ -42,12 +42,5 @@ def set_new_cron(settings_file):
         s["name"] = s["name"].replace(" ", "-")
         cmd = parse_cmd(s)
         job = cron.new(command=cmd, comment=s["name"])
-        num_every = grab_nums(s)
-        if "min" in s["every"]:
-            job.minute.every(num_every)
-        if "hour" in s["every"]:
-            job.hour.every(num_every)
-        if "day" in s["every"]:
-            job.day.every(num_every)
-
+        job.setall(s['cron'])
     cron.write()

@@ -2,7 +2,7 @@ user: vincent
 schedule:
     - name: good-job
       command: python /Users/vincent/Development/skedulord/jobs/pyjob.py
-      every: 1mins
+      cron: "*/2 * * * *"
     - name: bad-job
       command: python /Users/vincent/Development/skedulord/jobs/badpyjob.py
-      every: 1mins
+      cron: "* * * * *"
