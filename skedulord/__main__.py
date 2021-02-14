@@ -1,5 +1,6 @@
 import shutil
 import subprocess
+import webbrowser
 from pathlib import Path
 
 import typer
@@ -11,6 +12,7 @@ from skedulord import __version__ as lord_version
 from skedulord.job import JobRunner
 from skedulord.common import SKEDULORD_PATH, heartbeat_path
 from skedulord.cron import set_new_cron, clean_cron
+from skedulord.tables import make_landing_page_table
 
 app = typer.Typer(name="SKEDULORD", add_completion=False, help="SKEDULORD: helps with cronjobs and logs.")
 
@@ -86,6 +88,25 @@ def history(n: int = typer.Option(10, help="How many rows should the table show.
                 d["logpath"]
         )
     print(table)
+
+
+@app.command(name="build")
+def build_site():
+    """
+    Builds static html files so you may view a dashboard.
+    """
+    data = Clumper.read_jsonl(heartbeat_path()).collect()
+    make_landing_page_table(data)
+
+
+@app.command()
+def serve(build: bool = typer.Option(True, is_flag=True, help="Build the dashboard before opening it.")):
+    """
+    Opens the dashboard in a browser.
+    """
+    if build:
+        build_site()
+    webbrowser.open_new_tab(f"file://{heartbeat_path().parent / 'index.html'}")
 
 
 if __name__ == "__main__":

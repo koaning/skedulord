@@ -23,18 +23,26 @@ clean:
 	rm -rf notebooks/.ipynb_checkpoints
 	rm -rf skedulord.egg-info
 
-dev:
-	cd skedulord/dashboard && gatsby build
-	cp -r skedulord/dashboard/public/* skedulord/web/templates
-	cd skedulord/dashboard && gatsby clean
-	lord serve
 
 reset:
-	lord init
-	lord nuke --yes --really
-	lord init
-	lord run pyjob "python jobs/pyjob.py" --retry 1 --wait 1
-	lord run pyjob "python jobs/badpyjob.py" --retry 3 --wait 1
+	python -m skedulord wipe disk --really --yes
+	python -m skedulord wipe schedule --really --yes
+	python -m skedulord run pyjob "python jobs/pyjob.py" --retry 1 --wait 1
+	python -m skedulord run pyjob "python jobs/pyjob.py" --retry 1 --wait 1
+	python -m skedulord run badpyjob "python jobs/badpyjob.py" --retry 3 --wait 1
+	python -m skedulord run another-pyjob "python jobs/pyjob.py" --retry 1 --wait 1
+
+reset-big:
+	python -m skedulord wipe disk --really --yes
+	python -m skedulord wipe schedule --really --yes
+	python -m skedulord run pyjob "python jobs/pyjob.py" --retry 1 --wait 1
+	python -m skedulord run pyjob "python jobs/pyjob.py" --retry 1 --wait 1
+	python -m skedulord run badpyjob "python jobs/badpyjob.py" --retry 3 --wait 1
+	python -m skedulord run another-pyjob "python jobs/pyjob.py" --retry 1 --wait 1
+	python -m skedulord run pyjob "python jobs/pyjob.py" --retry 1 --wait 1
+	python -m skedulord run pyjob "python jobs/pyjob.py" --retry 1 --wait 1
+	python -m skedulord run badpyjob "python jobs/badpyjob.py" --retry 3 --wait 1
+	python -m skedulord run another-pyjob "python jobs/pyjob.py" --retry 1 --wait 1
 
 pypi:
 	rm -rf dist
