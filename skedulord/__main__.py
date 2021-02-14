@@ -11,7 +11,7 @@ from clumper import Clumper
 from skedulord import __version__ as lord_version
 from skedulord.job import JobRunner
 from skedulord.common import SKEDULORD_PATH, heartbeat_path
-from skedulord.cron import set_new_cron, clean_cron
+from skedulord.cron import Cron, clean_cron
 from skedulord.dashboard import Dashboard
 
 app = typer.Typer(
@@ -48,7 +48,7 @@ def schedule(
     )
 ):
     """Set (or reset) cron jobs based on config."""
-    set_new_cron(config)
+    Cron(config).set_new_cron()
 
 
 @app.command()
