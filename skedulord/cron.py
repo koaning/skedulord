@@ -27,10 +27,10 @@ def parse_cmd(settings):
     return big_cmd
 
 
-def clean_cron(settings_file):
-    settings = Clumper.read_yaml(settings_file).collect()[0]
-    cron = CronTab(user=settings["user"])
+def clean_cron(user):
+    cron = CronTab(user=user)
     cron.remove_all()
+    cron.write()
 
 
 def set_new_cron(settings_file):

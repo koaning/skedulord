@@ -10,7 +10,7 @@ develop: install
 	python setup.py develop
 
 test:
-	pytest --cov=skedulord tests
+	pytest tests
 
 check: flake test clean
 
@@ -35,12 +35,6 @@ reset:
 	lord init
 	lord run pyjob "python jobs/pyjob.py" --retry 1 --wait 1
 	lord run pyjob "python jobs/badpyjob.py" --retry 3 --wait 1
-
-test-frontend:
-	lord serve & ./node_modules/.bin/cypress run
-
-test-gitlab:
-	gitlab-runner exec docker test
 
 pypi:
 	rm -rf dist

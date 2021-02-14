@@ -1,4 +1,5 @@
 import shutil
+import subprocess
 from pathlib import Path
 
 import typer
@@ -23,8 +24,8 @@ def version():
 @app.command()
 def run(name: str = typer.Argument(..., help="The name you want to assign to the run."),
         command: str = typer.Argument(..., help="The command you want to run (in parentheses)."),
-        retry: int = typer.Argument(..., help="The number of re-tries, should a job fail."),
-        wait: int = typer.Argument(..., help="The number of seconds between tries.")):
+        retry: int = typer.Option(1, help="The number of re-tries, should a job fail."),
+        wait: int = typer.Option(60, help="The number of seconds between tries.")):
     """Run a single command, which is logged by skedulord."""
     runner = JobRunner(retry=retry, wait=wait)
     runner.cmd(name=name, command=command)
@@ -38,32 +39,38 @@ def schedule(config: Path = typer.Argument(..., help="The config file containing
 
 @app.command()
 def wipe(what: str = typer.Argument(..., help="What to wipe. Either `disk` or `schedule`."),
-         yes: bool = typer.Option(..., is_flag=True, prompt=True, help="Are you sure?"),
-         really: bool = typer.Option(..., is_flag=True, prompt=True, help="Really sure?")):
+         yes: bool = typer.Option(False, is_flag=True, prompt=True, help="Are you sure?"),
+         really: bool = typer.Option(False, is_flag=True, prompt=True, help="Really sure?"),
+         user: str = typer.Option(None, help="The name of the user. Default: curent user.")):
     """Wipe the disk or schedule state."""
     if yes and really:
         if what == "disk":
-            shutil.rmtree(SKEDULORD_PATH)
-            print("Disk state has been cleaned.")
+            if Path(SKEDULORD_PATH).exists():
+                shutil.rmtree(SKEDULORD_PATH)
+                print("Disk state has been cleaned.")
         if what == "schedule":
-            print("Not implemented.")
+            if not user:
+                name = subprocess.run(["whoami"], stdout=subprocess.PIPE)
+                user = name.stdout.decode("utf8").strip()
+            clean_cron(user=user)
+            print("Cron state has been cleaned.")
     else:
         print("Crisis averted.")
 
 
 @app.command()
 def history(n: int = typer.Option(10, help="How many rows should the table show."),
-            only_failures: bool = typer.Option(..., is_flag=True, help="Only show failures."),
-            date: str = typer.Option(..., is_flag=True, help="Only show specific date."),
-            jobname: str = typer.Option(..., is_flag=True, help="Only show jobs with specific name.")):
+            only_failures: bool = typer.Option(False, is_flag=True, help="Only show failures."),
+            date: str = typer.Option(None, is_flag=True, help="Only show specific date."),
+            jobname: str = typer.Option(None, is_flag=True, help="Only show jobs with specific name.")):
     """Shows a table with job status."""
     clump = Clumper.read_jsonl(heartbeat_path()).sort(lambda _: _["start"], reverse=True)
     if only_failures:
-        clump = clump.keep(lambda d: d['status'] != 'success')
+        clump = clump.keep(lambda _: _['status'] != 'success')
     if jobname:
-        clump = clump.keep(lambda d: d['name'] != jobname)
+        clump = clump.keep(lambda _: _['name'] != jobname)
     if date:
-        clump = clump.keep(lambda d: d['start'][:10] != date)
+        clump = clump.keep(lambda _: _['start'][:10] != date)
     if n:
         clump = clump.head(n)
     table = Table(title=None)

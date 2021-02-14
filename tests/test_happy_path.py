@@ -2,32 +2,35 @@ import os
 import json
 
 import pytest
-from click.testing import CliRunner
+from typer.testing import CliRunner
+from clumper import Clumper
 
 from skedulord.common import heartbeat_path
-from skedulord.__main__ import history, version
+from skedulord.__main__ import app
 from skedulord import __version__ as lord_version
 
 
 @pytest.fixture()
 def clean_start_small():
-    os.system("lord nuke --really --yes")
-    os.system("lord init")
-    os.system("lord run foo 'python jobs/pyjob.py'")
-    os.system("lord run bar 'python jobs/pyjob.py'")
-    os.system("lord run buz 'python jobs/pyjob.py'")
+    os.system("python -m skedulord wipe disk --really --yes")
+    os.system("python -m skedulord wipe schedule --really --yes")
+    os.system("python -m skedulord run foo 'python jobs/pyjob.py'")
+    os.system("python -m skedulord run bar 'python jobs/pyjob.py'")
+    os.system("python -m skedulord run buz 'python jobs/pyjob.py'")
     yield 1
-    os.system("lord nuke --really --yes")
+    os.system("python -m skedulord wipe disk --really --yes")
+    os.system("python -m skedulord wipe schedule --really --yes")
 
 
 @pytest.fixture()
 def dirty_start_small():
-    os.system("lord nuke --yes --really")
-    os.system("lord init")
-    os.system("lord run buz 'python jobs/pyjob.py'")
-    os.system("lord run bad 'python jobs/badpyjob.py'")
+    os.system("python -m skedulord wipe disk --yes --really")
+    os.system("python -m skedulord wipe schedule --really --yes")
+    os.system("python -m skedulord run buz 'python jobs/pyjob.py'")
+    os.system("python -m skedulord run bad 'python jobs/badpyjob.py'")
     yield 1
-    os.system("lord nuke --yes --really")
+    os.system("python -m skedulord wipe disk --yes --really")
+    os.system("python -m skedulord wipe schedule --really --yes")
 
 
 def test_basic_heartbeat_file(clean_start_small):
@@ -38,45 +41,17 @@ def test_basic_heartbeat_file(clean_start_small):
 
 
 def test_basic_history(clean_start_small):
-    runner = CliRunner()
-    result = runner.invoke(history)
-    assert result.exit_code == 0
-    assert len(result.output.split("\n")) == 8
-    assert 'foo' in result.output
-    assert 'bar' in result.output
-    assert 'buz' in result.output
-    assert '✅' in result.output
+    assert len(Clumper.read_jsonl(heartbeat_path())) == 3
 
 
 def test_adv_heartbeat_file(dirty_start_small):
-    with open(heartbeat_path(), "r") as f:
-        jobs = [json.loads(_) for _ in f.readlines()]
+    jobs = Clumper.read_jsonl(heartbeat_path()).collect()
     assert len(jobs) == 2
     assert {_['name'] for _ in jobs} == {'buz', 'bad'}
 
 
-def test_adv_history(dirty_start_small):
-    runner = CliRunner()
-    result = runner.invoke(history)
-    assert result.exit_code == 0
-    assert len(result.output.split("\n")) == 7
-    assert 'bad' in result.output
-    assert 'buz' in result.output
-    assert '✅' in result.output
-    assert '❌' in result.output
-
-
-def test_adv_summary(dirty_start_small):
-    runner = CliRunner()
-    result = runner.invoke(history)
-    assert result.exit_code == 0
-    assert len(result.output.split("\n")) == 7
-    assert 'bad' in result.output
-    assert 'buz' in result.output
-
-
 def test_version():
     runner = CliRunner()
-    result = runner.invoke(version)
+    result = runner.invoke(app, ["version"])
     assert result.exit_code == 0
     assert lord_version in result.output

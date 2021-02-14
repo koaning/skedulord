@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from click.testing import CliRunner
+from typer.testing import CliRunner
 
 
 @pytest.fixture()

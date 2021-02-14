@@ -18,7 +18,10 @@ class JobRunner:
         self.fancy_console = Console(record=True, file=io.StringIO(), width=120, log_path=False)
         self.basic_console = Console(record=True, file=io.StringIO(), width=120, log_path=False, log_time=False)
 
-    def logline(self, stuff):
+    def _logline(self, stuff):
+        """
+        Log a line to both consoles.
+        """
         self.fancy_console.log(stuff)
         self.basic_console.log(stuff)
 
@@ -26,10 +29,10 @@ class JobRunner:
         tries = 1
         stop = False
         while not stop:
-            self.logline(f"run_id={run_id}")
-            self.logline(f"name={name}")
-            self.logline(f"command={command}")
-            self.logline(f"attempt={tries}")
+            self._logline(f"run_id={run_id}")
+            self._logline(f"name={name}")
+            self._logline(f"command={command}")
+            self._logline(f"attempt={tries}")
             output = subprocess.run(
                 command.split(" "),
                 cwd=str(pathlib.Path().cwd()),
@@ -39,7 +42,7 @@ class JobRunner:
                 universal_newlines=True,
             )
             for line in output.stdout.split("\n"):
-                self.logline(line)
+                self._logline(line)
             if output.returncode == 0:
                 stop = True
             else:
