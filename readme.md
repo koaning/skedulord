@@ -31,7 +31,3 @@ Commands:
   wipe      Wipe the disk or schedule state.
   version   Show the version.
 ```
-
-## Commands 
-
-<kdb>schedule</kdb>
