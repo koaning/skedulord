@@ -12,11 +12,16 @@ class JobRunner:
     """
     Object in charge of running a job and logging it.
     """
+
     def __init__(self, retry=3, wait=60):
         self.retry = retry
         self.wait = wait
-        self.fancy_console = Console(record=True, file=io.StringIO(), width=120, log_path=False)
-        self.basic_console = Console(record=True, file=io.StringIO(), width=120, log_path=False, log_time=False)
+        self.fancy_console = Console(
+            record=True, file=io.StringIO(), width=120, log_path=False
+        )
+        self.basic_console = Console(
+            record=True, file=io.StringIO(), width=120, log_path=False, log_time=False
+        )
 
     def _logline(self, stuff):
         """
@@ -72,6 +77,10 @@ class JobRunner:
             toc=endtime,
             logpath=str(job_name_path(name) / f"{filename}.txt"),
         )
-        self.basic_console.save_text(job_name_path(name) / f"{filename}.txt", clear=False)
-        self.fancy_console.save_html(job_name_path(name) / f"{filename}.html", clear=False)
+        self.basic_console.save_text(
+            job_name_path(name) / f"{filename}.txt", clear=False
+        )
+        self.fancy_console.save_html(
+            job_name_path(name) / f"{filename}.html", clear=False
+        )
         return self

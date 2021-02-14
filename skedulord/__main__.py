@@ -12,9 +12,13 @@ from skedulord import __version__ as lord_version
 from skedulord.job import JobRunner
 from skedulord.common import SKEDULORD_PATH, heartbeat_path
 from skedulord.cron import set_new_cron, clean_cron
-from skedulord.tables import make_landing_page_table
+from skedulord.dashboard import Dashboard
 
-app = typer.Typer(name="SKEDULORD", add_completion=False, help="SKEDULORD: helps with cronjobs and logs.")
+app = typer.Typer(
+    name="SKEDULORD",
+    add_completion=False,
+    help="SKEDULORD: helps with cronjobs and logs.",
+)
 
 
 @app.command()
@@ -24,26 +28,36 @@ def version():
 
 
 @app.command()
-def run(name: str = typer.Argument(..., help="The name you want to assign to the run."),
-        command: str = typer.Argument(..., help="The command you want to run (in parentheses)."),
-        retry: int = typer.Option(1, help="The number of re-tries, should a job fail."),
-        wait: int = typer.Option(60, help="The number of seconds between tries.")):
+def run(
+    name: str = typer.Argument(..., help="The name you want to assign to the run."),
+    command: str = typer.Argument(
+        ..., help="The command you want to run (in parentheses)."
+    ),
+    retry: int = typer.Option(1, help="The number of re-tries, should a job fail."),
+    wait: int = typer.Option(60, help="The number of seconds between tries."),
+):
     """Run a single command, which is logged by skedulord."""
     runner = JobRunner(retry=retry, wait=wait)
     runner.cmd(name=name, command=command)
 
 
 @app.command()
-def schedule(config: Path = typer.Argument(..., help="The config file containing the schedule.", exists=True)):
+def schedule(
+    config: Path = typer.Argument(
+        ..., help="The config file containing the schedule.", exists=True
+    )
+):
     """Set (or reset) cron jobs based on config."""
     set_new_cron(config)
 
 
 @app.command()
-def wipe(what: str = typer.Argument(..., help="What to wipe. Either `disk` or `schedule`."),
-         yes: bool = typer.Option(False, is_flag=True, prompt=True, help="Are you sure?"),
-         really: bool = typer.Option(False, is_flag=True, prompt=True, help="Really sure?"),
-         user: str = typer.Option(None, help="The name of the user. Default: curent user.")):
+def wipe(
+    what: str = typer.Argument(..., help="What to wipe. Either `disk` or `schedule`."),
+    yes: bool = typer.Option(False, is_flag=True, prompt=True, help="Are you sure?"),
+    really: bool = typer.Option(False, is_flag=True, prompt=True, help="Really sure?"),
+    user: str = typer.Option(None, help="The name of the user. Default: curent user."),
+):
     """Wipe the disk or schedule state."""
     if yes and really:
         if what == "disk":
@@ -61,18 +75,24 @@ def wipe(what: str = typer.Argument(..., help="What to wipe. Either `disk` or `s
 
 
 @app.command()
-def history(n: int = typer.Option(10, help="How many rows should the table show."),
-            only_failures: bool = typer.Option(False, is_flag=True, help="Only show failures."),
-            date: str = typer.Option(None, is_flag=True, help="Only show specific date."),
-            jobname: str = typer.Option(None, is_flag=True, help="Only show jobs with specific name.")):
+def history(
+    n: int = typer.Option(10, help="How many rows should the table show."),
+    only_failures: bool = typer.Option(False, is_flag=True, help="Only show failures."),
+    date: str = typer.Option(None, is_flag=True, help="Only show specific date."),
+    jobname: str = typer.Option(
+        None, is_flag=True, help="Only show jobs with specific name."
+    ),
+):
     """Shows a table with job status."""
-    clump = Clumper.read_jsonl(heartbeat_path()).sort(lambda _: _["start"], reverse=True)
+    clump = Clumper.read_jsonl(heartbeat_path()).sort(
+        lambda _: _["start"], reverse=True
+    )
     if only_failures:
-        clump = clump.keep(lambda _: _['status'] != 'success')
+        clump = clump.keep(lambda _: _["status"] != "success")
     if jobname:
-        clump = clump.keep(lambda _: _['name'] != jobname)
+        clump = clump.keep(lambda _: _["name"] != jobname)
     if date:
-        clump = clump.keep(lambda _: _['start'][:10] != date)
+        clump = clump.keep(lambda _: _["start"][:10] != date)
     if n:
         clump = clump.head(n)
     table = Table(title=None)
@@ -82,10 +102,10 @@ def history(n: int = typer.Option(10, help="How many rows should the table show.
     table.add_column("logfile")
     for d in clump.collect():
         table.add_row(
-                f"[{'red' if d['status'] == 'fail' else 'green'}]{d['status']}[/]",
-                d["start"],
-                d["name"],
-                d["logpath"]
+            f"[{'red' if d['status'] == 'fail' else 'green'}]{d['status']}[/]",
+            d["start"],
+            d["name"],
+            d["logpath"],
         )
     print(table)
 
@@ -96,11 +116,15 @@ def build_site():
     Builds static html files so you may view a dashboard.
     """
     data = Clumper.read_jsonl(heartbeat_path()).collect()
-    make_landing_page_table(data)
+    Dashboard(data).build()
 
 
 @app.command()
-def serve(build: bool = typer.Option(True, is_flag=True, help="Build the dashboard before opening it.")):
+def serve(
+    build: bool = typer.Option(
+        True, is_flag=True, help="Build the dashboard before opening it."
+    )
+):
     """
     Opens the dashboard in a browser.
     """

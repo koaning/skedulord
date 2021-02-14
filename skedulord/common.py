@@ -5,12 +5,16 @@ import pathlib
 SKEDULORD_PATH = os.path.join(os.path.expanduser("~/.skedulord"))
 
 
+def skedulord_path():
+    return pathlib.Path(SKEDULORD_PATH)
+
+
 def job_name_path(jobname):
-    return pathlib.Path(SKEDULORD_PATH) / jobname
+    return skedulord_path() / jobname
 
 
 def heartbeat_path():
-    return pathlib.Path(SKEDULORD_PATH) / "heartbeat.jsonl"
+    return skedulord_path() / "heartbeat.jsonl"
 
 
 def log_heartbeat(run_id, name, command, tic, toc, status, logpath):
