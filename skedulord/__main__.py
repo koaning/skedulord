@@ -1,6 +1,7 @@
 import shutil
+from pathlib import Path
 
-import click
+import typer
 from rich import print
 from rich.table import Table
 from clumper import Clumper
@@ -10,74 +11,61 @@ from skedulord.job import JobRunner
 from skedulord.common import SKEDULORD_PATH, heartbeat_path
 from skedulord.cron import set_new_cron, clean_cron
 
-
-@click.group()
-def main():
-    """
-    SKEDULORD:
-    keeps track of logs so you don't have to.
-    """
-    pass
+app = typer.Typer(name="SKEDULORD", add_completion=False, help="SKEDULORD: helps with cronjobs and logs.")
 
 
-@click.command()
+@app.command()
 def version():
-    """confirm the version"""
+    """Show the version."""
     print(lord_version)
 
 
-@click.command()
-@click.argument("name")
-@click.argument("command")
-@click.option("--retry", default=1, help="max number of tries")
-@click.option("--wait", default=60, help="seconds between tries")
-def run(name, command, retry, wait):
-    """run (and log) a command, can retry"""
+@app.command()
+def run(name: str = typer.Argument(..., help="The name you want to assign to the run."),
+        command: str = typer.Argument(..., help="The command you want to run (in parentheses)."),
+        retry: int = typer.Argument(..., help="The number of re-tries, should a job fail."),
+        wait: int = typer.Argument(..., help="The number of seconds between tries.")):
+    """Run a single command, which is logged by skedulord."""
     runner = JobRunner(retry=retry, wait=wait)
     runner.cmd(name=name, command=command)
 
 
-@click.command()
-@click.argument("config")
-@click.option("--clean", default=False, is_flag=True)
-def schedule(config, clean):
-    """(re)schedule cron jobs"""
-    if clean:
-        clean_cron(config)
-    else:
-        set_new_cron(config)
+@app.command()
+def schedule(config: Path = typer.Argument(..., help="The config file containing the schedule.", exists=True)):
+    """Set (or reset) cron jobs based on config."""
+    set_new_cron(config)
 
 
-@click.command()
-@click.option("--yes", prompt=True, is_flag=True)
-@click.option("--really", prompt=True, is_flag=True)
-def clean(yes, really):
-    """hard reset of disk state"""
+@app.command()
+def wipe(what: str = typer.Argument(..., help="What to wipe. Either `disk` or `schedule`."),
+         yes: bool = typer.Option(..., is_flag=True, prompt=True, help="Are you sure?"),
+         really: bool = typer.Option(..., is_flag=True, prompt=True, help="Really sure?")):
+    """Wipe the disk or schedule state."""
     if yes and really:
-        shutil.rmtree(SKEDULORD_PATH)
-        print("Disk state has been cleaned.")
+        if what == "disk":
+            shutil.rmtree(SKEDULORD_PATH)
+            print("Disk state has been cleaned.")
+        if what == "schedule":
+            print("Not implemented.")
     else:
         print("Crisis averted.")
 
 
-@click.command()
-@click.option("--failures", default=False, is_flag=True, help="only show the failures")
-@click.option(
-    "--rows", "-r", default=None, type=int, help="maximum number of rows to show"
-)
-@click.option("--date", "-d", default=None, help="only show specific date")
-@click.option("--jobname", "-j", default=None, help="only show specific jobname")
-def history(rows, failures, date, jobname):
-    """show historical log overview"""
-    clump = Clumper.read_jsonl(heartbeat_path()).sort(lambda d: d["start"], reverse=True)
-    if failures:
+@app.command()
+def history(n: int = typer.Option(10, help="How many rows should the table show."),
+            only_failures: bool = typer.Option(..., is_flag=True, help="Only show failures."),
+            date: str = typer.Option(..., is_flag=True, help="Only show specific date."),
+            jobname: str = typer.Option(..., is_flag=True, help="Only show jobs with specific name.")):
+    """Shows a table with job status."""
+    clump = Clumper.read_jsonl(heartbeat_path()).sort(lambda _: _["start"], reverse=True)
+    if only_failures:
         clump = clump.keep(lambda d: d['status'] != 'success')
     if jobname:
         clump = clump.keep(lambda d: d['name'] != jobname)
     if date:
         clump = clump.keep(lambda d: d['start'][:10] != date)
-    if rows:
-        clump = clump.head(rows)
+    if n:
+        clump = clump.head(n)
     table = Table(title=None)
     table.add_column("status")
     table.add_column("date")
@@ -93,11 +81,5 @@ def history(rows, failures, date, jobname):
     print(table)
 
 
-main.add_command(run)
-main.add_command(clean)
-main.add_command(version)
-main.add_command(history)
-main.add_command(schedule)
-
 if __name__ == "__main__":
-    main()
+    app()

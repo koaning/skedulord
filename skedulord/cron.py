@@ -16,7 +16,6 @@ def parse_cmd(settings):
     if "venv" not in settings.keys():
         output = subprocess.run(["which", "python"], capture_output=True)
         python = output.stdout.decode("ascii").replace("\n", "")
-        print(python)
     # Set base values.
     retry = settings.get("retry", 1)
     wait = settings.get("wait", 60)
@@ -25,7 +24,6 @@ def parse_cmd(settings):
     if cmd.startswith("python"):
         cmd = cmd.replace("python", python, 1)
     big_cmd = f'{python} -m skedulord run {settings["name"]} "{cmd}" --retry {retry} --wait {wait}'
-    print(big_cmd)
     return big_cmd
 
 
