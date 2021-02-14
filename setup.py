@@ -10,7 +10,7 @@ def read(fname):
 
 base_packages = ["PyYAML>=5.1.1", "rich>=9.10.0", "clumper>=0.2.8", "typer>=0.3.2", "python-crontab>=2.5.1"]
 
-dev_packages = ["pytest", "pytest-cov"]
+dev_packages = ["pytest", "pytest-cov", "mkdocs-material>=6.2.8"]
 
 
 setup(

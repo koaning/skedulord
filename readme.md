@@ -1,12 +1,4 @@
-```
-                    _            _       _               _ 
-                   | |          | |     | |             | |
-                ___| | _____  __| |_   _| | ___  _ __ __| |
-               / __| |/ / _ \/ _` | | | | |/ _ \| '__/ _` |
-               \__ \   <  __/ (_| | |_| | | (_) | | | (_| |
-               |___/_|\_\___|\__,_|\__,_|_|\___/|_|  \__,_|
-```
-
+![](docs/full-logo.png)
 
 Skedulord is a tool that automates scheduling and logging of jobs. It's a 
 layer on top of cron meant for python users. 
