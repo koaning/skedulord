@@ -105,6 +105,7 @@ def history(
             d["name"],
             d["logpath"],
         )
+    print(table)
 
 
 @app.command(name="build")
