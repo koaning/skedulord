@@ -1,5 +1,4 @@
 import os
-import json
 
 import pytest
 from typer.testing import CliRunner
@@ -33,21 +32,12 @@ def dirty_start_small():
     os.system("python -m skedulord wipe schedule --really --yes")
 
 
-def test_basic_heartbeat_file(clean_start_small):
-    with open(heartbeat_path(), "r") as f:
-        jobs = [json.loads(_) for _ in f.readlines()]
-    assert len(jobs) == 3
-    assert {_['name'] for _ in jobs} == {'foo', 'bar', 'buz'}
-
-
 def test_basic_history(clean_start_small):
     assert len(Clumper.read_jsonl(heartbeat_path())) == 3
 
 
 def test_adv_heartbeat_file(dirty_start_small):
-    jobs = Clumper.read_jsonl(heartbeat_path()).collect()
-    assert len(jobs) == 2
-    assert {_['name'] for _ in jobs} == {'buz', 'bad'}
+    assert len(Clumper.read_jsonl(heartbeat_path())) == 2
 
 
 def test_version():
@@ -55,3 +45,20 @@ def test_version():
     result = runner.invoke(app, ["version"])
     assert result.exit_code == 0
     assert lord_version in result.output
+
+
+def test_history_name(clean_start_small):
+    runner = CliRunner()
+    result = runner.invoke(app, ["history"])
+    assert any(["bar" in line for line in result.output.split("\n")])
+    result = runner.invoke(app, ["history", "--jobname", "baz"])
+    assert all(["foo" not in line for line in result.output.split("\n")])
+
+
+def test_history_only_failures(dirty_start_small):
+    runner = CliRunner()
+    result = runner.invoke(app, ["history"])
+    assert "bad" in result.output
+    result = runner.invoke(app, ["history", "--only-failures"])
+    assert "bad" in result.output
+    assert "buz" not in result.output

@@ -90,17 +90,15 @@ def history(
     if only_failures:
         clump = clump.keep(lambda _: _["status"] != "success")
     if jobname:
-        clump = clump.keep(lambda _: _["name"] != jobname)
+        clump = clump.keep(lambda _: jobname in _["name"])
     if date:
-        clump = clump.keep(lambda _: _["start"][:10] != date)
-    if n:
-        clump = clump.head(n)
+        clump = clump.keep(lambda _: date in _["start"])
     table = Table(title=None)
     table.add_column("status")
     table.add_column("date")
     table.add_column("name")
     table.add_column("logfile")
-    for d in clump.collect():
+    for d in clump.head(n).collect():
         table.add_row(
             f"[{'red' if d['status'] == 'fail' else 'green'}]{d['status']}[/]",
             d["start"],

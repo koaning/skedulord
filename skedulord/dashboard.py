@@ -29,6 +29,7 @@ def generate_link_to_log(jobdata):
 def color_status(status):
     return f"[red]{status}[/red]" if status == "fail" else f"[green]{status}[/green]"
 
+
 class Dashboard:
     """
     Helper class to generate the dashboards.
@@ -78,10 +79,12 @@ class Dashboard:
                 ___| | _____  __| |_   _| | ___  _ __ __| |
                / __| |/ / _ \/ _` | | | | |/ _ \| '__/ _` |
                \__ \   <  __/ (_| | |_| | | (_) | | | (_| |
-               |___/_|\_\___|\__,_|\__,_|_|\___/|_|  \__,_|                                       
+               |___/_|\_\___|\__,_|\__,_|_|\___/|_|  \__,_|
         """
         console.print(img)
-        console.print(Markdown("<img src='/Users/vincent/Development/skedulord/docs/logo.png)'/>"))
+        console.print(
+            Markdown("<img src='/Users/vincent/Development/skedulord/docs/logo.png)'/>")
+        )
         console.print(
             Markdown(
                 "### You can find an overview of all jobs below. Feel free to click links!"
@@ -108,7 +111,11 @@ class Dashboard:
         table.add_column("logs")
         for d in data:
             table.add_row(
-                d["id"], color_status(d["status"]), d["start"], d["end"], generate_link_to_log(d)
+                d["id"],
+                color_status(d["status"]),
+                d["start"],
+                d["end"],
+                generate_link_to_log(d),
             )
 
         console = Console(record=True, width=self.width, file=io.StringIO())
@@ -117,9 +124,7 @@ class Dashboard:
         )
         console.print(Markdown(f"# Overview for **{jobname}**"))
         console.print(
-            Markdown(
-                "### You can find an overview below. Feel free to click links!"
-            )
+            Markdown("### You can find an overview below. Feel free to click links!")
         )
         console.print(table)
         console.save_html(heartbeat_path().parent / f"{jobname}.html")

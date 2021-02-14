@@ -16,10 +16,6 @@ def cli():
     return CliRunner()
 
 
-def test_run_without_init(clean_slate, cli):
-    assert os.system('lord run pyjob "python jobs/badpyjob.py"') != 0
-
-
 def test_history_without_init(clean_slate, cli):
     assert os.system('lord history') != 0
 

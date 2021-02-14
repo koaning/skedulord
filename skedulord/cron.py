@@ -42,5 +42,5 @@ def set_new_cron(settings_file):
         s["name"] = s["name"].replace(" ", "-")
         cmd = parse_cmd(s)
         job = cron.new(command=cmd, comment=s["name"])
-        job.setall(s['cron'])
+        job.setall(s["cron"])
     cron.write()
