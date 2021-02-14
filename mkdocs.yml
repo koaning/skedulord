@@ -1,0 +1,38 @@
+site_name: skedulord
+repo_url: https://github.com/koaning/skedulord
+site_url: https://koaning.github.io/skedulord/
+site_description: A nice way to schedule and log.
+site_author: Vincent D. Warmerdam
+use_directory_urls: false
+nav:
+  - Index: index.md
+  - Getting Started: getting-started.md
+  - CLI API: cli.md
+plugins:
+  - search
+copyright: Copyright &copy; 2020 Maintained by <a href="https://twitter.com/fishnets88">Vincent</a>.
+theme:
+  name: material
+  logo: logo.png
+  font:
+    text: Ubuntu
+    code: Ubuntu Mono
+  feature:
+    tabs: true
+  palette:
+    primary: white
+    accent: teal
+  features:
+    - navigation.tabs
+markdown_extensions:
+  - admonition
+  - codehilite
+  - pymdownx.inlinehilite
+  - pymdownx.details
+  - pymdownx.tabbed
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      use_pygments: true
+      guess_lang: true
+  - toc:
+      permalink: true
