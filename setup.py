@@ -8,7 +8,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
-base_packages = ["PyYAML>=5.1.1", "rich>=9.10.0", "clumper>=0.2.0", "typer>=0.3.2"]
+base_packages = ["PyYAML>=5.1.1", "rich>=9.10.0", "clumper>=0.2.0", "typer>=0.3.2", "python-crontab>=2.5.1"]
 
 dev_packages = ["pytest", "pytest-cov"]
 
