@@ -15,7 +15,7 @@ dev_packages = ["pytest", "pytest-cov", "mkdocs-material>=6.2.8"]
 
 setup(
     name="skedulord",
-    version="1.0.1",
+    version="1.0.2",
     packages=find_packages(),
     long_description=read('readme.md'),
     long_description_content_type='text/markdown',

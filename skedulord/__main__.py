@@ -12,7 +12,7 @@ from skedulord import __version__ as lord_version
 from skedulord.job import JobRunner
 from skedulord.common import SKEDULORD_PATH, heartbeat_path
 from skedulord.cron import Cron, clean_cron
-from skedulord.dashboard import Dashboard
+from skedulord.dashboard import Dashboard, generate_color_link_to_log
 
 app = typer.Typer(
     name="SKEDULORD",
@@ -75,11 +75,43 @@ def wipe(
 
 
 @app.command()
+def summary(n: int = typer.Option(10, help="Max number of icons in `last run` column."),):
+    """Shows a summary of all jobs."""
+    clump = Clumper.read_jsonl(heartbeat_path())
+    summary = (
+        clump
+            .group_by("name")
+            .mutate(fail=lambda _: _["status"] == "fail")
+            .agg(n_total=("id", "count"), n_fail=("fail", "sum"), max_date=("end", "max"))
+            .mutate(n_succes=lambda _: _["n_total"] - _["n_fail"])
+    )
+    table = Table(title=None)
+    table.add_column("name")
+    table.add_column("recent runs")
+    table.add_column("last run")
+    table.add_column("fail")
+    table.add_column("succes")
+    table.add_column("total")
+    for d in summary:
+        job_data = clump.keep(lambda _: _["name"] == d["name"]).head(n).collect()
+        recent = " ".join([generate_color_link_to_log(_) for _ in job_data])
+        table.add_row(
+            d["name"],
+            d["max_date"],
+            recent,
+            f"[red]{d['n_fail']}[/]",
+            f"[green]{d['n_succes']}[/]",
+            f"{d['n_total']}",
+        )
+    print(table)
+
+
+@app.command()
 def history(
     n: int = typer.Option(10, help="How many rows should the table show."),
     only_failures: bool = typer.Option(False, is_flag=True, help="Only show failures."),
     date: str = typer.Option(None, is_flag=True, help="Only show specific date."),
-    jobname: str = typer.Option(
+    name: str = typer.Option(
         None, is_flag=True, help="Only show jobs with specific name."
     ),
 ):
@@ -89,8 +121,8 @@ def history(
     )
     if only_failures:
         clump = clump.keep(lambda _: _["status"] != "success")
-    if jobname:
-        clump = clump.keep(lambda _: jobname in _["name"])
+    if name:
+        clump = clump.keep(lambda _: name in _["name"])
     if date:
         clump = clump.keep(lambda _: date in _["start"])
     table = Table(title=None)
