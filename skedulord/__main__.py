@@ -75,7 +75,7 @@ def wipe(
 
 
 @app.command()
-def summary():
+def summary(n: int = typer.Option(10, help="Max number of icons in `last run` column."),):
     """Shows a summary of all jobs."""
     clump = Clumper.read_jsonl(heartbeat_path())
     summary = (
@@ -93,7 +93,7 @@ def summary():
     table.add_column("succes")
     table.add_column("total")
     for d in summary:
-        job_data = clump.keep(lambda _: _["name"] == d["name"]).head(10).collect()
+        job_data = clump.keep(lambda _: _["name"] == d["name"]).head(n).collect()
         recent = " ".join([generate_color_link_to_log(_) for _ in job_data])
         table.add_row(
             d["name"],

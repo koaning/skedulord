@@ -1,4 +1,4 @@
-##  run       
+## `run`       
 
 Run a single command, which is logged by skedulord.
 
@@ -13,7 +13,7 @@ Options:
   --help           Show this message and exit.
 ```
 
-##  schedule  
+## `schedule`  
 
 Set (or reset) cron jobs based on config.
 
@@ -25,7 +25,7 @@ Options:
   --help  Show this message and exit.
 ```
 
-##  history   
+## `history`   
 
 Shows a table with job status.
 
@@ -41,7 +41,17 @@ Options:
   --help                          Show this message and exit.
 ```
 
-## build     
+## `summary`
+
+Shows a table with job status.
+
+```
+Options:
+  --n INTEGER  Max number of icons in `last run` column.  [default: 10]
+  --help       Show this message and exit.
+```
+
+## `build`     
 
 Builds static html files so you may view a dashboard.
 
@@ -50,16 +60,15 @@ Options:
   --help  Show this message and exit.
 ```
 
-##  serve     
+## `serve`     
 
 Opens the dashboard in a browser.
 
 ```text
 Options:
-  --build / --no-build  Build the dashboard before opening it.  [default:
-                        True]
+  --build / --no-build  Build the dashboard before opening it.  [default:True]
 ```
-##  wipe      
+## `wipe`      
 
 Wipe the disk or schedule state.
 
@@ -74,7 +83,7 @@ Options:
   --help                  Show this message and exit.
 ```
 
-##  version   
+## `version`   
 
 Show the version.
 
