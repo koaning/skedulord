@@ -29,6 +29,7 @@ Commands:
   schedule  Set (or reset) cron jobs based on config.
   run       Run a single command, which is logged by skedulord.
   history   Shows a table with job status.
+  summary   Shows a summary of all jobs.``
   build     Builds static html files so you may view a dashboard.
   serve     Opens the dashboard in a browser.
   wipe      Wipe the disk or schedule state.
