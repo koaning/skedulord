@@ -1,3 +1,4 @@
+import typer
 import subprocess
 from clumper import Clumper
 from crontab import CronTab
@@ -7,6 +8,15 @@ def clean_cron(user):
     cron = CronTab(user=user)
     cron.remove_all()
     cron.write()
+
+
+def parse_job_from_settings(settings, name):
+    if len(settings) == 0:
+        print(f"The name `{name}` doesn't appear in supplied schedule config.")
+        raise typer.Exit(code=1)
+    cmd_settings = settings[0]
+    arguments = " ".join([f"--{k} {v}" for k, v in cmd_settings['arguments'].items()])
+    return f"{cmd_settings['command']} {arguments}"
 
 
 class Cron:

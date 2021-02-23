@@ -6,3 +6,9 @@ schedule:
     - name: bad-job
       command: python /Users/vincent/Development/skedulord/jobs/badpyjob.py
       cron: "* * * * *"
+    - name: printer
+      command: python /Users/vincent/Development/skedulord/jobs/printer.py
+      arguments:
+        this: that
+        one: two
+        three: 3

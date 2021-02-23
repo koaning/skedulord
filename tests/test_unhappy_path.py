@@ -17,7 +17,7 @@ def cli():
 
 
 def test_history_without_init(clean_slate, cli):
-    assert os.system('lord history') != 0
+    assert os.system("lord history") != 0
 
 
 def test_summary_without_init(clean_slate, cli):
