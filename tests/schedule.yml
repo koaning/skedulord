@@ -1,13 +1,14 @@
 user: vincent
 schedule:
     - name: good-job
-      command: python /Users/vincent/Development/skedulord/jobs/pyjob.py
+      command: python jobs/pyjob.py
       cron: "*/2 * * * *"
     - name: bad-job
-      command: python /Users/vincent/Development/skedulord/jobs/badpyjob.py
+      command: python jobs/badpyjob.py
       cron: "* * * * *"
+      retry: 3
     - name: printer
-      command: python /Users/vincent/Development/skedulord/jobs/printer.py
+      command: python jobs/printer.py
       arguments:
         this: that
         one: two

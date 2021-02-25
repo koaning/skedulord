@@ -34,6 +34,7 @@ class JobRunner:
         tries = 1
         stop = False
         while not stop:
+            print(tries)
             self._logline(f"run_id={run_id}")
             self._logline(f"name={name}")
             self._logline(f"command={command}")
@@ -46,6 +47,7 @@ class JobRunner:
                 encoding="utf-8",
                 universal_newlines=True,
             )
+            print(output)
             for line in output.stdout.split("\n"):
                 self._logline(line)
             if output.returncode == 0:
