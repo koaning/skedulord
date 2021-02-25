@@ -1,4 +1,5 @@
 import io
+import re
 import time
 import uuid
 import pathlib
@@ -16,19 +17,30 @@ class JobRunner:
     def __init__(self, retry=3, wait=60):
         self.retry = retry
         self.wait = wait
-        self.console = Console(
+        self.fancy_console = Console(
             record=True, file=io.StringIO(), width=120, log_path=False, log_time=False
         )
+        self.basic_console = Console(
+            record=True, file=io.StringIO(), width=120, log_path=False, log_time=False
+        )
+
+    def _logline(self, stuff):
+        """
+        Log a line to both consoles.
+        """
+        self.fancy_console.log(stuff)
+        self.basic_console.log(stuff)
 
     def _attempt_cmd(self, command, name, run_id):
         tries = 1
         stop = False
         while not stop:
             print(tries)
-            self.console.log(f"run_id={run_id}")
-            self.console.log(f"name={name}")
-            self.console.log(f"command={command}")
-            self.console.log(f"attempt={tries}")
+            self._logline(f"run_id={run_id}")
+            self._logline(f"name={name}")
+            self._logline(f"command={command}")
+            self._logline(f"attempt={tries}")
+            self._logline(f"datetime={str(dt.datetime.now())[:10]}")
             output = subprocess.run(
                 command.split(" "),
                 cwd=str(pathlib.Path().cwd()),
@@ -37,9 +49,11 @@ class JobRunner:
                 encoding="utf-8",
                 universal_newlines=True,
             )
-            print(output)
             for line in output.stdout.split("\n"):
-                self.console.log(line)
+                x = re.findall("(\[\d{2}:\d{2}:\d{2}\])", line)
+                if len(x) > 0:
+                    line = f"[cyan]{line[:10]}[/]{line[10:]}"
+                self._logline(line)
             if output.returncode == 0:
                 stop = True
             else:
@@ -69,10 +83,10 @@ class JobRunner:
             toc=endtime,
             logpath=str(job_name_path(name) / f"{filename}.txt"),
         )
-        self.console.save_text(
+        self.basic_console.save_text(
             job_name_path(name) / f"{filename}.txt", clear=False
         )
-        self.console.save_html(
+        self.fancy_console.save_html(
             job_name_path(name) / f"{filename}.html", clear=False
         )
         return self

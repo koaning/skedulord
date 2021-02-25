@@ -1,16 +1,18 @@
 import io
+from pathlib import Path
 
 from clumper import Clumper
 from rich.table import Table
 from rich.console import Console
 from rich.markdown import Markdown
 
-from skedulord.common import heartbeat_path
+from skedulord.common import heartbeat_path, skedulord_path
 
 
 def generate_color_link_to_log(jobdata):
     result = "x" if jobdata["status"] == "fail" else "o"
-    result = f"[link={heartbeat_path() / jobdata['logpath'].replace('txt', 'html')}]{result}[/link]"
+    logpath = Path(jobdata['logpath']).relative_to(skedulord_path())
+    result = f"[link={str(logpath).replace('txt', 'html')}]{result}[/link]"
     result = (
         f"[red]{result}[/red]"
         if jobdata["status"] == "fail"
@@ -21,8 +23,9 @@ def generate_color_link_to_log(jobdata):
 
 def generate_link_to_log(jobdata):
     result = "html"
-    result = f"[link={heartbeat_path() / jobdata['logpath'].replace('txt', 'html')}]{result}[/link]"
-    result = f"{result}/[link={heartbeat_path() / jobdata['logpath']}]txt[/link]"
+    logpath = Path(jobdata['logpath']).relative_to(skedulord_path())
+    result = f"[link={str(logpath).replace('txt', 'html')}]{result}[/link]"
+    result = f"{result}/[link={logpath}]txt[/link]"
     return result
 
 
@@ -70,7 +73,7 @@ class Dashboard:
                 d["name"],
                 recent,
                 str(d["n_total"]),
-                f"[link={heartbeat_path().parent / d['name']}.html]link[/link]",
+                f"[link={d['name']}.html]link[/link]",
             )
         console = Console(record=True, width=self.width, file=io.StringIO())
         img = """
@@ -120,7 +123,7 @@ class Dashboard:
 
         console = Console(record=True, width=self.width, file=io.StringIO())
         console.print(
-            f"[link={heartbeat_path().parent / 'index.html'}]Back to index.[/link]"
+            f"[link=/]Back to index.[/link]"
         )
         console.print(Markdown(f"# Overview for **{jobname}**"))
         console.print(
