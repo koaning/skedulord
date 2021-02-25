@@ -6,7 +6,7 @@ schedule:
     - name: bad-job
       command: python jobs/badpyjob.py
       cron: "* * * * *"
-      retry: 3
+      retry: 1
     - name: printer
       command: python jobs/printer.py
       arguments:
