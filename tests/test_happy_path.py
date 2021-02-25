@@ -5,7 +5,7 @@ import pytest
 from typer.testing import CliRunner
 from clumper import Clumper
 
-from skedulord.common import skedulord_path
+from skedulord.common import skedulord_path, heartbeat_path
 from skedulord.__main__ import app
 from skedulord import __version__ as lord_version
 
