@@ -1,4 +1,5 @@
 import io
+import re
 import time
 import uuid
 import pathlib
@@ -17,7 +18,7 @@ class JobRunner:
         self.retry = retry
         self.wait = wait
         self.fancy_console = Console(
-            record=True, file=io.StringIO(), width=120, log_path=False
+            record=True, file=io.StringIO(), width=120, log_path=False, log_time=False
         )
         self.basic_console = Console(
             record=True, file=io.StringIO(), width=120, log_path=False, log_time=False
@@ -34,10 +35,12 @@ class JobRunner:
         tries = 1
         stop = False
         while not stop:
+            print(tries)
             self._logline(f"run_id={run_id}")
             self._logline(f"name={name}")
             self._logline(f"command={command}")
             self._logline(f"attempt={tries}")
+            self._logline(f"datetime={str(dt.datetime.now())[:10]}")
             output = subprocess.run(
                 command.split(" "),
                 cwd=str(pathlib.Path().cwd()),
@@ -47,6 +50,9 @@ class JobRunner:
                 universal_newlines=True,
             )
             for line in output.stdout.split("\n"):
+                x = re.findall("(\[\d{2}:\d{2}:\d{2}\])", line)
+                if len(x) > 0:
+                    line = f"[cyan]{line[:10]}[/]{line[10:]}"
                 self._logline(line)
             if output.returncode == 0:
                 stop = True

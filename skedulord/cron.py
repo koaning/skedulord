@@ -1,3 +1,4 @@
+import typer
 import subprocess
 from clumper import Clumper
 from crontab import CronTab
@@ -7,6 +8,15 @@ def clean_cron(user):
     cron = CronTab(user=user)
     cron.remove_all()
     cron.write()
+
+
+def parse_job_from_settings(settings, name):
+    if len(settings) == 0:
+        print(f"The name `{name}` doesn't appear in supplied schedule config.")
+        raise typer.Exit(code=1)
+    cmd_settings = settings[0]
+    arguments = " ".join([f"--{k} {v}" for k, v in cmd_settings.get('arguments', {}).items()])
+    return f"{cmd_settings['command']} {arguments}"
 
 
 class Cron:
@@ -26,12 +36,13 @@ class Cron:
             output = subprocess.run(["which", "python"], capture_output=True)
             python = output.stdout.decode("ascii").replace("\n", "")
         # Set base values.
-        retry = settings.get("retry", 1)
+        retry = settings.get("retry", 2)
         wait = settings.get("wait", 60)
         # We only want to replace python if it is at the start.
         cmd = settings["command"]
         if cmd.startswith("python"):
             cmd = cmd.replace("python", python, 1)
+            print(cmd)
         big_cmd = f'{python} -m skedulord run {settings["name"]} "{cmd}" --retry {retry} --wait {wait}'
         return big_cmd
 

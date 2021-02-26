@@ -2,6 +2,7 @@ import shutil
 import subprocess
 import webbrowser
 from pathlib import Path
+from typing import Union
 
 import typer
 from rich import print
@@ -11,7 +12,7 @@ from clumper import Clumper
 from skedulord import __version__ as lord_version
 from skedulord.job import JobRunner
 from skedulord.common import SKEDULORD_PATH, heartbeat_path
-from skedulord.cron import Cron, clean_cron
+from skedulord.cron import Cron, clean_cron, parse_job_from_settings
 from skedulord.dashboard import Dashboard, generate_color_link_to_log
 
 app = typer.Typer(
@@ -31,13 +32,18 @@ def version():
 def run(
     name: str = typer.Argument(..., help="The name you want to assign to the run."),
     command: str = typer.Argument(
-        ..., help="The command you want to run (in parentheses)."
+        None, help="The command you want to run (in parentheses)."
     ),
-    retry: int = typer.Option(1, help="The number of re-tries, should a job fail."),
+    settings_path: Union[Path, None] = typer.Option(None, help="Schedule config to reference."),
+    retry: int = typer.Option(2, help="The number of tries, should a job fail."),
     wait: int = typer.Option(60, help="The number of seconds between tries."),
 ):
     """Run a single command, which is logged by skedulord."""
     runner = JobRunner(retry=retry, wait=wait)
+    if settings_path:
+        settings = Clumper.read_yaml(settings_path).unpack("schedule").keep(lambda d: d['name'] == name).collect()
+        command = parse_job_from_settings(settings, name)
+    print(f"retreived command: {command}")
     runner.cmd(name=name, command=command)
 
 

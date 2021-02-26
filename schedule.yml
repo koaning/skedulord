@@ -1,8 +1,0 @@
-user: vincent
-schedule:
-    - name: good-job
-      command: python /Users/vincent/Development/skedulord/jobs/pyjob.py
-      cron: "*/2 * * * *"
-    - name: bad-job
-      command: python /Users/vincent/Development/skedulord/jobs/badpyjob.py
-      cron: "* * * * *"
