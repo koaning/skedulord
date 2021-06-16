@@ -1,3 +1,7 @@
+**EDIT** 
+
+I maintain a whole bunch of projects and this one is unfortunately on the lower end of the priority que. Feel free to ask questions, but I cannot offer proper support. 
+
 ![](docs/full-logo.png)
 
 > Skedulord is a tool that automates scheduling and logging of jobs. It's a 
