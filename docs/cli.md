@@ -29,7 +29,7 @@ Options:
 
 Shows a table with job status.
 
-```
+```text
 Options:
   --n INTEGER                     How many rows should the table show.
                                   [default: 10]
@@ -45,7 +45,7 @@ Options:
 
 Shows a table with job status.
 
-```
+```text
 Options:
   --n INTEGER  Max number of icons in `last run` column.  [default: 10]
   --help       Show this message and exit.
