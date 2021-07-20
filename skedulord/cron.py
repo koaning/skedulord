@@ -16,7 +16,9 @@ def parse_job_from_settings(settings, name):
         raise typer.Exit(code=1)
     cmd_settings = settings[0]
     arguments = " ".join([f"--{k} {v}" for k, v in cmd_settings.get('arguments', {}).items()])
-    return f"{cmd_settings['command']} {arguments}"
+    
+    # Ensure we remove the space at the end.
+    return f"{cmd_settings['command']} {arguments}".rstrip()
 
 
 class Cron:
@@ -26,25 +28,27 @@ class Cron:
     def grab_nums(self, setting):
         return int("".join([s for s in setting["every"] if s.isdigit()]))
 
-    def parse_cmd(self, settings):
+    def parse_cmd(self, setting):
         """
-        Parse settings into elaborate command for CRON.
+        Parse single cron setting into elaborate command for crontab.
         """
         # If no venv is given we assume the one you're currently in.
         python = "python"
-        if "venv" not in settings.keys():
+        if "venv" not in setting.keys():
             output = subprocess.run(["which", "python"], capture_output=True)
             python = output.stdout.decode("ascii").replace("\n", "")
+        
         # Set base values.
-        retry = settings.get("retry", 2)
-        wait = settings.get("wait", 60)
+        retry = setting.get("retry", 2)
+        wait = setting.get("wait", 60)
+        
         # We only want to replace python if it is at the start.
-        cmd = settings["command"]
+        cmd = setting["command"]
         if cmd.startswith("python"):
             cmd = cmd.replace("python", python, 1)
-            print(cmd)
-        big_cmd = f'{python} -m skedulord run {settings["name"]} "{cmd}" --retry {retry} --wait {wait}'
-        return big_cmd
+            print(f"adding command: '{cmd}'")
+        big_cmd = f'{python} -m skedulord run {setting["name"]} "{cmd}" --retry {retry} --wait {wait}'
+        return big_cmd.rstrip()
 
     def set_new_cron(self):
         cron = CronTab(user=self.settings[0]["user"])
