@@ -23,7 +23,6 @@ clean:
 	rm -rf notebooks/.ipynb_checkpoints
 	rm -rf skedulord.egg-info
 
-
 reset:
 	python -m skedulord wipe disk --really --yes
 	python -m skedulord wipe schedule --really --yes

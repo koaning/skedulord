@@ -43,7 +43,6 @@ def run(
     if settings_path:
         settings = Clumper.read_yaml(settings_path).unpack("schedule").keep(lambda d: d['name'] == name).collect()
         command = parse_job_from_settings(settings, name)
-    print(f"retreived command: {command}")
     runner.cmd(name=name, command=command)
 
 

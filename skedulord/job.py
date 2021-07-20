@@ -35,12 +35,16 @@ class JobRunner:
         tries = 1
         stop = False
         while not stop:
-            print(tries)
-            self._logline(f"run_id={run_id}")
-            self._logline(f"name={name}")
-            self._logline(f"command={command}")
-            self._logline(f"attempt={tries}")
-            self._logline(f"datetime={str(dt.datetime.now())[:10]}")
+            header = "\n".join([
+                f"attempt={tries}",
+                f"run_id={run_id}",
+                f"name={name}",
+                f"command={command}",
+                f"datetime={str(dt.datetime.now())[:10]}",
+                "\n",
+            ])
+            self._logline(header)
+            
             output = subprocess.run(
                 command.split(" "),
                 cwd=str(pathlib.Path().cwd()),
