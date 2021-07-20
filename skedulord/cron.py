@@ -4,13 +4,15 @@ from clumper import Clumper
 from crontab import CronTab
 
 
-def clean_cron(user):
+def clean_cron(user: str):
+    """Removes all entries in cron."""
     cron = CronTab(user=user)
     cron.remove_all()
     cron.write()
 
 
-def parse_job_from_settings(settings, name):
+def parse_job_from_settings(settings: dict, name: str) -> str:
+    """Parse a job from a settings dictionary. """
     if len(settings) == 0:
         print(f"The name `{name}` doesn't appear in supplied schedule config.")
         raise typer.Exit(code=1)
@@ -25,10 +27,7 @@ class Cron:
     def __init__(self, settings_path):
         self.settings = Clumper.read_yaml(settings_path).unpack("schedule").collect()
 
-    def grab_nums(self, setting):
-        return int("".join([s for s in setting["every"] if s.isdigit()]))
-
-    def parse_cmd(self, setting):
+    def parse_cmd(self, setting: dict) -> str:
         """
         Parse single cron setting into elaborate command for crontab.
         """
