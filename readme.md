@@ -16,6 +16,12 @@ If you're new, check out the [getting started guide](https://koaning.github.io/s
 pip install skedulord
 ```
 
+If you like to live dangerously, you can also install from GitHub for the latest commit. 
+
+```
+python -m pip install "taipo @ git+https://github.com/koaning/skedulord.git"
+```
+
 ## Usage 
 
 These are all the commands available: 
