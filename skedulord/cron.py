@@ -16,7 +16,9 @@ def parse_job_from_settings(settings, name):
         raise typer.Exit(code=1)
     cmd_settings = settings[0]
     arguments = " ".join([f"--{k} {v}" for k, v in cmd_settings.get('arguments', {}).items()])
-    return f"{cmd_settings['command']} {arguments}"
+    
+    # Ensure we remove the space at the end.
+    return f"{cmd_settings['command']} {arguments}".rstrip()
 
 
 class Cron:

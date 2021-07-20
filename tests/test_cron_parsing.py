@@ -14,6 +14,11 @@ checks = [
         "arguments": {"hello": "world", "one": 1},
         "expected": "python foobar.py --hello world --one 1",
     },
+    {
+        "name": "download",
+        "command": "python -m gitwit download apache/airflow",
+        "expected": "python -m gitwit download apache/airflow",
+    }
 ]
 
 
