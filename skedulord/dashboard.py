@@ -47,91 +47,32 @@ class Dashboard:
         Generates the landing page for the dashboard.
         """
         clump = Clumper(self.heartbeat_data).sort(lambda _: _["start"], reverse=True)
-        self.build_index_page(clump=clump)
+
+        # Generate summary data for the table on the front page.
+        (clump
+            .mutate(logpath=lambda d: d['logpath'].replace(".txt", ".html"))
+            .group_by('name')
+            .agg(
+                last_status=('status', 'first'),
+                last_log=('logpath', 'first'),
+                last_run=('start', 'first'),
+                runs=('id', 'count'),
+                hit_list=('status', lambda d: d[:10]),
+                log_list=('logpath', lambda d: d[:10]),
+            )
+            .mutate(recent=lambda d: [{'status': s, 'logpath': p} for s, p in zip(d['hit_list'], d['log_list'])])
+            .drop('log_list', 'hit_list')
+            .sort(lambda d: d['name'])
+            .write_json(Path(skedulord_path()) / 'index.json')
+        )
+
+        # Create .csv file for each job.
         for job in clump.select("name").drop_duplicates():
-            self.make_job_overview_page(jobname=job["name"])
-
-    def build_index_page(self, clump):
-        """
-        Build the index page.
-        """
-        summary = (
-            clump.group_by("name")
-            .mutate(fail=lambda _: _["status"] == "fail")
-            .agg(n_total=("id", "count"), n_fail=("fail", "sum"))
-            .mutate(n_succes=lambda _: _["n_total"] - _["n_fail"])
-        )
-        table = Table(title=None, width=self.width)
-        table.add_column("name")
-        table.add_column("recent runs")
-        table.add_column("total")
-        table.add_column("overview")
-        for d in summary:
-            job_data = clump.keep(lambda _: _["name"] == d["name"]).head(10).collect()
-            recent = " ".join([generate_color_link_to_log(_) for _ in job_data])
-            table.add_row(
-                d["name"],
-                recent,
-                str(d["n_total"]),
-                f"[link={d['name']}.html]link[/link]",
-            )
-        console = Console(record=True, width=self.width, file=io.StringIO())
-        img = """
-                    _            _       _               _ 
-                   | |          | |     | |             | |
-                ___| | _____  __| |_   _| | ___  _ __ __| |
-               / __| |/ / _ \/ _` | | | | |/ _ \| '__/ _` |
-               \__ \   <  __/ (_| | |_| | | (_) | | | (_| |
-               |___/_|\_\___|\__,_|\__,_|_|\___/|_|  \__,_|
-        """
-        console.print(img)
-        console.print(
-            Markdown("<img src='/Users/vincent/Development/skedulord/docs/logo.png)'/>")
-        )
-        console.print(
-            Markdown(
-                "### You can find an overview of all jobs below. Feel free to click links!"
-            )
-        )
-        console.print(table)
-        console.save_html(heartbeat_path().parent / "index.html")
-
-    def make_job_overview_page(self, jobname):
-        """
-        Generate a page for a single job overview.
-        """
-        data = (
-            Clumper(self.heartbeat_data)
-            .sort(lambda _: _["start"], reverse=True)
-            .keep(lambda _: _["name"] == jobname)
-            .collect()
-        )
-        table = Table(title=None, width=self.width)
-        table.add_column("id")
-        table.add_column("status")
-        table.add_column("start")
-        table.add_column("end")
-        table.add_column("logs")
-        for d in data:
-            table.add_row(
-                d["id"],
-                color_status(d["status"]),
-                d["start"],
-                d["end"],
-                generate_link_to_log(d),
-            )
-
-        console = Console(record=True, width=self.width, file=io.StringIO())
-        console.print(
-            f"[link=/]Back to index.[/link]"
-        )
-        console.print(Markdown(f"# Overview for **{jobname}**"))
-        console.print(
-            Markdown("### You can find an overview below. Feel free to click links!")
-        )
-        console.print(table)
-        console.save_html(heartbeat_path().parent / f"{jobname}.html")
-
+            csv_path = Path(skedulord_path()) / (job['name'] + '.csv')
+            (clump
+                .keep(lambda d: d['name'] == job['name'])
+                .sort(lambda d: d['start'], reverse=True)
+                .write_csv(csv_path))
 
 if __name__ == "__main__":
     data = Clumper.read_jsonl(heartbeat_path()).collect()
