@@ -15,7 +15,7 @@ pip install skedulord
 If you like to live dangerously, you can also install from GitHub for the latest commit. 
 
 ```
-python -m pip install "taipo @ git+https://github.com/koaning/skedulord.git"
+python -m pip install --upgrade "skedulord @ git+https://github.com/koaning/skedulord.git"
 ```
 
 ## Usage 
