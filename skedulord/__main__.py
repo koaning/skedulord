@@ -39,11 +39,10 @@ def run(
     wait: int = typer.Option(60, help="The number of seconds between tries."),
 ):
     """Run a single command, which is logged by skedulord."""
-    runner = JobRunner(retry=retry, wait=wait)
     if settings_path:
         settings = Clumper.read_yaml(settings_path).unpack("schedule").keep(lambda d: d['name'] == name).collect()
-        command = parse_job_from_settings(settings, name)
-    runner.cmd(name=name, command=command)
+        cmd = parse_job_from_settings(settings, name)
+    JobRunner(retry=retry, wait=wait, name=name, cmd=command).run()
 
 
 @app.command()
