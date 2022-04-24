@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -121,7 +122,7 @@ def build():
 
 @app.command(name="serve")
 def serve(
-    build: bool = typer.Option(False, is_flag=True, help="Build the site beforehand?"),
+    build: bool = typer.Option(True, help="Build the site beforehand?"),
     port: int = typer.Option(8000, help="How many rows should the table show.")
     ):
     """
@@ -129,7 +130,7 @@ def serve(
     """
     if build:
         build_site()
-    subprocess.Popen(["python", "-m", "http.server" ,"--directory", skedulord_path(), str(port)])
+    os.system(f"python -m http.server --directory {skedulord_path()} {port}")
 
 
 if __name__ == "__main__":
