@@ -13,7 +13,7 @@ from skedulord import __version__ as lord_version
 from skedulord.job import JobRunner
 from skedulord.common import SKEDULORD_PATH, heartbeat_path
 from skedulord.cron import Cron, clean_cron, parse_job_from_settings
-from skedulord.dashboard import Dashboard, generate_color_link_to_log
+from skedulord.dashboard import build_site
 
 app = typer.Typer(
     name="SKEDULORD",
@@ -41,7 +41,7 @@ def run(
     """Run a single command, which is logged by skedulord."""
     if settings_path:
         settings = Clumper.read_yaml(settings_path).unpack("schedule").keep(lambda d: d['name'] == name).collect()
-        cmd = parse_job_from_settings(settings, name)
+        command = parse_job_from_settings(settings, name)
     JobRunner(retry=retry, wait=wait, name=name, cmd=command).run()
 
 
@@ -79,38 +79,6 @@ def wipe(
 
 
 @app.command()
-def summary(n: int = typer.Option(10, help="Max number of icons in `last run` column."),):
-    """Shows a summary of all jobs."""
-    clump = Clumper.read_jsonl(heartbeat_path())
-    summary = (
-        clump
-            .group_by("name")
-            .mutate(fail=lambda _: _["status"] == "fail")
-            .agg(n_total=("id", "count"), n_fail=("fail", "sum"), max_date=("end", "max"))
-            .mutate(n_succes=lambda _: _["n_total"] - _["n_fail"])
-    )
-    table = Table(title=None)
-    table.add_column("name")
-    table.add_column("recent runs")
-    table.add_column("last run")
-    table.add_column("fail")
-    table.add_column("succes")
-    table.add_column("total")
-    for d in summary:
-        job_data = clump.keep(lambda _: _["name"] == d["name"]).head(n).collect()
-        recent = " ".join([generate_color_link_to_log(_) for _ in job_data])
-        table.add_row(
-            d["name"],
-            d["max_date"],
-            recent,
-            f"[red]{d['n_fail']}[/]",
-            f"[green]{d['n_succes']}[/]",
-            f"{d['n_total']}",
-        )
-    print(table)
-
-
-@app.command()
 def history(
     n: int = typer.Option(10, help="How many rows should the table show."),
     only_failures: bool = typer.Option(False, is_flag=True, help="Only show failures."),
@@ -145,26 +113,11 @@ def history(
 
 
 @app.command(name="build")
-def build_site():
+def build():
     """
-    Builds static html files so you may view a dashboard.
+    Builds static html files so you may view a dashboard after.
     """
-    data = Clumper.read_jsonl(heartbeat_path()).collect()
-    Dashboard(data).build()
-
-
-@app.command()
-def serve(
-    build: bool = typer.Option(
-        True, is_flag=True, help="Build the dashboard before opening it."
-    )
-):
-    """
-    Opens the dashboard in a browser.
-    """
-    if build:
-        build_site()
-    webbrowser.open_new_tab(f"file://{heartbeat_path().parent / 'index.html'}")
+    build_site()
 
 
 if __name__ == "__main__":

@@ -7,7 +7,6 @@ import subprocess
 import datetime as dt
 from skedulord.common import job_name_path, log_heartbeat
 from pathlib import Path
-from rich.console import Console
 
 class JobRunner:
     """
