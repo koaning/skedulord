@@ -106,13 +106,26 @@ logs of the jobs that failed.
 ## Dashboard 
 
 If you want, you can even use skedulord to run a small dashboard for you. It's nice and 
-minimal as to not to distract you.  
+minimal as to not to distract you. 
 
 ```python
 python -m skedulord serve
 ```
 
+The landing page shows an overview of all jobs. 
+
 ![](dashboard1.png)
+
+You can click on the associated link to find all runs.
+
+![](dashboard2.png)
+
+From here you can explore the logs. We host both the raw .txt logs
+and a "fancy" variant that attemps some syntax highlighting.
+
+![](dashboard3.png)
+
+If you'd like to play around, we host a small demo of this dashboard [here](https://koaning.github.io/skedulord-demo/).
 
 ## Shutting Down 
 
