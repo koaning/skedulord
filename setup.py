@@ -30,8 +30,9 @@ setup(
     extras_require={
         "dev": dev_packages
     },
+    package_data={'skedulord': ['templates/*.html']},
     classifiers=['Programming Language :: Python :: 3',
-                 'Programming Language :: Python :: 3.6',
                  'Programming Language :: Python :: 3.7',
+                 'Programming Language :: Python :: 3.8',
                  'License :: OSI Approved :: MIT License']
 )

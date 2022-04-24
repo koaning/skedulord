@@ -9,6 +9,7 @@ schedule:
     retry: 1
   - name: printer
     command: python jobs/printer.py
+    cron: "* * * * *"
     arguments:
       this: that
       one: two

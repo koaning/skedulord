@@ -25,7 +25,7 @@ checks = [
 @pytest.mark.parametrize("check", checks)
 def test_job_parsing(check):
     """Test that the job is parsed correctly from the settings"""
-    res = parse_job_from_settings(settings=[check], name="foo")
+    res = parse_job_from_settings(settings=[check], name=check["name"])
     assert res == check["expected"]
 
 
@@ -37,9 +37,3 @@ def test_cron_obj_parsing():
         assert parsed_command.rstrip() == parsed_command
         assert '--retry' in parsed_command
         assert '--wait' in parsed_command
-
-        # TODO add this feature
-        # if 'arguments' in s.keys():
-        #     for k, v in s['arguments'].items():
-        #         print(parsed_command)
-        #         assert f"--{k} {v}" in parsed_command

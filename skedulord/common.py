@@ -5,15 +5,15 @@ import pathlib
 SKEDULORD_PATH = os.path.join(os.path.expanduser("~/.skedulord"))
 
 
-def skedulord_path():
+def skedulord_path() -> str:
     return pathlib.Path(SKEDULORD_PATH)
 
 
-def job_name_path(jobname):
+def job_name_path(jobname) -> str:
     return skedulord_path() / jobname
 
 
-def heartbeat_path():
+def heartbeat_path() -> str:
     return skedulord_path() / "heartbeat.jsonl"
 
 
