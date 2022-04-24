@@ -41,16 +41,6 @@ Options:
   --help                          Show this message and exit.
 ```
 
-## `summary`
-
-Shows a table with job status.
-
-```text
-Options:
-  --n INTEGER  Max number of icons in `last run` column.  [default: 10]
-  --help       Show this message and exit.
-```
-
 ## `build`     
 
 Builds static html files so you may view a dashboard.
@@ -62,11 +52,13 @@ Options:
 
 ## `serve`     
 
-Opens the dashboard in a browser.
+Serves the skedulord dashboard.
 
 ```text
 Options:
-  --build / --no-build  Build the dashboard before opening it.  [default:True]
+  --build / --no-build  Build the site beforehand?  [default: True]
+  --port INTEGER        How many rows should the table show.  [default: 8000]
+  --help                Show this message and exit.
 ```
 ## `wipe`      
 

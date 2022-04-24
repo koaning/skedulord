@@ -123,7 +123,7 @@ def build():
 @app.command(name="serve")
 def serve(
     build: bool = typer.Option(True, help="Build the site beforehand?"),
-    port: int = typer.Option(8000, help="How many rows should the table show.")
+    port: int = typer.Option(8000, help="The port number to use.")
     ):
     """
     Serves the skedulord dashboard.
