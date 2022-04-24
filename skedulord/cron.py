@@ -45,7 +45,6 @@ class Cron:
         cmd = setting["command"]
         if cmd.startswith("python"):
             cmd = cmd.replace("python", python, 1)
-            print(f"adding command: '{cmd}'")
         big_cmd = f'{python} -m skedulord run {setting["name"]} "{cmd}" --retry {retry} --wait {wait}'
         return big_cmd.rstrip()
 
