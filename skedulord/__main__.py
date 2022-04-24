@@ -1,6 +1,5 @@
 import shutil
 import subprocess
-import webbrowser
 from pathlib import Path
 from typing import Union
 
@@ -11,7 +10,7 @@ from clumper import Clumper
 
 from skedulord import __version__ as lord_version
 from skedulord.job import JobRunner
-from skedulord.common import SKEDULORD_PATH, heartbeat_path
+from skedulord.common import SKEDULORD_PATH, heartbeat_path, skedulord_path
 from skedulord.cron import Cron, clean_cron, parse_job_from_settings
 from skedulord.dashboard import build_site
 
@@ -118,6 +117,19 @@ def build():
     Builds static html files so you may view a dashboard after.
     """
     build_site()
+
+
+@app.command(name="serve")
+def serve(
+    build: bool = typer.Option(False, is_flag=True, help="Build the site beforehand?"),
+    port: int = typer.Option(8000, help="How many rows should the table show.")
+    ):
+    """
+    Serves the skedulord dashboard.
+    """
+    if build:
+        build_site()
+    subprocess.Popen(["python", "-m", "http.server" ,"--directory", skedulord_path(), str(port)])
 
 
 if __name__ == "__main__":
