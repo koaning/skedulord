@@ -119,8 +119,6 @@ schedule:
       cron: "0 1 * * *"
 ```
 
-> Note that it's important to give full paths to files here. 
-
 Given a schedule like this, skedulord can schedule everything via; 
 
 ```text
@@ -134,9 +132,9 @@ taking care of all the logging.
 crontab -e
 ```
 
-> Note that Unless configured otherwise, skedulord will assume the same virtualenv
-as the one that ran the `skedulord schedule` command. This is important to be aware
-of if your scripts carry dependencies. 
+> Note that when a command starts with `python` skedulord will assume the same virtualenv
+as the one that ran the `skedulord schedule` command. You may also pass another Python path
+if you prefer to use another virtualenv.
 
 ### Dashboard 
 
