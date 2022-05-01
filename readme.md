@@ -42,6 +42,10 @@ Commands:
   version   Show the version.
 ```
 
+## Docmentation
+
+The docs are hosted on GitHub Pages and can be found [here](koaning.github.io/skedulord/).
+
 ## Demo
 
 Let's say we've got this small python file. 
