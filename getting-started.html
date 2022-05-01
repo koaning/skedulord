@@ -522,10 +522,17 @@ broken jobs as soon as possible. </p>
 logs of the jobs that failed.</p>
 <h2 id="dashboard">Dashboard<a class="headerlink" href="#dashboard" title="Permanent link">&para;</a></h2>
 <p>If you want, you can even use skedulord to run a small dashboard for you. It's nice and 
-minimal as to not to distract you.  </p>
+minimal as to not to distract you. </p>
 <div class="highlight"><pre><span></span><code><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">skedulord</span> <span class="n">serve</span>
 </code></pre></div>
+<p>The landing page shows an overview of all jobs. </p>
 <p><img alt="" src="dashboard1.png" /></p>
+<p>You can click on the associated link to find all runs.</p>
+<p><img alt="" src="dashboard2.png" /></p>
+<p>From here you can explore the logs. We host both the raw .txt logs
+and a "fancy" variant that attemps some syntax highlighting.</p>
+<p><img alt="" src="dashboard3.png" /></p>
+<p>If you'd like to play around, we host a small demo of this dashboard <a href="https://koaning.github.io/skedulord-demo/">here</a>.</p>
 <h2 id="shutting-down">Shutting Down<a class="headerlink" href="#shutting-down" title="Permanent link">&para;</a></h2>
 <p>If you're done with the app you can wipe the cronjobs and disk state from the command
 line as well. </p>

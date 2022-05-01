@@ -334,13 +334,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#summary" class="md-nav__link">
-    summary
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#build" class="md-nav__link">
     build
   </a>
@@ -416,13 +409,6 @@
         <li class="md-nav__item">
   <a href="#history" class="md-nav__link">
     history
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#summary" class="md-nav__link">
-    summary
   </a>
   
 </li>
@@ -505,21 +491,17 @@ Options:
   --jobname TEXT                  Only show jobs with specific name.
   --help                          Show this message and exit.
 </code></pre></div>
-<h2 id="summary"><code class="highlight">summary</code><a class="headerlink" href="#summary" title="Permanent link">&para;</a></h2>
-<p>Shows a table with job status.</p>
-<div class="highlight"><pre><span></span><code>Options:
-  --n INTEGER  Max number of icons in `last run` column.  [default: 10]
-  --help       Show this message and exit.
-</code></pre></div>
 <h2 id="build"><code class="highlight">build</code><a class="headerlink" href="#build" title="Permanent link">&para;</a></h2>
 <p>Builds static html files so you may view a dashboard.</p>
 <div class="highlight"><pre><span></span><code>Options:
   --help  Show this message and exit.
 </code></pre></div>
 <h2 id="serve"><code class="highlight">serve</code><a class="headerlink" href="#serve" title="Permanent link">&para;</a></h2>
-<p>Opens the dashboard in a browser.</p>
+<p>Serves the skedulord dashboard.</p>
 <div class="highlight"><pre><span></span><code>Options:
-  --build / --no-build  Build the dashboard before opening it.  [default:True]
+  --build / --no-build  Build the site beforehand?  [default: True]
+  --port INTEGER        How many rows should the table show.  [default: 8000]
+  --help                Show this message and exit.
 </code></pre></div>
 <h2 id="wipe"><code class="highlight">wipe</code><a class="headerlink" href="#wipe" title="Permanent link">&para;</a></h2>
 <p>Wipe the disk or schedule state.</p>
