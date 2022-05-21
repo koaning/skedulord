@@ -78,16 +78,13 @@ will also be the name of the folder where logs can be found.
 /Users/vincent/.skedulord/
 ├── heartbeat.jsonl
 ├── jobname1
-│   ├── 2021-02-14T16:56:34.html
 │   └── 2021-02-14T16:56:34.txt
 └── jobname2
-    ├── 2021-02-14T16:56:35.html
     └── 2021-02-14T16:56:35.txt
 
 ```
 
-The logs themselves have a timestamp as the filename. There are basic `.txt` logs 
-but also fancy `.html` logs which render nicely in a dashboard.
+The logs themselves have a timestamp as the filename. 
 
 ## Mechanics 
 
