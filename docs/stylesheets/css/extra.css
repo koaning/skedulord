@@ -1,0 +1,9 @@
+@font-face {
+    font-family: "DepartureMono-Regular";
+    src: url("/fonts/DepartureMono-Regular.otf");
+}
+
+:root {
+  --md-text-font: "DepartureMono-Regular";
+  --md-code-font: "DepartureMono-Regular";
+}

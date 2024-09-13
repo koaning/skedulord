@@ -1,0 +1,11 @@
+[project]
+name = "skedulord"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["nbformat", "nbconvert", "python-crontab", "uv", "python-fasthtml", "click"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
