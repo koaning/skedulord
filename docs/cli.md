@@ -41,24 +41,16 @@ Options:
   --help                          Show this message and exit.
 ```
 
-## `build`     
-
-Builds static html files so you may view a dashboard.
-
-```text
-Options:
-  --help  Show this message and exit.
-```
-
 ## `serve`     
 
-Serves the skedulord dashboard.
+Serves the Skedulord API (and webapp if built).
 
 ```text
 Options:
-  --build / --no-build  Build the site beforehand?  [default: True]
-  --port INTEGER        How many rows should the table show.  [default: 8000]
-  --help                Show this message and exit.
+  --host TEXT     The host to bind.  [default: 127.0.0.1]
+  --port INTEGER  The port number to use.  [default: 8000]
+  --reload        Enable auto-reload.  [default: False]
+  --help          Show this message and exit.
 ```
 ## `wipe`      
 
