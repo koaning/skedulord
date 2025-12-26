@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
-import { AlertCircle, Command, CornerUpLeft, Filter, Moon, RefreshCw, Search, Sun } from "lucide-react";
+import {
+  AlertCircle,
+  Check,
+  Command,
+  Copy,
+  CornerUpLeft,
+  Filter,
+  Moon,
+  RefreshCw,
+  Sun
+} from "lucide-react";
 
 import { fetchLog, fetchRuns, type RunEntry } from "./api";
 
@@ -38,6 +48,13 @@ function formatDuration(ms: number) {
   if (minutes < 60) return `${minutes}m`;
   const hours = Math.round(minutes / 60);
   return `${hours}h`;
+}
+
+function filenameOnly(path?: string | null) {
+  if (!path) return "";
+  const normalized = path.replace(/\\/g, "/");
+  const parts = normalized.split("/");
+  return parts[parts.length - 1] || "";
 }
 
 function RunBars({
@@ -158,6 +175,7 @@ export default function App() {
   const [logLoading, setLogLoading] = useState(false);
   const [logError, setLogError] = useState<string | null>(null);
   const [logData, setLogData] = useState<{ logpath: string; content: string } | null>(null);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle");
   const [commandOpen, setCommandOpen] = useState(false);
   const [listIndex, setListIndex] = useState(0);
   const [shortcutOpen, setShortcutOpen] = useState(false);
@@ -172,6 +190,20 @@ export default function App() {
   const runListRefs = useRef<Array<HTMLDivElement | null>>([]);
   const listboxRef = useRef<HTMLDivElement | null>(null);
   const hasHydratedRef = useRef(false);
+  const copyResetRef = useRef<number | null>(null);
+
+  async function handleCopyPath(path?: string | null) {
+    if (!path) return;
+    try {
+      await navigator.clipboard.writeText(path);
+      setCopyStatus("copied");
+    } catch {
+      setCopyStatus("error");
+    } finally {
+      if (copyResetRef.current) window.clearTimeout(copyResetRef.current);
+      copyResetRef.current = window.setTimeout(() => setCopyStatus("idle"), 1600);
+    }
+  }
 
   async function loadRuns() {
     setLoading(true);
@@ -1228,7 +1260,26 @@ export default function App() {
                       ) : null}
                       {logData ? (
                         <>
-                          <p className="text-xs text-ink/60 dark:text-slate-300">{logData.logpath}</p>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-ink/60 dark:text-slate-300">
+                            <span className="font-mono" title={logData.logpath}>
+                              {filenameOnly(logData.logpath)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyPath(logData.logpath)}
+                              className="inline-flex items-center gap-1 rounded-full border border-ink/10 px-2 py-0.5 text-[10px] font-semibold text-ink/70 transition hover:-translate-y-0.5 hover:shadow-card dark:border-white/10 dark:text-slate-200"
+                              aria-label="Copy log path"
+                            >
+                              {copyStatus === "copied" ? (
+                                <Check className="h-3 w-3" />
+                              ) : copyStatus === "error" ? (
+                                <AlertCircle className="h-3 w-3 text-rose-500" />
+                              ) : (
+                                <Copy className="h-3 w-3" />
+                              )}
+                              {copyStatus === "copied" ? "Copied" : "Copy"}
+                            </button>
+                          </div>
                           <pre className="max-h-[320px] overflow-auto rounded-2xl border border-ink/10 bg-white px-4 py-3 text-xs text-ink dark:border-white/10 dark:bg-slate-950 dark:text-slate-100">
                             {logData.content || "Log is empty."}
                           </pre>
@@ -1295,11 +1346,33 @@ export default function App() {
                 <div className="overflow-hidden rounded-2xl border border-ink/10 bg-white/80 dark:border-white/10 dark:bg-slate-900/70">
                   <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/5 px-4 py-3 text-xs uppercase tracking-[0.2em] text-clay dark:border-white/10 dark:text-slate-400">
                     <span>Run log</span>
-                    {selectedRun ? (
-                      <span className="normal-case text-xs text-ink/60 dark:text-slate-300">
-                        {selectedRun.logpath}
-                      </span>
-                    ) : null}
+                    <div className="flex flex-wrap items-center gap-2">
+                      {selectedRun ? (
+                        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-ink/10 bg-white/70 px-3 py-1 text-[10px] font-semibold normal-case text-ink/70 shadow-sm dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-200">
+                          <span
+                            className="font-mono text-ink/60 dark:text-slate-300"
+                            title={selectedRun.logpath}
+                          >
+                            {filenameOnly(selectedRun.logpath)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleCopyPath(selectedRun.logpath)}
+                            className="inline-flex items-center gap-1 rounded-full border border-ink/10 px-2 py-0.5 text-[10px] font-semibold text-ink/70 transition hover:-translate-y-0.5 hover:shadow-card dark:border-white/10 dark:text-slate-200"
+                            aria-label="Copy log path"
+                          >
+                            {copyStatus === "copied" ? (
+                              <Check className="h-3 w-3" />
+                            ) : copyStatus === "error" ? (
+                              <AlertCircle className="h-3 w-3 text-rose-500" />
+                            ) : (
+                              <Copy className="h-3 w-3" />
+                            )}
+                            {copyStatus === "copied" ? "Copied" : "Copy"}
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                   <ScrollArea.Root className="h-[520px]">
                     <ScrollArea.Viewport className="p-4">
