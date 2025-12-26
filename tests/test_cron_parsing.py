@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from skedulord.cron import parse_job_from_settings, Cron
 
@@ -34,8 +36,10 @@ def test_job_parsing(check):
 def test_cron_obj_parsing():
     """Test that the cron object parses the schedule appropriately"""
     c = Cron("tests/schedule.yml")
+    expected_path = Path("tests/schedule.yml").resolve()
     for s in c.settings:
         parsed_command = c.parse_cmd(s)
         assert parsed_command.rstrip() == parsed_command
         assert "uv run python -m skedulord run" in parsed_command
         assert "--settings-path" in parsed_command
+        assert str(expected_path) in parsed_command

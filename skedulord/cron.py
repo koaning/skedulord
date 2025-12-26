@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import typer
 from clumper import Clumper
 from crontab import CronTab
@@ -28,8 +30,8 @@ def parse_job_from_settings(settings: dict, name: str) -> dict:
 
 class Cron:
     def __init__(self, settings_path):
-        self.settings_path = settings_path
-        self.settings = Clumper.read_yaml(settings_path).unpack("schedule").collect()
+        self.settings_path = Path(settings_path).resolve()
+        self.settings = Clumper.read_yaml(self.settings_path).unpack("schedule").collect()
 
     def parse_cmd(self, setting: dict) -> str:
         """
