@@ -1,5 +1,5 @@
 .PHONY: lint install develop test check clean reset reset-big pypi \
-	demo-reset demo-seed demo-run demo-web demo-clean demo-install demo-ui-build demo-check
+	demo-reset demo-seed demo-run demo-run-dev demo-web demo-clean demo-install demo-ui-build demo-check
 
 lint:
 	ruff check skedulord tests
@@ -60,6 +60,10 @@ demo-seed:
 
 demo-run: demo-reset demo-seed demo-ui-build
 	uv run python -m skedulord serve --reload
+
+demo-run-dev: demo-reset demo-seed
+	SKEDULORD_CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173 \
+		uv run python -m skedulord serve --reload
 
 
 demo-web:

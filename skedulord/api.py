@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from skedulord.auth import verify_password
+from skedulord.common import skedulord_path
 from skedulord.db import fetch_run, fetch_runs, fetch_user
 
 
@@ -27,19 +28,23 @@ def _basic_credentials(auth_header: str | None) -> tuple[str, str] | None:
     return username, password
 
 
-def create_app() -> FastAPI:
+def create_app(no_auth: bool = False, cors_origins: list[str] | None = None) -> FastAPI:
     app = FastAPI(title="Skedulord API", version="0.1.0")
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    if cors_origins is None:
+        env_origins = os.getenv("SKEDULORD_CORS_ORIGINS", "")
+        cors_origins = [origin.strip() for origin in env_origins.split(",") if origin.strip()]
+    if cors_origins:
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=cors_origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
     @app.middleware("http")
     async def auth_middleware(request, call_next):
-        if os.getenv("SKEDULORD_NO_AUTH") == "1":
+        if no_auth:
             return await call_next(request)
         path = request.url.path
         if path in ("/api/health",):
@@ -94,9 +99,15 @@ def create_app() -> FastAPI:
         if not row:
             raise HTTPException(status_code=404, detail="Run not found")
         logpath = Path(row["logpath"])
+        base_path = skedulord_path().resolve()
+        resolved_logpath = logpath.resolve()
+        try:
+            resolved_logpath.relative_to(base_path)
+        except ValueError:
+            raise HTTPException(status_code=403, detail="Log file is outside the skedulord data directory")
         if not logpath.exists():
             raise HTTPException(status_code=404, detail="Log file not found")
-        return {"logpath": str(logpath), "content": logpath.read_text()}
+        return {"logpath": str(resolved_logpath), "content": logpath.read_text()}
 
     repo_root = Path(__file__).resolve().parents[1]
     dist_path = repo_root / "webapp" / "dist"
