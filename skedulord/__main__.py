@@ -1,5 +1,4 @@
 import getpass
-import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -24,6 +23,7 @@ from skedulord.db import (
     update_user_password,
 )
 from skedulord.templating import render_tokens
+from skedulord.api import create_app
 
 app = typer.Typer(
     name="SKEDULORD",
@@ -319,12 +319,12 @@ def serve(
     finally:
         sock.close()
 
-    if no_auth:
-        os.environ["SKEDULORD_NO_AUTH"] = "1"
-    else:
-        os.environ.pop("SKEDULORD_NO_AUTH", None)
+    if no_auth and reload:
+        typer.echo("Disabling reload because --no-auth requires an in-memory app instance.")
+        reload = False
 
-    uvicorn.run("skedulord.api:app", host=host, port=port, reload=reload)
+    app = create_app(no_auth=no_auth)
+    uvicorn.run(app, host=host, port=port, reload=reload)
 
 
 if __name__ == "__main__":
