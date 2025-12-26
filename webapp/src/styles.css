@@ -6,8 +6,17 @@
   color-scheme: light;
 }
 
+.dark {
+  color-scheme: dark;
+}
+
 body {
   @apply bg-haze text-ink font-body;
+}
+
+.dark body {
+  background-color: #0b0f14;
+  color: #f1f5f9;
 }
 
 .app-shell {
@@ -15,8 +24,17 @@ body {
   min-height: 100vh;
 }
 
+.dark .app-shell {
+  background: radial-gradient(circle at top left, #1d2330 0%, #0f141c 45%, #0b0f14 100%);
+}
+
 .frost-card {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(20, 21, 26, 0.08);
+}
+
+.dark .frost-card {
+  background: rgba(15, 19, 28, 0.8);
+  border: 1px solid rgba(226, 232, 240, 0.08);
 }
