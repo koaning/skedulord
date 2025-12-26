@@ -127,6 +127,20 @@ type SuggestionItem =
     };
 
 export default function App() {
+  function readUrlState() {
+    if (typeof window === "undefined") {
+      return { job: null, run: null, page: 0 };
+    }
+    const params = new URLSearchParams(window.location.search);
+    const pageParam = Number.parseInt(params.get("page") ?? "1", 10);
+    return {
+      job: params.get("job"),
+      run: params.get("run"),
+      page: Number.isFinite(pageParam) && pageParam > 1 ? pageParam - 1 : 0
+    };
+  }
+
+  const initialUrlState = readUrlState();
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     if (typeof window === "undefined") return "light";
     const stored = window.localStorage.getItem("theme");
@@ -138,24 +152,26 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [highlightIndex, setHighlightIndex] = useState(0);
-  const [selectedJob, setSelectedJob] = useState<string | null>(null);
-  const [page, setPage] = useState(0);
+  const [selectedJob, setSelectedJob] = useState<string | null>(initialUrlState.job);
+  const [page, setPage] = useState(initialUrlState.page);
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(initialUrlState.run);
+  const [logLoading, setLogLoading] = useState(false);
+  const [logError, setLogError] = useState<string | null>(null);
+  const [logData, setLogData] = useState<{ logpath: string; content: string } | null>(null);
   const [commandOpen, setCommandOpen] = useState(false);
   const [listIndex, setListIndex] = useState(0);
+  const [shortcutOpen, setShortcutOpen] = useState(false);
   const [failedOnly, setFailedOnly] = useState(false);
-  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [focusedRunId, setFocusedRunId] = useState<string | null>(null);
   const [focusedRun, setFocusedRun] = useState<{ id: string; jobName: string } | null>(null);
   const [hoveredRun, setHoveredRun] = useState<{ id: string; jobName: string } | null>(null);
-  const [logData, setLogData] = useState<{ logpath: string; content: string } | null>(null);
-  const [logLoading, setLogLoading] = useState(false);
-  const [logError, setLogError] = useState<string | null>(null);
   const [runListIndex, setRunListIndex] = useState(0);
 
   const commandInputRef = useRef<HTMLInputElement>(null);
   const listRefs = useRef<Array<HTMLDivElement | null>>([]);
   const runListRefs = useRef<Array<HTMLDivElement | null>>([]);
   const listboxRef = useRef<HTMLDivElement | null>(null);
+  const hasHydratedRef = useRef(false);
 
   async function loadRuns() {
     setLoading(true);
@@ -176,13 +192,12 @@ export default function App() {
 
   useEffect(() => {
     function syncFromUrl() {
-      const url = new URL(window.location.href);
-      const job = url.searchParams.get("job");
-      const run = url.searchParams.get("run");
-      setSelectedJob(job);
-      setSelectedRunId(run);
-      setFocusedRunId(run);
-      setFocusedRun(run && job ? { id: run, jobName: job } : null);
+      const state = readUrlState();
+      setSelectedJob(state.job);
+      setSelectedRunId(state.run);
+      setPage(state.page);
+      setFocusedRunId(state.run);
+      setFocusedRun(state.run && state.job ? { id: state.run, jobName: state.job } : null);
     }
 
     syncFromUrl();
@@ -204,6 +219,7 @@ export default function App() {
     function onKeyDown(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
+        setShortcutOpen(false);
         setCommandOpen(true);
       }
     }
@@ -289,6 +305,10 @@ export default function App() {
   }, [runs, selectedJob, selectedRunId]);
 
   useEffect(() => {
+    if (!hasHydratedRef.current) {
+      hasHydratedRef.current = true;
+      return;
+    }
     setPage(0);
   }, [selectedJob]);
 
@@ -300,6 +320,43 @@ export default function App() {
   useEffect(() => {
     setListIndex(0);
   }, [filteredJobs.length]);
+
+  useEffect(() => {
+    if (!selectedRunId) {
+      setLogData(null);
+      setLogError(null);
+      setLogLoading(false);
+      return;
+    }
+    let active = true;
+    setLogLoading(true);
+    setLogError(null);
+    setLogData(null);
+    fetchLog(selectedRunId)
+      .then((data) => {
+        if (!active) return;
+        setLogData(data);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setLogError((err as Error).message);
+      })
+      .finally(() => {
+        if (!active) return;
+        setLogLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [selectedRunId]);
+
+  useEffect(() => {
+    if (!selectedRunId || selectedJob) return;
+    const match = runs.find((run) => run.id === selectedRunId);
+    if (match) {
+      setSelectedJob(match.name);
+    }
+  }, [runs, selectedJob, selectedRunId]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -527,6 +584,10 @@ export default function App() {
   }, [commandOpen, filteredRuns, focusedRunId, pageCount, pageRuns.length, runListIndex, selectedJob, selectedRunId]);
 
   const isDark = theme === "dark";
+  const headerButtonClass =
+    "inline-flex h-8 items-center gap-1.5 rounded-full border border-ink/10 bg-white/80 px-3 text-xs font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100";
+  const headerKeycapClass =
+    "rounded-full border border-ink/10 px-1.5 py-0.5 text-[9px] text-ink/40 dark:border-white/10 dark:text-slate-400";
 
   const actionItems: SuggestionItem[] = useMemo(() => {
     const actions: SuggestionItem[] = [
@@ -543,6 +604,13 @@ export default function App() {
         type: "action",
         shortcut: "D",
         run: () => setTheme(isDark ? "light" : "dark")
+      },
+      {
+        id: "shortcuts",
+        label: "Keyboard shortcut overview",
+        type: "action",
+        shortcut: "?",
+        run: () => setShortcutOpen(true)
       }
     ];
 
@@ -580,7 +648,7 @@ export default function App() {
     }
 
     return actions;
-  }, [isDark, query, selectedJob]);
+  }, [failedOnly, isDark, query, selectedJob]);
 
   const suggestionItems = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -642,6 +710,10 @@ export default function App() {
   function handleListKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (commandOpen) return;
     if (!filteredJobs.length) return;
+    const navKeys = ["ArrowDown", "ArrowUp", "Home", "End", "Enter"];
+    if (navKeys.includes(event.key)) {
+      event.stopPropagation();
+    }
     if (event.key === "ArrowDown") {
       event.preventDefault();
       focusListIndex(Math.min(filteredJobs.length - 1, listIndex + 1));
@@ -711,12 +783,22 @@ export default function App() {
     } else {
       url.searchParams.delete("run");
     }
+    if (job && page > 0) {
+      url.searchParams.set("page", String(page + 1));
+    } else {
+      url.searchParams.delete("page");
+    }
     if (replace) {
       window.history.replaceState({}, "", url);
     } else {
       window.history.pushState({}, "", url);
     }
   }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    updateUrl(selectedJob, selectedRunId, true);
+  }, [page, selectedJob, selectedRunId]);
 
   function handleSelectJob(name: string) {
     setSelectedJob(name);
@@ -740,21 +822,79 @@ export default function App() {
     setFocusedRun(null);
     updateUrl(selectedJob ?? run.name, run.id);
   }
-
+  const shortcutGroups = [
+    {
+      title: "Global",
+      items: [{ label: "Open command palette", keys: "Cmd/Ctrl + K" }]
+    },
+    {
+      title: "Command palette",
+      items: [
+        { label: "Move selection", keys: "Up / Down" },
+        { label: "Open selection", keys: "Enter" },
+        { label: "Close palette", keys: "Esc" }
+      ]
+    },
+    {
+      title: "Job list",
+      items: [
+        { label: "Move selection", keys: "Up / Down" },
+        { label: "Move run focus", keys: "Left / Right" },
+        { label: "Jump to start/end", keys: "Home / End" },
+        { label: "Open job/run", keys: "Enter" }
+      ]
+    },
+    {
+      title: "Job detail",
+      items: [
+        { label: "Back to list", keys: "B" },
+        { label: "Toggle failed runs", keys: "F" },
+        { label: "Move run focus", keys: "Up / Down" },
+        { label: "Move bar focus", keys: "Left / Right" },
+        { label: "Previous / next page", keys: "Alt + ← / Alt + →" }
+      ]
+    }
+  ];
   return (
     <div className="app-shell">
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 px-6 py-10">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-plum dark:text-orange-300">Skedulord</p>
-            <h1 className="font-display text-4xl font-semibold text-ink dark:text-slate-100">
-              {selectedJobData ? selectedJobData.name : "All jobs"}
-            </h1>
+            <nav aria-label="Breadcrumb">
+              <ol className="flex flex-wrap items-center gap-3 text-sm uppercase tracking-[0.3em]">
+                {selectedJobData ? (
+                  <>
+                    <li>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedJob(null);
+                          setSelectedRunId(null);
+                          setFocusedRunId(null);
+                          setFocusedRun(null);
+                          updateUrl(null, null);
+                        }}
+                        className="uppercase text-ink/50 transition hover:text-ink dark:text-slate-400 dark:hover:text-slate-200"
+                      >
+                        All jobs
+                      </button>
+                    </li>
+                    <li aria-hidden="true" className="text-ink/30 dark:text-slate-500">
+                      /
+                    </li>
+                  </>
+                ) : null}
+                <li aria-current="page" className="font-semibold uppercase text-ink dark:text-slate-100">
+                  {selectedJobData ? selectedJobData.name : "All jobs"}
+                </li>
+              </ol>
+            </nav>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setCommandOpen(true)}
-              className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-4 py-2 text-xs font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+              className={headerButtonClass}
               aria-label="Open command palette"
             >
               <Command className="h-4 w-4" />
@@ -762,24 +902,20 @@ export default function App() {
             </button>
             <button
               onClick={() => setTheme(isDark ? "light" : "dark")}
-              className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-4 py-2 text-sm font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+              className={headerButtonClass}
               aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             >
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               {isDark ? "Light" : "Dark"}
-              <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
-                D
-              </span>
+              <span className={headerKeycapClass}>D</span>
             </button>
             <button
               onClick={loadRuns}
-              className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-4 py-2 text-sm font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+              className={headerButtonClass}
             >
               <RefreshCw className="h-4 w-4" />
               Refresh
-              <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
-                R
-              </span>
+              <span className={headerKeycapClass}>R</span>
             </button>
           </div>
         </header>
@@ -862,11 +998,7 @@ export default function App() {
           </section>
         ) : selectedJobData ? (
           <section className="frost-card flex flex-col gap-5 rounded-3xl p-6 shadow-card">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Job overview</p>
-                <h2 className="font-display text-2xl text-ink dark:text-slate-100">{selectedJobData.name}</h2>
-              </div>
+            <div className="flex flex-wrap items-center justify-end gap-4">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -954,8 +1086,11 @@ export default function App() {
                               {formatDuration(getDurationMs(run))}
                             </span>
                             <StatusPill status={run.status} />
+                            <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[11px] font-semibold text-ink/50 dark:border-white/10 dark:text-slate-300">
+                              Logs
+                            </span>
                           </div>
-                        </div>
+                        </button>
                       ))
                     )}
                   </div>
@@ -989,17 +1124,55 @@ export default function App() {
                 </span>
               </button>
             </div>
+
+            <div className="rounded-2xl border border-ink/10 bg-white/80 p-4 dark:border-white/10 dark:bg-slate-900/70">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Run log</p>
+                  <h3 className="font-display text-xl text-ink dark:text-slate-100">
+                    {selectedRunId ? `Run ${selectedRunId.slice(0, 8)}` : "Select a run"}
+                  </h3>
+                </div>
+                {selectedRunId ? (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRunId(null)}
+                    className="rounded-full border border-ink/10 px-3 py-1 text-xs font-semibold text-ink transition dark:border-white/10 dark:text-slate-100"
+                  >
+                    Close
+                  </button>
+                ) : null}
+              </div>
+              {selectedRunId ? (
+                <div className="mt-4 space-y-3 text-sm">
+                  {logError ? (
+                    <p className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200">
+                      {logError}
+                    </p>
+                  ) : null}
+                  {logLoading ? (
+                    <p className="text-ink/60 dark:text-slate-300">Loading log…</p>
+                  ) : null}
+                  {logData ? (
+                    <>
+                      <p className="text-xs text-ink/60 dark:text-slate-300">{logData.logpath}</p>
+                      <pre className="max-h-[320px] overflow-auto rounded-2xl border border-ink/10 bg-white px-4 py-3 text-xs text-ink dark:border-white/10 dark:bg-slate-950 dark:text-slate-100">
+                        {logData.content || "Log is empty."}
+                      </pre>
+                    </>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-ink/60 dark:text-slate-300">
+                  Click a run to open its logs and share the URL if you need help debugging.
+                </p>
+              )}
+            </div>
           </section>
         ) : (
           <section className="frost-card flex flex-col gap-5 rounded-3xl p-6 shadow-card">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Job list</p>
-                <h2 className="font-display text-2xl text-ink dark:text-slate-100">All jobs</h2>
-              </div>
-              <p className="text-xs text-ink/60 dark:text-slate-300">
-                {filteredJobs.length} jobs
-              </p>
+            <div className="flex items-center justify-end">
+              <p className="text-xs text-ink/60 dark:text-slate-300">{filteredJobs.length} jobs</p>
             </div>
 
             <div
@@ -1156,6 +1329,66 @@ export default function App() {
                   </button>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {shortcutOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex justify-center bg-black/30 px-4 py-20 backdrop-blur-sm dark:bg-black/60"
+          onClick={() => setShortcutOpen(false)}
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-lg rounded-3xl border border-ink/10 bg-white/95 p-6 shadow-soft dark:border-white/10 dark:bg-slate-950/90"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Keyboard shortcut overview"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">
+                  Shortcuts
+                </p>
+                <h2 className="font-display text-2xl text-ink dark:text-slate-100">
+                  Keyboard shortcut overview
+                </h2>
+                <p className="mt-1 text-sm text-ink/60 dark:text-slate-300">
+                  Quick reference for navigation and palette controls.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShortcutOpen(false)}
+                className="rounded-full border border-ink/10 px-3 py-1 text-xs font-semibold text-ink transition hover:-translate-y-0.5 hover:shadow-card dark:border-white/10 dark:text-slate-100"
+              >
+                Close
+              </button>
+            </div>
+            <div className="mt-6 grid gap-4">
+              {shortcutGroups.map((group) => (
+                <div
+                  key={group.title}
+                  className="rounded-2xl border border-ink/10 bg-white/80 p-4 text-sm dark:border-white/10 dark:bg-slate-900/70"
+                >
+                  <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">
+                    {group.title}
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {group.items.map((item) => (
+                      <div key={item.label} className="flex items-center justify-between gap-3">
+                        <span className="text-ink/80 dark:text-slate-200">
+                          {item.label}
+                        </span>
+                        <span className="rounded-full border border-ink/10 bg-white/80 px-2 py-0.5 text-xs font-semibold text-ink dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100">
+                          {item.keys}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
