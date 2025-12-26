@@ -55,10 +55,7 @@ demo-reset:
 
 
 demo-seed:
-	uv run python -m skedulord run demo-ok "jobs/pyjob.py" --retry 1 --wait 0
-	uv run python -m skedulord run demo-ok "jobs/pyjob.py" --retry 1 --wait 0
-	uv run python -m skedulord run demo-bad "jobs/badpyjob.py" --retry 1 --wait 0
-	uv run python -m skedulord run demo-printer "jobs/printer.py" --retry 1 --wait 0
+	uv run python -m skedulord.demo_seed
 
 
 demo-run: demo-reset demo-seed demo-ui-build
