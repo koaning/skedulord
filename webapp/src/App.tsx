@@ -1,19 +1,79 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
-import * as Tabs from "@radix-ui/react-tabs";
-import { AlertCircle, Moon, RefreshCw, Sun } from "lucide-react";
+import { AlertCircle, Command, Moon, RefreshCw, Search, Sun } from "lucide-react";
 
-import { fetchLog, fetchRuns, type RunEntry } from "./api";
+import { fetchRuns, type RunEntry } from "./api";
+
+const MAX_RECENT_RUNS = 20;
+
+function statusColor(status: string) {
+  if (status === "success") return "bg-emerald-500";
+  if (status === "fail") return "bg-rose-500";
+  return "bg-amber-400";
+}
 
 function StatusPill({ status }: { status: string }) {
-  const color = status === "success" ? "bg-emerald-500" : status === "fail" ? "bg-rose-500" : "bg-slate-400";
   return (
     <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-ink shadow-sm dark:bg-slate-900/70 dark:text-slate-100">
-      <span className={`h-2 w-2 rounded-full ${color}`} />
+      <span className={`h-2 w-2 rounded-full ${statusColor(status)}`} />
       {status}
     </span>
   );
 }
+
+function getDurationMs(run: RunEntry) {
+  const start = Date.parse(run.start);
+  const end = Date.parse(run.end);
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return 0;
+  return Math.max(0, end - start);
+}
+
+function formatDuration(ms: number) {
+  if (!ms) return "0s";
+  const seconds = Math.round(ms / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.round(minutes / 60);
+  return `${hours}h`;
+}
+
+function RunBars({ runs }: { runs: RunEntry[] }) {
+  const recentRuns = runs.slice(0, MAX_RECENT_RUNS);
+  const durations = recentRuns.map((run) => getDurationMs(run));
+  const maxDuration = Math.max(0, ...durations);
+  const maxHeight = 52;
+  const minHeight = 10;
+
+  return (
+    <div className="flex items-end gap-2" aria-label="Recent runs" role="list">
+      {recentRuns.map((run, index) => {
+        const duration = durations[index];
+        const height = maxDuration
+          ? Math.max(minHeight, Math.round((duration / maxDuration) * maxHeight))
+          : minHeight;
+        const label = `${run.status} run, ${formatDuration(duration)}`;
+
+        return (
+          <div
+            key={run.id}
+            className={`w-3 rounded-full ${statusColor(run.status)}`}
+            style={{ height }}
+            aria-label={label}
+            role="listitem"
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+type PaletteAction = {
+  id: string;
+  label: string;
+  shortcut?: string;
+  run: () => void;
+};
 
 export default function App() {
   const [theme, setTheme] = useState<"light" | "dark">(() => {
@@ -23,24 +83,22 @@ export default function App() {
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
   const [runs, setRuns] = useState<RunEntry[]>([]);
-  const [selected, setSelected] = useState<RunEntry | null>(null);
-  const [logContent, setLogContent] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "success" | "fail">("all");
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [paletteQuery, setPaletteQuery] = useState("");
+  const [paletteIndex, setPaletteIndex] = useState(0);
+
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const paletteInputRef = useRef<HTMLInputElement>(null);
 
   async function loadRuns() {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchRuns({
-        limit: 100,
-        name: query || undefined,
-        status: statusFilter === "all" ? undefined : statusFilter
-      });
+      const data = await fetchRuns({ limit: 500 });
       setRuns(data);
-      setSelected((current) => current ?? data[0] ?? null);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -50,7 +108,7 @@ export default function App() {
 
   useEffect(() => {
     loadRuns();
-  }, [statusFilter]);
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -63,202 +121,309 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
-    if (!selected) return;
-    fetchLog(selected.id)
-      .then((data) => setLogContent(data.content))
-      .catch(() => setLogContent("Unable to load log content."));
-  }, [selected]);
+    function onKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setPaletteOpen(true);
+      }
+    }
 
-  const stats = useMemo(() => {
-    const total = runs.length;
-    const failures = runs.filter((run) => run.status === "fail").length;
-    const successes = runs.filter((run) => run.status === "success").length;
-    return { total, failures, successes };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  useEffect(() => {
+    if (!paletteOpen) return;
+    setPaletteIndex(0);
+    setPaletteQuery("");
+    const timer = window.setTimeout(() => paletteInputRef.current?.focus(), 0);
+    return () => window.clearTimeout(timer);
+  }, [paletteOpen]);
+
+  const jobs = useMemo(() => {
+    const map = new Map<string, RunEntry[]>();
+    runs.forEach((run) => {
+      const list = map.get(run.name) ?? [];
+      list.push(run);
+      map.set(run.name, list);
+    });
+    return Array.from(map.entries())
+      .map(([name, entries]) => {
+        const sorted = [...entries].sort(
+          (a, b) => Date.parse(b.start) - Date.parse(a.start)
+        );
+        return {
+          name,
+          runs: sorted,
+          latest: sorted[0]
+        };
+      })
+      .sort((a, b) => Date.parse(b.latest.start) - Date.parse(a.latest.start));
   }, [runs]);
+
+  const filteredJobs = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    if (!normalized) return jobs;
+    return jobs.filter((job) => job.name.toLowerCase().includes(normalized));
+  }, [jobs, query]);
+
   const isDark = theme === "dark";
+
+  const paletteActions: PaletteAction[] = useMemo(() => {
+    const actions: PaletteAction[] = [
+      {
+        id: "refresh",
+        label: "Refresh job list",
+        shortcut: "R",
+        run: () => loadRuns()
+      },
+      {
+        id: "theme",
+        label: isDark ? "Switch to light mode" : "Switch to dark mode",
+        shortcut: "T",
+        run: () => setTheme(isDark ? "light" : "dark")
+      },
+      {
+        id: "focus-search",
+        label: "Focus job search",
+        shortcut: "S",
+        run: () => searchInputRef.current?.focus()
+      }
+    ];
+
+    if (query.trim()) {
+      actions.push({
+        id: "clear-search",
+        label: "Clear job search",
+        shortcut: "C",
+        run: () => setQuery("")
+      });
+    }
+
+    return actions;
+  }, [isDark, query]);
+
+  const filteredActions = useMemo(() => {
+    const normalized = paletteQuery.trim().toLowerCase();
+    if (!normalized) return paletteActions;
+    return paletteActions.filter((action) =>
+      action.label.toLowerCase().includes(normalized)
+    );
+  }, [paletteActions, paletteQuery]);
+
+  useEffect(() => {
+    if (!paletteOpen) return;
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setPaletteOpen(false);
+        return;
+      }
+      if (!filteredActions.length) return;
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        setPaletteIndex((index) => (index + 1) % filteredActions.length);
+      }
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        setPaletteIndex((index) =>
+          (index - 1 + filteredActions.length) % filteredActions.length
+        );
+      }
+      if (event.key === "Enter") {
+        event.preventDefault();
+        const action = filteredActions[paletteIndex];
+        if (action) {
+          action.run();
+          setPaletteOpen(false);
+          setPaletteQuery("");
+        }
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [paletteOpen, filteredActions, paletteIndex]);
 
   return (
     <div className="app-shell">
-      <div className="mx-auto flex min-h-screen max-w-7xl flex-col gap-8 px-6 py-10">
-        <header className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-sm uppercase tracking-[0.3em] text-plum dark:text-orange-300">Skedulord</p>
-              <h1 className="font-display text-4xl font-semibold text-ink dark:text-slate-100">Runboard</h1>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setTheme(isDark ? "light" : "dark")}
-                className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-4 py-2 text-sm font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
-                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
-              >
-                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                {isDark ? "Light mode" : "Dark mode"}
-              </button>
-              <button
-                onClick={loadRuns}
-                className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-4 py-2 text-sm font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
-              >
-                <RefreshCw className="h-4 w-4" />
-                Refresh
-              </button>
-            </div>
+      <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-6 py-10">
+        <header className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-sm uppercase tracking-[0.3em] text-plum dark:text-orange-300">Skedulord</p>
+            <h1 className="font-display text-4xl font-semibold text-ink dark:text-slate-100">
+              All jobs
+            </h1>
           </div>
-          <div className="grid gap-4 lg:grid-cols-3">
-            <div className="frost-card rounded-2xl p-5 shadow-card">
-              <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Runs tracked</p>
-              <p className="mt-2 font-display text-3xl text-ink dark:text-slate-100">{stats.total}</p>
-              <p className="mt-1 text-sm text-ink/60 dark:text-slate-300">Latest 100 runs in view</p>
-            </div>
-            <div className="frost-card rounded-2xl p-5 shadow-card">
-              <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Healthy</p>
-              <p className="mt-2 font-display text-3xl text-ink dark:text-slate-100">{stats.successes}</p>
-              <p className="mt-1 text-sm text-ink/60 dark:text-slate-300">Successful executions</p>
-            </div>
-            <div className="frost-card rounded-2xl p-5 shadow-card">
-              <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Needs attention</p>
-              <p className="mt-2 font-display text-3xl text-ink dark:text-slate-100">{stats.failures}</p>
-              <p className="mt-1 text-sm text-ink/60 dark:text-slate-300">Failures in this view</p>
-            </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPaletteOpen(true)}
+              className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-4 py-2 text-xs font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+              aria-label="Open command palette"
+            >
+              <Command className="h-4 w-4" />
+              Cmd + K
+            </button>
+            <button
+              onClick={() => setTheme(isDark ? "light" : "dark")}
+              className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-4 py-2 text-sm font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {isDark ? "Light" : "Dark"}
+            </button>
+            <button
+              onClick={loadRuns}
+              className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-4 py-2 text-sm font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </button>
           </div>
         </header>
 
-        <Tabs.Root defaultValue="runs" className="flex flex-1 flex-col gap-6">
-          <Tabs.List className="flex flex-wrap gap-3">
-            {["runs", "activity", "settings"].map((tab) => (
-              <Tabs.Trigger
-                key={tab}
-                value={tab}
-                className="rounded-full border border-transparent bg-white/70 px-4 py-2 text-sm font-medium text-ink transition data-[state=active]:border-ink/10 data-[state=active]:bg-white data-[state=active]:shadow-sm dark:bg-slate-900/70 dark:text-slate-100 dark:data-[state=active]:border-white/10 dark:data-[state=active]:bg-slate-900"
-              >
-                {tab}
-              </Tabs.Trigger>
-            ))}
-          </Tabs.List>
-
-          <Tabs.Content value="runs" className="flex flex-1 flex-col gap-6">
-            <div className="grid gap-6 lg:grid-cols-[1.1fr_2fr]">
-              <div className="frost-card flex flex-col gap-4 rounded-3xl p-5 shadow-card">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Run archive</p>
-                    <h2 className="font-display text-2xl">Recent jobs</h2>
-                  </div>
-                  <div className="flex gap-2 rounded-full bg-white/80 p-1 text-xs dark:bg-slate-900/70">
-                    {(["all", "success", "fail"] as const).map((status) => (
-                      <button
-                        key={status}
-                        onClick={() => setStatusFilter(status)}
-                        className={`rounded-full px-3 py-1 font-medium transition ${
-                          statusFilter === status
-                            ? "bg-ink text-white dark:bg-orange-400 dark:text-slate-900"
-                            : "text-ink/60 hover:text-ink dark:text-slate-300 dark:hover:text-slate-100"
-                        }`}
-                      >
-                        {status}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Filter by job name"
-                    className="w-full rounded-2xl border border-ink/10 bg-white/70 px-4 py-2 text-sm outline-none focus:border-ink/30 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:border-white/20"
-                  />
-                  <button
-                    onClick={loadRuns}
-                    className="rounded-2xl border border-ink/10 bg-ink px-4 py-2 text-sm font-semibold text-white dark:border-white/10 dark:bg-orange-400 dark:text-slate-900"
-                  >
-                    Go
-                  </button>
-                </div>
-
-                <div className="flex-1 overflow-hidden rounded-2xl border border-ink/5 bg-white/80 dark:border-white/10 dark:bg-slate-900/70">
-                  <ScrollArea.Root className="h-[420px]">
-                    <ScrollArea.Viewport className="p-2">
-                      <div className="flex flex-col gap-2">
-                        {runs.map((run) => (
-                          <button
-                            key={run.id}
-                            onClick={() => setSelected(run)}
-                            className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${
-                              selected?.id === run.id
-                                ? "border-ink/20 bg-white shadow-soft dark:border-white/10 dark:bg-slate-900"
-                                : "border-transparent hover:border-ink/10 hover:bg-white dark:hover:border-white/10 dark:hover:bg-slate-900/60"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between gap-2">
-                              <div>
-                                <p className="font-medium text-ink dark:text-slate-100">{run.name}</p>
-                                <p className="text-xs text-ink/50 dark:text-slate-400">{run.start}</p>
-                              </div>
-                              <StatusPill status={run.status} />
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </ScrollArea.Viewport>
-                    <ScrollArea.Scrollbar orientation="vertical" className="flex touch-none select-none p-1">
-                      <ScrollArea.Thumb className="relative flex-1 rounded-full bg-ink/20 dark:bg-white/20" />
-                    </ScrollArea.Scrollbar>
-                  </ScrollArea.Root>
-                </div>
-              </div>
-
-              <div className="frost-card flex flex-col gap-4 rounded-3xl p-6 shadow-card">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Log viewer</p>
-                    <h2 className="font-display text-2xl">{selected?.name ?? "Select a run"}</h2>
-                  </div>
-                  {selected ? <StatusPill status={selected.status} /> : null}
-                </div>
-
-                {error ? (
-                  <div className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200">
-                    <AlertCircle className="h-4 w-4" />
-                    {error}
-                  </div>
-                ) : null}
-
-                <div className="rounded-2xl border border-ink/10 bg-ink px-4 py-3 text-xs text-white/70 dark:border-white/10 dark:bg-slate-950 dark:text-slate-300">
-                  <p className="text-white/90 dark:text-slate-100">{selected?.command ?? "No command selected"}</p>
-                </div>
-
-                <div className="flex-1 overflow-hidden rounded-2xl border border-ink/5 bg-white/80 dark:border-white/10 dark:bg-slate-900/70">
-                  <ScrollArea.Root className="h-[420px]">
-                    <ScrollArea.Viewport className="p-4">
-                      <pre className="whitespace-pre-wrap text-xs leading-relaxed text-ink/80 dark:text-slate-200">
-                        {logContent || (loading ? "Loading..." : "Select a run to view logs.")}
-                      </pre>
-                    </ScrollArea.Viewport>
-                    <ScrollArea.Scrollbar orientation="vertical" className="flex touch-none select-none p-1">
-                      <ScrollArea.Thumb className="relative flex-1 rounded-full bg-ink/20 dark:bg-white/20" />
-                    </ScrollArea.Scrollbar>
-                  </ScrollArea.Root>
-                </div>
-              </div>
+        <section className="frost-card flex flex-col gap-5 rounded-3xl p-6 shadow-card">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Job list</p>
+              <h2 className="font-display text-2xl text-ink dark:text-slate-100">All jobs</h2>
             </div>
-          </Tabs.Content>
-
-          <Tabs.Content value="activity" className="frost-card rounded-3xl p-6 shadow-card">
-            <h2 className="font-display text-2xl">Activity stream</h2>
-            <p className="mt-2 text-sm text-ink/60 dark:text-slate-300">
-              Timeline and alerting hooks can live here once we add more metadata.
+            <p className="text-xs text-ink/60 dark:text-slate-300">
+              {filteredJobs.length} jobs
             </p>
-          </Tabs.Content>
+          </div>
 
-          <Tabs.Content value="settings" className="frost-card rounded-3xl p-6 shadow-card">
-            <h2 className="font-display text-2xl">Workspace settings</h2>
-            <p className="mt-2 text-sm text-ink/60 dark:text-slate-300">
-              Configure retention, scheduling, and API auth here once we wire up the backend.
-            </p>
-          </Tabs.Content>
-        </Tabs.Root>
+          <div className="flex flex-col gap-2">
+            <label
+              className="text-xs font-semibold uppercase tracking-[0.2em] text-clay dark:text-slate-400"
+              htmlFor="job-search"
+            >
+              Search jobs
+            </label>
+            <div className="flex items-center gap-2 rounded-2xl border border-ink/10 bg-white/70 px-3 py-2 text-sm text-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100">
+              <Search className="h-4 w-4 text-ink/40 dark:text-slate-400" />
+              <input
+                ref={searchInputRef}
+                id="job-search"
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Filter by job name"
+                className="w-full bg-transparent text-sm outline-none placeholder:text-ink/40 dark:placeholder:text-slate-400"
+              />
+            </div>
+          </div>
+
+          {error ? (
+            <div className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200">
+              <AlertCircle className="h-4 w-4" />
+              {error}
+            </div>
+          ) : null}
+
+          <div className="overflow-hidden rounded-2xl border border-ink/5 bg-white/80 dark:border-white/10 dark:bg-slate-900/70">
+            <ScrollArea.Root className="h-[520px]">
+              <ScrollArea.Viewport className="p-2">
+                <div className="flex flex-col gap-2">
+                  {loading ? (
+                    <p className="px-4 py-6 text-sm text-ink/50 dark:text-slate-400">Loading jobs...</p>
+                  ) : null}
+                  {!loading && filteredJobs.length === 0 ? (
+                    <p className="px-4 py-6 text-sm text-ink/50 dark:text-slate-400">No jobs match this search.</p>
+                  ) : null}
+                  {filteredJobs.map((job) => (
+                    <div
+                      key={job.name}
+                      className="rounded-2xl border border-transparent px-4 py-3 text-sm transition hover:border-ink/10 hover:bg-white dark:hover:border-white/10 dark:hover:bg-slate-900/60"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-medium text-ink dark:text-slate-100">{job.name}</p>
+                          <p className="text-xs text-ink/50 dark:text-slate-400">{job.runs.length} runs in view</p>
+                        </div>
+                        {job.latest ? <StatusPill status={job.latest.status} /> : null}
+                      </div>
+                      <div className="mt-3">
+                        <RunBars runs={job.runs} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea.Viewport>
+              <ScrollArea.Scrollbar orientation="vertical" className="flex touch-none select-none p-1">
+                <ScrollArea.Thumb className="relative flex-1 rounded-full bg-ink/20 dark:bg-white/20" />
+              </ScrollArea.Scrollbar>
+            </ScrollArea.Root>
+          </div>
+        </section>
       </div>
+
+      {paletteOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex justify-center bg-black/30 px-4 py-20 backdrop-blur-sm dark:bg-black/60"
+          onClick={() => {
+            setPaletteOpen(false);
+            setPaletteQuery("");
+          }}
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-xl rounded-3xl border border-ink/10 bg-white/95 p-4 shadow-soft dark:border-white/10 dark:bg-slate-950/90"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Command palette"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 rounded-2xl border border-ink/10 bg-white/70 px-3 py-2 text-sm text-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100">
+              <Search className="h-4 w-4 text-ink/40 dark:text-slate-400" />
+              <input
+                ref={paletteInputRef}
+                type="search"
+                value={paletteQuery}
+                onChange={(event) => {
+                  setPaletteQuery(event.target.value);
+                  setPaletteIndex(0);
+                }}
+                placeholder="Type a command"
+                className="w-full bg-transparent text-sm outline-none placeholder:text-ink/40 dark:placeholder:text-slate-400"
+              />
+              <span className="text-xs text-ink/40 dark:text-slate-400">Esc</span>
+            </div>
+            <div className="mt-3 max-h-64 overflow-auto" role="listbox">
+              {filteredActions.length === 0 ? (
+                <p className="px-3 py-4 text-sm text-ink/50 dark:text-slate-400">No matching commands.</p>
+              ) : (
+                filteredActions.map((action, index) => (
+                  <button
+                    key={action.id}
+                    type="button"
+                    onClick={() => {
+                      action.run();
+                      setPaletteOpen(false);
+                      setPaletteQuery("");
+                    }}
+                    className={`flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:focus-visible:outline-slate-100 ${
+                      index === paletteIndex
+                        ? "bg-ink/5 text-ink dark:bg-white/10 dark:text-slate-100"
+                        : "text-ink/70 hover:bg-ink/5 hover:text-ink dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-slate-100"
+                    }`}
+                    aria-selected={index === paletteIndex}
+                    role="option"
+                  >
+                    <span>{action.label}</span>
+                    {action.shortcut ? (
+                      <span className="rounded-full border border-ink/10 px-2 py-0.5 text-xs text-ink/40 dark:border-white/10 dark:text-slate-400">
+                        {action.shortcut}
+                      </span>
+                    ) : null}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

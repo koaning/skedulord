@@ -1,0 +1,6 @@
+{
+  "scripts": {
+    "setup": "make install",
+    "run": "make demo-run"
+  }
+}
