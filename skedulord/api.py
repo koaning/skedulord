@@ -94,7 +94,7 @@ def create_app(no_auth: bool = False, cors_origins: list[str] | None = None) -> 
         return dict(row)
 
     @app.get("/api/logs/{run_id}")
-    def get_log(run_id: str) -> dict:
+    def get_log(run_id: str, max_lines: int = 2000) -> dict:
         row = fetch_run(run_id)
         if not row:
             raise HTTPException(status_code=404, detail="Run not found")
@@ -107,7 +107,18 @@ def create_app(no_auth: bool = False, cors_origins: list[str] | None = None) -> 
             raise HTTPException(status_code=403, detail="Log file is outside the skedulord data directory")
         if not logpath.exists():
             raise HTTPException(status_code=404, detail="Log file not found")
-        return {"logpath": str(resolved_logpath), "content": logpath.read_text()}
+        if max_lines <= 0:
+            raise HTTPException(status_code=400, detail="max_lines must be positive")
+        lines = logpath.read_text().splitlines()
+        truncated = len(lines) > max_lines
+        if truncated:
+            lines = lines[-max_lines:]
+        return {
+            "logpath": str(resolved_logpath),
+            "content": "\n".join(lines),
+            "truncated": truncated,
+            "max_lines": max_lines,
+        }
 
     repo_root = Path(__file__).resolve().parents[1]
     dist_path = repo_root / "webapp" / "dist"
