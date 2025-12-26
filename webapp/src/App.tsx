@@ -970,7 +970,7 @@ export default function App() {
     setQuery("");
   }
 
-  function handleCommandKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+  function handleCommandKeyDown(event: KeyboardEvent<HTMLElement>) {
     if (event.key === "Escape") {
       event.preventDefault();
       if (commandView !== "root") {
@@ -1714,6 +1714,7 @@ export default function App() {
             aria-modal="true"
             aria-label="Command palette"
             onClick={(event) => event.stopPropagation()}
+            onKeyDown={handleCommandKeyDown}
           >
             <div className="flex items-center gap-2 rounded-2xl border border-ink/10 bg-white/70 px-3 py-2 text-sm text-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100">
               <Search className="h-4 w-4 text-ink/40 dark:text-slate-400" />
@@ -1722,7 +1723,6 @@ export default function App() {
                 type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                onKeyDown={handleCommandKeyDown}
                 placeholder={
                   normalizedQuery
                     ? "Search jobs or actions…"
@@ -1740,45 +1740,51 @@ export default function App() {
               {commandItems.length === 0 ? (
                 <p className="px-3 py-4 text-sm text-ink/50 dark:text-slate-400">No matching commands.</p>
               ) : (
-                commandItems.map((item, index) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => handleSuggestionSelect(item)}
-                    ref={(node) => {
-                      commandItemRefs.current[index] = node;
-                    }}
-                    className={`flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:focus-visible:outline-slate-100 ${
-                      item.type === "route"
-                        ? "gap-4 border border-ink/10 bg-white/80 px-4 py-3 text-ink shadow-card dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
-                        : ""
-                    } ${
-                      index === highlightIndex
-                        ? "bg-ink/5 text-ink dark:bg-white/10 dark:text-slate-100"
-                        : "text-ink/70 hover:bg-ink/5 hover:text-ink dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-slate-100"
-                    }`}
-                    aria-selected={index === highlightIndex}
-                    role="option"
-                  >
-                    <div>
-                      <span className="block">{item.label}</span>
-                      {item.type === "route" ? (
-                        <span className="mt-1 block text-xs text-ink/50 dark:text-slate-400">
-                          {item.description}
+                commandItems.map((item, index) => {
+                  const isSelected = index === highlightIndex;
+                  const isRoute = item.type === "route";
+                  const selectedClass = isSelected
+                    ? isRoute
+                      ? "bg-ink/10 text-ink border-2 border-ink/40 dark:bg-white/10 dark:text-slate-100 dark:border-white/30"
+                      : "text-ink border border-ink/35 font-semibold dark:border-white/20 dark:text-slate-100"
+                    : "text-ink/70 hover:bg-ink/5 hover:text-ink dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-slate-100";
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleSuggestionSelect(item)}
+                      ref={(node) => {
+                        commandItemRefs.current[index] = node;
+                      }}
+                      className={`flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:focus-visible:outline-slate-100 ${
+                        isRoute
+                          ? "gap-4 border border-ink/10 bg-white/80 px-4 py-3 text-ink shadow-card dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+                          : ""
+                      } ${selectedClass}`}
+                      aria-selected={isSelected}
+                      role="option"
+                    >
+                      <div>
+                        <span className="block">{item.label}</span>
+                        {item.type === "route" ? (
+                          <span className="mt-1 block text-xs text-ink/50 dark:text-slate-400">
+                            {item.description}
+                          </span>
+                        ) : null}
+                      </div>
+                      {item.type === "action" ? (
+                        <span className="rounded-full border border-ink/10 px-2 py-0.5 text-xs text-ink/40 dark:border-white/10 dark:text-slate-400">
+                          {item.shortcut ?? ""}
                         </span>
-                      ) : null}
-                    </div>
-                    {item.type === "action" ? (
-                      <span className="rounded-full border border-ink/10 px-2 py-0.5 text-xs text-ink/40 dark:border-white/10 dark:text-slate-400">
-                        {item.shortcut ?? ""}
-                      </span>
-                    ) : item.type === "job" ? (
-                      <span className="text-xs text-ink/40 dark:text-slate-400">Job</span>
-                    ) : (
-                      <span className="text-xs text-ink/40 dark:text-slate-400">Enter</span>
-                    )}
-                  </button>
-                ))
+                      ) : item.type === "job" ? (
+                        <span className="text-xs text-ink/40 dark:text-slate-400">Job</span>
+                      ) : (
+                        <span className="text-xs text-ink/40 dark:text-slate-400">Enter</span>
+                      )}
+                    </button>
+                  );
+                })
               )}
             </div>
           </div>
