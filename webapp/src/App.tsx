@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 import { AlertCircle, Command, CornerUpLeft, Filter, Moon, RefreshCw, Search, Sun } from "lucide-react";
 
-import { fetchRuns, type RunEntry } from "./api";
+import { fetchLog, fetchRuns, type RunEntry } from "./api";
 
 const MAX_RECENT_RUNS = 20;
 const RUNS_PER_PAGE = 25;
@@ -40,30 +40,71 @@ function formatDuration(ms: number) {
   return `${hours}h`;
 }
 
-function RunBars({ runs }: { runs: RunEntry[] }) {
+function RunBars({
+  runs,
+  variant = "default",
+  onSelectRun,
+  onHoverRun,
+  highlightRunId
+}: {
+  runs: RunEntry[];
+  variant?: "default" | "compact";
+  onSelectRun?: (run: RunEntry) => void;
+  onHoverRun?: (run: RunEntry | null) => void;
+  highlightRunId?: string | null;
+}) {
   const recentRuns = runs.slice(0, MAX_RECENT_RUNS);
   const durations = recentRuns.map((run) => getDurationMs(run));
   const maxDuration = Math.max(0, ...durations);
-  const maxHeight = 52;
-  const minHeight = 10;
+  const isCompact = variant === "compact";
+  const maxHeight = isCompact ? 40 : 52;
+  const minHeight = isCompact ? 8 : 10;
+  const barWidth = isCompact ? "w-2.5" : "w-3";
+  const barGap = isCompact ? "gap-1.5" : "gap-2";
+  const interactive = Boolean(onSelectRun);
 
   return (
-    <div className="flex items-end gap-2" aria-label="Recent runs" role="list">
+    <div
+      className={`flex items-end ${barGap}`}
+      aria-label="Recent runs"
+      role="list"
+      onMouseLeave={() => {
+        if (onHoverRun) onHoverRun(null);
+      }}
+    >
       {recentRuns.map((run, index) => {
         const duration = durations[index];
         const height = maxDuration
           ? Math.max(minHeight, Math.round((duration / maxDuration) * maxHeight))
           : minHeight;
-        const label = `${run.status} run, ${formatDuration(duration)}`;
+        const label = `Run ${run.id.slice(0, 8)} · ${formatDuration(duration)} · ${run.status}`;
+        const isHighlighted = highlightRunId === run.id;
 
         return (
-          <div
+          <button
             key={run.id}
-            className={`w-3 rounded-full ${statusColor(run.status)}`}
+            type="button"
+            className={`group relative ${barWidth} rounded-full ${statusColor(
+              run.status
+            )} transition ${interactive ? "cursor-pointer" : "cursor-default"} hover:-translate-y-0.5 hover:shadow-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+              isHighlighted
+                ? "ring-2 ring-ink/40 ring-offset-2 ring-offset-white/80 dark:ring-white/40 dark:ring-offset-slate-900/70"
+                : ""
+            }`}
             style={{ height }}
             aria-label={label}
+            title={label}
             role="listitem"
-          />
+            onClick={(event) => {
+              if (!onSelectRun) return;
+              event.stopPropagation();
+              onSelectRun(run);
+            }}
+            onMouseEnter={() => {
+              if (onHoverRun) onHoverRun(run);
+            }}
+          >
+          </button>
         );
       })}
     </div>
@@ -102,9 +143,19 @@ export default function App() {
   const [commandOpen, setCommandOpen] = useState(false);
   const [listIndex, setListIndex] = useState(0);
   const [failedOnly, setFailedOnly] = useState(false);
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
+  const [focusedRunId, setFocusedRunId] = useState<string | null>(null);
+  const [focusedRun, setFocusedRun] = useState<{ id: string; jobName: string } | null>(null);
+  const [hoveredRun, setHoveredRun] = useState<{ id: string; jobName: string } | null>(null);
+  const [logData, setLogData] = useState<{ logpath: string; content: string } | null>(null);
+  const [logLoading, setLogLoading] = useState(false);
+  const [logError, setLogError] = useState<string | null>(null);
+  const [runListIndex, setRunListIndex] = useState(0);
 
   const commandInputRef = useRef<HTMLInputElement>(null);
-  const listRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const listRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const runListRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const listboxRef = useRef<HTMLDivElement | null>(null);
 
   async function loadRuns() {
     setLoading(true);
@@ -121,6 +172,22 @@ export default function App() {
 
   useEffect(() => {
     loadRuns();
+  }, []);
+
+  useEffect(() => {
+    function syncFromUrl() {
+      const url = new URL(window.location.href);
+      const job = url.searchParams.get("job");
+      const run = url.searchParams.get("run");
+      setSelectedJob(job);
+      setSelectedRunId(run);
+      setFocusedRunId(run);
+      setFocusedRun(run && job ? { id: run, jobName: job } : null);
+    }
+
+    syncFromUrl();
+    window.addEventListener("popstate", syncFromUrl);
+    return () => window.removeEventListener("popstate", syncFromUrl);
   }, []);
 
   useEffect(() => {
@@ -215,8 +282,14 @@ export default function App() {
   }, [jobs, selectedJob]);
 
   useEffect(() => {
+    if (!runs.length || !selectedRunId || selectedJob) return;
+    const run = runs.find((entry) => entry.id === selectedRunId);
+    if (!run) return;
+    setSelectedJob(run.name);
+  }, [runs, selectedJob, selectedRunId]);
+
+  useEffect(() => {
     setPage(0);
-    setFailedOnly(false);
   }, [selectedJob]);
 
   useEffect(() => {
@@ -237,6 +310,9 @@ export default function App() {
       if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) {
         return;
       }
+      if (listboxRef.current && target && listboxRef.current.contains(target)) {
+        return;
+      }
       if (event.key === "ArrowDown") {
         event.preventDefault();
         focusListIndex(Math.min(filteredJobs.length - 1, listIndex + 1));
@@ -253,16 +329,50 @@ export default function App() {
         event.preventDefault();
         focusListIndex(filteredJobs.length - 1);
       }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        const job = filteredJobs[listIndex];
+        if (!job) return;
+        const recentRuns = job.runs.slice(0, MAX_RECENT_RUNS);
+        if (!recentRuns.length) return;
+        const baseId =
+          focusedRun && focusedRun.jobName === job.name ? focusedRun.id : recentRuns[0].id;
+        const currentIndex = recentRuns.findIndex((run) => run.id === baseId);
+        const nextIndex = Math.min(recentRuns.length - 1, Math.max(0, currentIndex) + 1);
+        const run = recentRuns[nextIndex];
+        if (run) setFocusedRun({ id: run.id, jobName: job.name });
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        const job = filteredJobs[listIndex];
+        if (!job) return;
+        const recentRuns = job.runs.slice(0, MAX_RECENT_RUNS);
+        if (!recentRuns.length) return;
+        const baseId =
+          focusedRun && focusedRun.jobName === job.name ? focusedRun.id : recentRuns[0].id;
+        const currentIndex = recentRuns.findIndex((run) => run.id === baseId);
+        const nextIndex = Math.max(0, (currentIndex === -1 ? 0 : currentIndex) - 1);
+        const run = recentRuns[nextIndex];
+        if (run) setFocusedRun({ id: run.id, jobName: job.name });
+      }
       if (event.key === "Enter") {
         event.preventDefault();
         const job = filteredJobs[listIndex];
-        if (job) setSelectedJob(job.name);
+        if (!job) return;
+        if (focusedRun && focusedRun.jobName === job.name) {
+          const run = job.runs.find((entry) => entry.id === focusedRun.id);
+          if (run) {
+            handleSelectRun(job.name, run);
+            return;
+          }
+        }
+        handleSelectJob(job.name);
       }
     }
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [commandOpen, filteredJobs, listIndex, selectedJob]);
+  }, [commandOpen, filteredJobs, focusedRun, listIndex, selectedJob]);
 
   const filteredRuns = selectedJobData
     ? failedOnly
@@ -276,6 +386,52 @@ export default function App() {
     ? filteredRuns.slice(page * RUNS_PER_PAGE, (page + 1) * RUNS_PER_PAGE)
     : [];
 
+  const selectedRun = selectedJobData
+    ? selectedJobData.runs.find((run) => run.id === selectedRunId) ?? null
+    : null;
+
+  useEffect(() => {
+    if (selectedRunId) return;
+    setRunListIndex(0);
+    runListRefs.current[0]?.focus();
+  }, [page, selectedJob, filteredRuns.length, selectedRunId]);
+
+  useEffect(() => {
+    if (!selectedRunId) {
+      setLogData(null);
+      setLogError(null);
+      setLogLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setLogLoading(true);
+    setLogError(null);
+    fetchLog(selectedRunId)
+      .then((data) => {
+        if (cancelled) return;
+        setLogData(data);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setLogError((err as Error).message);
+        setLogData(null);
+      })
+      .finally(() => {
+        if (cancelled) return;
+        setLogLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedRunId]);
+
+  useEffect(() => {
+    if (!selectedJobData || !selectedRunId) return;
+    const index = filteredRuns.findIndex((run) => run.id === selectedRunId);
+    if (index === -1) return;
+    setPage(Math.floor(index / RUNS_PER_PAGE));
+  }, [filteredRuns, selectedJobData, selectedRunId]);
+
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (!selectedJob) return;
@@ -287,17 +443,80 @@ export default function App() {
       }
       if (event.key.toLowerCase() === "b") {
         event.preventDefault();
-        setSelectedJob(null);
+        if (selectedRunId && selectedJob) {
+          setSelectedRunId(null);
+          setFocusedRunId(null);
+          setFocusedRun(null);
+          updateUrl(selectedJob, null);
+        } else {
+          setSelectedJob(null);
+          setSelectedRunId(null);
+          setFocusedRunId(null);
+          setFocusedRun(null);
+          updateUrl(null, null);
+        }
       }
       if (event.key.toLowerCase() === "f") {
         event.preventDefault();
         setFailedOnly((current) => !current);
       }
-      if (event.key === "ArrowLeft") {
+      if (event.key === "ArrowDown") {
+        if (selectedRunId) return;
+        event.preventDefault();
+        const nextIndex = Math.min(pageRuns.length - 1, runListIndex + 1);
+        setRunListIndex(nextIndex);
+        runListRefs.current[nextIndex]?.focus();
+        const run = pageRuns[nextIndex];
+        if (run) {
+          setFocusedRunId(run.id);
+        }
+      }
+      if (event.key === "ArrowUp") {
+        if (selectedRunId) return;
+        event.preventDefault();
+        const nextIndex = Math.max(0, runListIndex - 1);
+        setRunListIndex(nextIndex);
+        runListRefs.current[nextIndex]?.focus();
+        const run = pageRuns[nextIndex];
+        if (run) {
+          setFocusedRunId(run.id);
+        }
+      }
+      if (!event.altKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
+        if (selectedRunId) return;
+        const recentRuns = filteredRuns.slice(0, MAX_RECENT_RUNS);
+        if (!recentRuns.length) return;
+        event.preventDefault();
+        const baseId = focusedRunId ?? selectedRunId;
+        const currentIndex = baseId ? recentRuns.findIndex((run) => run.id === baseId) : -1;
+        const nextIndex =
+          event.key === "ArrowRight"
+            ? Math.min(recentRuns.length - 1, currentIndex + 1)
+            : Math.max(0, currentIndex === -1 ? recentRuns.length - 1 : currentIndex - 1);
+        const run = recentRuns[nextIndex];
+        if (run) {
+          setFocusedRunId(run.id);
+          const listIndexMatch = pageRuns.findIndex((entry) => entry.id === run.id);
+          if (listIndexMatch !== -1) {
+            setRunListIndex(listIndexMatch);
+            runListRefs.current[listIndexMatch]?.focus();
+          }
+        }
+        return;
+      }
+      if (event.key === "Enter") {
+        const targetId = selectedRunId ?? focusedRunId;
+        if (!targetId) return;
+        const run = filteredRuns.find((entry) => entry.id === targetId);
+        if (!run) return;
+        event.preventDefault();
+        handleSelectRunWithinJob(run);
+      }
+      if (event.altKey && event.key === "ArrowLeft") {
         event.preventDefault();
         setPage((current) => Math.max(0, current - 1));
       }
-      if (event.key === "ArrowRight") {
+      if (event.altKey && event.key === "ArrowRight") {
         event.preventDefault();
         setPage((current) => Math.min(pageCount - 1, current + 1));
       }
@@ -305,7 +524,7 @@ export default function App() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [commandOpen, pageCount, selectedJob]);
+  }, [commandOpen, filteredRuns, focusedRunId, pageCount, pageRuns.length, runListIndex, selectedJob, selectedRunId]);
 
   const isDark = theme === "dark";
 
@@ -333,7 +552,13 @@ export default function App() {
         label: "Back to all jobs",
         type: "action",
         shortcut: "B",
-        run: () => setSelectedJob(null)
+        run: () => {
+          setSelectedJob(null);
+          setSelectedRunId(null);
+          setFocusedRunId(null);
+          setFocusedRun(null);
+          updateUrl(null, null);
+        }
       });
       actions.push({
         id: "failed-only",
@@ -384,6 +609,8 @@ export default function App() {
       return;
     }
     setSelectedJob(item.jobName);
+    setSelectedRunId(null);
+    updateUrl(item.jobName, null);
     setCommandOpen(false);
     setQuery("");
   }
@@ -423,6 +650,32 @@ export default function App() {
       event.preventDefault();
       focusListIndex(Math.max(0, listIndex - 1));
     }
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      const job = filteredJobs[listIndex];
+      if (!job) return;
+      const recentRuns = job.runs.slice(0, MAX_RECENT_RUNS);
+      if (!recentRuns.length) return;
+      const baseId =
+        focusedRun && focusedRun.jobName === job.name ? focusedRun.id : recentRuns[0].id;
+      const currentIndex = recentRuns.findIndex((run) => run.id === baseId);
+      const nextIndex = Math.min(recentRuns.length - 1, Math.max(0, currentIndex) + 1);
+      const run = recentRuns[nextIndex];
+      if (run) setFocusedRun({ id: run.id, jobName: job.name });
+    }
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      const job = filteredJobs[listIndex];
+      if (!job) return;
+      const recentRuns = job.runs.slice(0, MAX_RECENT_RUNS);
+      if (!recentRuns.length) return;
+      const baseId =
+        focusedRun && focusedRun.jobName === job.name ? focusedRun.id : recentRuns[0].id;
+      const currentIndex = recentRuns.findIndex((run) => run.id === baseId);
+      const nextIndex = Math.max(0, (currentIndex === -1 ? 0 : currentIndex) - 1);
+      const run = recentRuns[nextIndex];
+      if (run) setFocusedRun({ id: run.id, jobName: job.name });
+    }
     if (event.key === "Home") {
       event.preventDefault();
       focusListIndex(0);
@@ -434,8 +687,58 @@ export default function App() {
     if (event.key === "Enter") {
       event.preventDefault();
       const job = filteredJobs[listIndex];
-      if (job) setSelectedJob(job.name);
+      if (!job) return;
+      if (focusedRun && focusedRun.jobName === job.name) {
+        const run = job.runs.find((entry) => entry.id === focusedRun.id);
+        if (run) {
+          handleSelectRun(job.name, run);
+          return;
+        }
+      }
+      handleSelectJob(job.name);
     }
+  }
+
+  function updateUrl(job: string | null, run: string | null, replace = false) {
+    const url = new URL(window.location.href);
+    if (job) {
+      url.searchParams.set("job", job);
+    } else {
+      url.searchParams.delete("job");
+    }
+    if (run) {
+      url.searchParams.set("run", run);
+    } else {
+      url.searchParams.delete("run");
+    }
+    if (replace) {
+      window.history.replaceState({}, "", url);
+    } else {
+      window.history.pushState({}, "", url);
+    }
+  }
+
+  function handleSelectJob(name: string) {
+    setSelectedJob(name);
+    setSelectedRunId(null);
+    setFocusedRunId(null);
+    setFocusedRun(null);
+    updateUrl(name, null);
+  }
+
+  function handleSelectRun(jobName: string, run: RunEntry) {
+    setSelectedJob(jobName);
+    setSelectedRunId(run.id);
+    setFocusedRunId(run.id);
+    setFocusedRun(null);
+    updateUrl(jobName, run.id);
+  }
+
+  function handleSelectRunWithinJob(run: RunEntry) {
+    setSelectedRunId(run.id);
+    setFocusedRunId(run.id);
+    setFocusedRun(null);
+    updateUrl(selectedJob ?? run.name, run.id);
   }
 
   return (
@@ -488,7 +791,76 @@ export default function App() {
           </div>
         ) : null}
 
-        {selectedJobData ? (
+        {selectedJobData && selectedRunId ? (
+          <section className="frost-card flex flex-col gap-5 rounded-3xl p-6 shadow-card">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Run details</p>
+                <h2 className="font-display text-2xl text-ink dark:text-slate-100">
+                  {selectedJobData.name}
+                </h2>
+                {selectedRun ? (
+                  <p className="mt-1 text-xs text-ink/60 dark:text-slate-300">
+                    Run {selectedRun.id.slice(0, 8)} · {formatDuration(getDurationMs(selectedRun))} · {selectedRun.status}
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRunId(null);
+                    setFocusedRunId(null);
+                    setFocusedRun(null);
+                    updateUrl(selectedJobData.name, null);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-3 py-2 text-xs font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+                >
+                  <CornerUpLeft className="h-3 w-3" />
+                  Back to runs
+                  <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
+                    B
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-ink/10 bg-white/80 dark:border-white/10 dark:bg-slate-900/70">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/5 px-4 py-3 text-xs uppercase tracking-[0.2em] text-clay dark:border-white/10 dark:text-slate-400">
+                <span>Run log</span>
+                {selectedRun ? (
+                  <span className="normal-case text-xs text-ink/60 dark:text-slate-300">
+                    {selectedRun.logpath}
+                  </span>
+                ) : null}
+              </div>
+              <ScrollArea.Root className="h-[520px]">
+                <ScrollArea.Viewport className="p-4">
+                  {selectedRun ? (
+                    logLoading ? (
+                      <p className="text-sm text-ink/50 dark:text-slate-400">Loading log…</p>
+                    ) : logError ? (
+                      <p className="text-sm text-rose-600 dark:text-rose-300">{logError}</p>
+                    ) : logData ? (
+                      <pre className="whitespace-pre-wrap text-xs leading-relaxed text-ink dark:text-slate-100">
+                        {logData.content || "Log is empty."}
+                      </pre>
+                    ) : (
+                      <p className="text-sm text-ink/50 dark:text-slate-400">No log available.</p>
+                    )
+                  ) : (
+                    <p className="text-sm text-ink/50 dark:text-slate-400">
+                      Select a run to view its logs.
+                    </p>
+                  )}
+                </ScrollArea.Viewport>
+                <ScrollArea.Scrollbar orientation="vertical" className="flex touch-none select-none p-1">
+                  <ScrollArea.Thumb className="relative flex-1 rounded-full bg-ink/20 dark:bg-white/20" />
+                </ScrollArea.Scrollbar>
+              </ScrollArea.Root>
+            </div>
+          </section>
+        ) : selectedJobData ? (
           <section className="frost-card flex flex-col gap-5 rounded-3xl p-6 shadow-card">
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
@@ -498,7 +870,13 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setSelectedJob(null)}
+                  onClick={() => {
+                    setSelectedJob(null);
+                    setSelectedRunId(null);
+                    setFocusedRunId(null);
+                    setFocusedRun(null);
+                    updateUrl(null, null);
+                  }}
                   className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-3 py-2 text-xs font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
                 >
                   <CornerUpLeft className="h-3 w-3" />
@@ -530,7 +908,11 @@ export default function App() {
                 </p>
               </div>
               <div className="mt-4">
-                <RunBars runs={filteredRuns} />
+                <RunBars
+                  runs={filteredRuns}
+                  onSelectRun={handleSelectRunWithinJob}
+                  highlightRunId={focusedRunId ?? selectedRunId}
+                />
               </div>
             </div>
 
@@ -549,10 +931,19 @@ export default function App() {
                         {failedOnly ? "No failed runs for this job." : "No runs for this job."}
                       </p>
                     ) : (
-                      pageRuns.map((run) => (
+                      pageRuns.map((run, index) => (
                         <div
                           key={run.id}
-                          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-transparent px-4 py-3 text-sm transition hover:border-ink/10 hover:bg-white dark:hover:border-white/10 dark:hover:bg-slate-900"
+                          ref={(node) => {
+                            runListRefs.current[index] = node;
+                          }}
+                          tabIndex={-1}
+                          className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-sm transition ${
+                            run.id === selectedRunId || run.id === focusedRunId
+                              ? "border-ink/20 bg-white shadow-soft dark:border-white/10 dark:bg-slate-900"
+                              : "border-transparent hover:border-ink/10 hover:bg-white dark:hover:border-white/10 dark:hover:bg-slate-900"
+                          }`}
+                          onClick={() => handleSelectRunWithinJob(run)}
                         >
                           <div>
                             <p className="font-medium text-ink dark:text-slate-100">Run {run.id.slice(0, 6)}</p>
@@ -617,6 +1008,7 @@ export default function App() {
               aria-label="Jobs"
               onKeyDown={handleListKeyDown}
               tabIndex={0}
+              ref={listboxRef}
             >
               <ScrollArea.Root className="h-[520px]">
                 <ScrollArea.Viewport className="p-2">
@@ -627,33 +1019,75 @@ export default function App() {
                     {!loading && filteredJobs.length === 0 ? (
                       <p className="px-4 py-6 text-sm text-ink/50 dark:text-slate-400">No jobs match this search.</p>
                     ) : null}
-                    {filteredJobs.map((job, index) => (
-                      <button
-                        key={job.name}
-                        type="button"
-                        ref={(node) => {
-                          listRefs.current[index] = node;
-                        }}
-                        onClick={() => setSelectedJob(job.name)}
-                        className={`rounded-2xl border px-4 py-3 text-left text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:focus-visible:outline-slate-100 ${
-                          index === listIndex
-                            ? "border-ink/20 bg-white shadow-soft dark:border-white/10 dark:bg-slate-900"
-                            : "border-transparent hover:border-ink/10 hover:bg-white dark:hover:border-white/10 dark:hover:bg-slate-900/60"
-                        }`}
-                        aria-selected={index === listIndex}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="font-medium text-ink dark:text-slate-100">{job.name}</p>
-                            <p className="text-xs text-ink/50 dark:text-slate-400">{job.runs.length} runs in view</p>
+                    {filteredJobs.map((job, index) => {
+                      const hoveredForJob =
+                        hoveredRun && hoveredRun.jobName === job.name
+                          ? job.runs.find((run) => run.id === hoveredRun.id) ?? null
+                          : null;
+                      const focusedForJob =
+                        focusedRun && focusedRun.jobName === job.name
+                          ? job.runs.find((run) => run.id === focusedRun.id) ?? null
+                          : null;
+                      const detailRun = hoveredForJob ?? focusedForJob ?? job.latest ?? null;
+
+                      return (
+                        <div
+                          key={job.name}
+                          ref={(node) => {
+                            listRefs.current[index] = node;
+                          }}
+                          onClick={() => handleSelectJob(job.name)}
+                          className={`cursor-pointer rounded-2xl border px-4 py-3 text-left text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:focus-visible:outline-slate-100 ${
+                            index === listIndex
+                              ? "border-ink/20 bg-white shadow-soft dark:border-white/10 dark:bg-slate-900"
+                              : "border-transparent hover:border-ink/10 hover:bg-white dark:hover:border-white/10 dark:hover:bg-slate-900/60"
+                          }`}
+                          aria-selected={index === listIndex}
+                          role="option"
+                          tabIndex={-1}
+                        >
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="min-w-0">
+                              <p className="truncate font-medium text-ink dark:text-slate-100">{job.name}</p>
+                              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink/50 dark:text-slate-400">
+                                <span>{job.runs.length} runs in view</span>
+                                {detailRun ? (
+                                  <span className="flex items-center gap-1">
+                                    <span className={`h-1.5 w-1.5 rounded-full ${statusColor(detailRun.status)}`} />
+                                    {hoveredForJob || focusedForJob ? "Run" : "Last run"}{" "}
+                                    {formatDuration(getDurationMs(detailRun))}
+                                    {hoveredForJob || focusedForJob
+                                      ? ` · ${detailRun.id.slice(0, 6)} · ${detailRun.status}`
+                                      : ""}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+                            <div className="shrink-0">
+                              <RunBars
+                                runs={job.runs}
+                                variant="compact"
+                                onSelectRun={(run) => handleSelectRun(job.name, run)}
+                                onHoverRun={(run) => {
+                                  if (!run) {
+                                    setHoveredRun(null);
+                                    return;
+                                  }
+                                  setHoveredRun({ id: run.id, jobName: job.name });
+                                }}
+                                highlightRunId={
+                                  hoveredRun && hoveredRun.jobName === job.name
+                                    ? hoveredRun.id
+                                    : focusedRun && focusedRun.jobName === job.name
+                                      ? focusedRun.id
+                                      : null
+                                }
+                              />
+                            </div>
                           </div>
-                          {job.latest ? <StatusPill status={job.latest.status} /> : null}
                         </div>
-                        <div className="mt-3">
-                          <RunBars runs={job.runs} />
-                        </div>
-                      </button>
-                    ))}
+                      );
+                    })}
                   </div>
                 </ScrollArea.Viewport>
                 <ScrollArea.Scrollbar orientation="vertical" className="flex touch-none select-none p-1">
