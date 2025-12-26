@@ -587,9 +587,29 @@ export default function App() {
         <header className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-plum dark:text-orange-300">Skedulord</p>
-            <h1 className="font-display text-4xl font-semibold text-ink dark:text-slate-100">
-              {selectedJobData ? selectedJobData.name : "All jobs"}
-            </h1>
+            <nav aria-label="Breadcrumb">
+              <ol className="flex flex-wrap items-center gap-3 text-sm uppercase tracking-[0.3em]">
+                {selectedJobData ? (
+                  <>
+                    <li>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedJob(null)}
+                        className="uppercase text-ink/50 transition hover:text-ink dark:text-slate-400 dark:hover:text-slate-200"
+                      >
+                        All jobs
+                      </button>
+                    </li>
+                    <li aria-hidden="true" className="text-ink/30 dark:text-slate-500">
+                      /
+                    </li>
+                  </>
+                ) : null}
+                <li aria-current="page" className="font-semibold uppercase text-ink dark:text-slate-100">
+                  {selectedJobData ? selectedJobData.name : "All jobs"}
+                </li>
+              </ol>
+            </nav>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -629,11 +649,7 @@ export default function App() {
 
         {selectedJobData ? (
           <section className="frost-card flex flex-col gap-5 rounded-3xl p-6 shadow-card">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Job overview</p>
-                <h2 className="font-display text-2xl text-ink dark:text-slate-100">{selectedJobData.name}</h2>
-              </div>
+            <div className="flex flex-wrap items-center justify-end gap-4">
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -797,14 +813,8 @@ export default function App() {
           </section>
         ) : (
           <section className="frost-card flex flex-col gap-5 rounded-3xl p-6 shadow-card">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Job list</p>
-                <h2 className="font-display text-2xl text-ink dark:text-slate-100">All jobs</h2>
-              </div>
-              <p className="text-xs text-ink/60 dark:text-slate-300">
-                {filteredJobs.length} jobs
-              </p>
+            <div className="flex items-center justify-end">
+              <p className="text-xs text-ink/60 dark:text-slate-300">{filteredJobs.length} jobs</p>
             </div>
 
             <div
