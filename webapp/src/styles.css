@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-haze text-ink font-body;
+}
+
+.app-shell {
+  background: radial-gradient(circle at top left, #fff6e9 0%, #f6f4ef 40%, #efe6da 100%);
+  min-height: 100vh;
+}
+
+.frost-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(20, 21, 26, 0.08);
+}

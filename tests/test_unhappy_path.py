@@ -6,9 +6,9 @@ from typer.testing import CliRunner
 
 @pytest.fixture()
 def clean_slate():
-    os.system("lord wipe disk --really --yes")
+    os.system("python -m skedulord wipe disk --really --yes")
     yield 1
-    os.system("lord wipe disk --really --yes")
+    os.system("python -m skedulord wipe disk --really --yes")
 
 
 @pytest.fixture()
@@ -17,12 +17,9 @@ def cli():
 
 
 def test_history_without_init(clean_slate, cli):
-    assert os.system("lord history") != 0
+    assert os.system("python -m skedulord history") != 0
 
 
 def test_summary_without_init(clean_slate, cli):
-    assert os.system('lord summary"') != 0
+    assert os.system("python -m skedulord summary") != 0
 
-
-def test_serve_without_init(clean_slate, cli):
-    assert os.system('lord serve"') != 0

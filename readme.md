@@ -8,14 +8,14 @@ If you're new, check out the [getting started guide](https://koaning.github.io/s
 
 ## Installation 
 
-```python
-pip install skedulord
+```text
+uv pip install skedulord
 ```
 
 If you like to live dangerously, you can also install from GitHub for the latest commit. 
 
 ```
-python -m pip install --upgrade "skedulord @ git+https://github.com/koaning/skedulord.git"
+uv pip install --upgrade "skedulord @ git+https://github.com/koaning/skedulord.git"
 ```
 
 ## Usage 
@@ -59,8 +59,8 @@ for i in range(5):
 The idea here is that `skedulord` can run this and keep track of logs.
 
 ```text
-python -m skedulord run jobname1 "python script.py" --retry 3 --wait 60
-python -m skedulord run jobname2 "python script.py" --retry 3 --wait 60
+python -m skedulord run jobname1 "script.py" --retry 3 --wait 60
+python -m skedulord run jobname2 "script.py" --retry 3 --wait 60
 ```
 
 This will run the `"python script.py"` command as if you'd normally run it
@@ -106,13 +106,13 @@ To help out, `skedulord` can also configure cron for you by configuring a `.yml`
 user: vincent
 schedule:
     - name: ping
-      command: python /home/vincent/path/scripts/ping.py
+      command: /home/vincent/path/scripts/ping.py
       cron: "*/2 * * * *"
     - name: github issues downloader
-      command: python /full/path/to/cli.py --repo foobar --output /Users/vincent/data
+      command: /full/path/to/cli.py --repo foobar --output /Users/vincent/data
       cron: "0 1 * * *"
     - name: github actions downloader
-      command: python /full/path/to/scrape.py --repo foobar --output /Users/vincent/data
+      command: /full/path/to/scrape.py --repo foobar --output /Users/vincent/data
       cron: "0 1 * * *"
 ```
 
@@ -129,11 +129,27 @@ taking care of all the logging.
 crontab -e
 ```
 
-> Note that when a command starts with `python` skedulord will assume the same virtualenv
-as the one that ran the `skedulord schedule` command. You may also pass another Python path
-if you prefer to use another virtualenv.
+> Note that skedulord assumes commands are Python scripts and executes them via `uv run python`.
+
+### Templating
+
+Schedule commands support a few runtime tokens that are rendered when a job starts:
+
+- `{current_date}` (ISO date)
+- `{current_time}` (ISO time)
+- `{current_datetime}` (ISO datetime)
 
 ### Dashboard 
+
+We are migrating to a new webapp built with React + Radix + shadcn and a FastAPI
+backend. For now, you can start the API via:
+
+```text
+python -m skedulord serve
+```
+
+The frontend lives in `webapp/` and can be run via `npm install` + `npm run dev`
+once dependencies are installed.
 
 If you want, you can even use skedulord to run a small dashboard for you to show
 all the logs from past jobs. These are all available from the terminal as well, 

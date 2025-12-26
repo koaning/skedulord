@@ -109,6 +109,8 @@ venv.bak/
 .mypy_cache/
 .dmypy.json
 dmypy.json
+.ruff_cache/
+uv.lock
 
 # IDE
 .idea
@@ -121,6 +123,8 @@ skedulord/dashboard/build/*
 
 package-lock.json
 node_modules/*
+.vite/
+webapp/dist/
 cypress/videos/*
 cypress/screenshots/*
 cov_html/*

@@ -3,17 +3,25 @@ import json
 import pathlib
 
 SKEDULORD_PATH = os.path.join(os.path.expanduser("~/.skedulord"))
+SKEDULORD_DB_PATH = os.path.join(SKEDULORD_PATH, "skedulord.db")
 
 
-def skedulord_path() -> str:
-    return pathlib.Path(SKEDULORD_PATH)
+def skedulord_path() -> pathlib.Path:
+    path = pathlib.Path(SKEDULORD_PATH)
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+def db_path() -> pathlib.Path:
+    skedulord_path()
+    return pathlib.Path(SKEDULORD_DB_PATH)
 
 
 def job_name_path(jobname) -> str:
     return skedulord_path() / jobname
 
 
-def heartbeat_path() -> str:
+def heartbeat_path() -> pathlib.Path:
     return skedulord_path() / "heartbeat.jsonl"
 
 

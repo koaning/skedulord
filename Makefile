@@ -1,24 +1,21 @@
-flake:
-	flake8 skedulord
-	flake8 tests
-	flake8 setup.py
+lint:
+	ruff check skedulord tests
 
 install:
-	pip install -e ".[dev]"
+	uv pip install -e ".[dev]"
 
 develop: install
-	python setup.py develop
+	uv pip install -e ".[dev]"
 
 test:
 	pytest tests
 
-check: flake test clean
+check: lint test clean
 
 clean:
 	rm -rf .pytest_cache
 	rm -rf build
 	rm -rf dist
-	rm -rf scikit_lego.egg-info
 	rm -rf .ipynb_checkpoints
 	rm -rf notebooks/.ipynb_checkpoints
 	rm -rf skedulord.egg-info
@@ -45,6 +42,5 @@ reset-big:
 
 pypi:
 	rm -rf dist
-	python setup.py sdist
-	python setup.py bdist_wheel --universal
+	uv build
 	twine upload dist/*
