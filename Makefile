@@ -1,24 +1,26 @@
-flake:
-	flake8 skedulord
-	flake8 tests
-	flake8 setup.py
+.PHONY: lint install develop test check clean reset reset-big pypi \
+	demo-reset demo-seed demo-run demo-web demo-clean demo-install demo-ui-build demo-check
+
+lint:
+	ruff check skedulord tests
 
 install:
-	pip install -e ".[dev]"
+	@if [ ! -d ".venv" ]; then uv venv .venv; fi
+	uv pip install -e ".[dev]"
+	cd webapp && npm install
 
 develop: install
-	python setup.py develop
+	uv pip install -e ".[dev]"
 
 test:
-	pytest tests
+	uv run pytest tests
 
-check: flake test clean
+check: lint test clean
 
 clean:
 	rm -rf .pytest_cache
 	rm -rf build
 	rm -rf dist
-	rm -rf scikit_lego.egg-info
 	rm -rf .ipynb_checkpoints
 	rm -rf notebooks/.ipynb_checkpoints
 	rm -rf skedulord.egg-info
@@ -45,6 +47,39 @@ reset-big:
 
 pypi:
 	rm -rf dist
-	python setup.py sdist
-	python setup.py bdist_wheel --universal
+	uv build
 	twine upload dist/*
+
+demo-reset:
+	uv run python -m skedulord wipe disk --really --yes
+
+
+demo-seed:
+	uv run python -m skedulord run demo-ok "jobs/pyjob.py" --retry 1 --wait 0
+	uv run python -m skedulord run demo-ok "jobs/pyjob.py" --retry 1 --wait 0
+	uv run python -m skedulord run demo-bad "jobs/badpyjob.py" --retry 1 --wait 0
+	uv run python -m skedulord run demo-printer "jobs/printer.py" --retry 1 --wait 0
+
+
+demo-run: demo-reset demo-seed demo-ui-build
+	uv run python -m skedulord serve
+
+
+demo-web:
+	cd webapp && npm install && npm run dev
+
+
+demo-ui-build:
+	cd webapp && npm install && npm run build
+
+
+demo-clean:
+	uv run python -m skedulord wipe disk --really --yes
+
+
+demo-install:
+	uv pip install -e ".[dev]"
+
+
+demo-check:
+	uv run python -m skedulord history --n 5

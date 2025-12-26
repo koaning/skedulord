@@ -3,9 +3,9 @@ import pathlib
 
 import pytest
 from typer.testing import CliRunner
-from clumper import Clumper
 
-from skedulord.common import skedulord_path, heartbeat_path
+from skedulord.common import skedulord_path
+from skedulord.db import fetch_runs
 from skedulord.__main__ import app
 from skedulord import __version__ as lord_version
 
@@ -40,11 +40,11 @@ def dirty_start_via_schedule():
 
 
 def test_basic_history(clean_start_small):
-    assert len(Clumper.read_jsonl(heartbeat_path())) == 3
+    assert len(list(fetch_runs())) == 3
 
 
 def test_adv_heartbeat_file(dirty_start_small):
-    assert len(Clumper.read_jsonl(heartbeat_path())) == 2
+    assert len(list(fetch_runs())) == 2
 
 
 def test_version():

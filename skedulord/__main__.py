@@ -1,4 +1,3 @@
-import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -11,8 +10,10 @@ from clumper import Clumper
 
 from skedulord import __version__ as lord_version
 from skedulord.job import JobRunner
-from skedulord.common import SKEDULORD_PATH, heartbeat_path, skedulord_path
+from skedulord.common import SKEDULORD_PATH
 from skedulord.cron import Cron, clean_cron, parse_job_from_settings
+from skedulord.db import fetch_runs
+from skedulord.templating import render_tokens
 from skedulord.dashboard import build_site
 
 app = typer.Typer(
@@ -35,14 +36,20 @@ def run(
         None, help="The command you want to run (in parentheses)."
     ),
     settings_path: Union[Path, None] = typer.Option(None, help="Schedule config to reference."),
-    retry: int = typer.Option(2, help="The number of tries, should a job fail."),
-    wait: int = typer.Option(60, help="The number of seconds between tries."),
+    retry: Union[int, None] = typer.Option(None, help="The number of tries, should a job fail."),
+    wait: Union[int, None] = typer.Option(None, help="The number of seconds between tries."),
 ):
     """Run a single command, which is logged by skedulord."""
     if settings_path:
         settings = Clumper.read_yaml(settings_path).unpack("schedule").keep(lambda d: d['name'] == name).collect()
-        command = parse_job_from_settings(settings, name)
-    JobRunner(retry=retry, wait=wait, name=name, cmd=command).run()
+        parsed = parse_job_from_settings(settings, name)
+        command = parsed["command"]
+        retry = parsed["retry"] if retry is None else retry
+        wait = parsed["wait"] if wait is None else wait
+    if not command:
+        raise typer.Exit(code=1)
+    command = render_tokens(command)
+    JobRunner(retry=retry or 2, wait=wait or 60, name=name, cmd=command).run()
 
 
 @app.command()
@@ -58,8 +65,8 @@ def schedule(
 @app.command()
 def wipe(
     what: str = typer.Argument(..., help="What to wipe. Either `disk` or `schedule`."),
-    yes: bool = typer.Option(False, is_flag=True, prompt=True, help="Are you sure?"),
-    really: bool = typer.Option(False, is_flag=True, prompt=True, help="Really sure?"),
+    yes: bool = typer.Option(False, prompt=True, help="Are you sure?"),
+    really: bool = typer.Option(False, prompt=True, help="Really sure?"),
     user: str = typer.Option(None, help="The name of the user. Default: curent user."),
 ):
     """Wipe the disk or schedule state."""
@@ -81,28 +88,22 @@ def wipe(
 @app.command()
 def history(
     n: int = typer.Option(10, help="How many rows should the table show."),
-    only_failures: bool = typer.Option(False, is_flag=True, help="Only show failures."),
-    date: str = typer.Option(None, is_flag=True, help="Only show specific date."),
-    name: str = typer.Option(
-        None, is_flag=True, help="Only show jobs with specific name."
-    ),
+    only_failures: bool = typer.Option(False, help="Only show failures."),
+    date: str = typer.Option(None, help="Only show specific date."),
+    name: str = typer.Option(None, "--name", "--jobname", help="Only show jobs with specific name."),
 ):
     """Shows a table with job status."""
-    clump = Clumper.read_jsonl(heartbeat_path()).sort(
-        lambda _: _["start"], reverse=True
-    )
-    if only_failures:
-        clump = clump.keep(lambda _: _["status"] != "success")
-    if name:
-        clump = clump.keep(lambda _: name in _["name"])
-    if date:
-        clump = clump.keep(lambda _: date in _["start"])
+    status = "fail" if only_failures else None
+    rows = list(fetch_runs(limit=n, name=name, status=status, date=date))
+    if not rows:
+        print("No runs found.")
+        raise typer.Exit(code=1)
     table = Table(title=None)
     table.add_column("status")
     table.add_column("date")
     table.add_column("name")
     table.add_column("logfile")
-    for d in clump.head(n).collect():
+    for d in rows:
         table.add_row(
             f"[{'red' if d['status'] == 'fail' else 'green'}]{d['status']}[/]",
             d["start"],
@@ -122,15 +123,16 @@ def build():
 
 @app.command(name="serve")
 def serve(
-    build: bool = typer.Option(True, help="Build the site beforehand?"),
-    port: int = typer.Option(8000, help="The port number to use.")
+    host: str = typer.Option("127.0.0.1", help="The host to bind."),
+    port: int = typer.Option(8000, help="The port number to use."),
+    reload: bool = typer.Option(False, help="Enable auto-reload."),
     ):
     """
-    Serves the skedulord dashboard.
+    Serves the skedulord API.
     """
-    if build:
-        build_site()
-    os.system(f"python -m http.server --directory {skedulord_path()} {port}")
+    import uvicorn
+
+    uvicorn.run("skedulord.api:app", host=host, port=port, reload=reload)
 
 
 if __name__ == "__main__":

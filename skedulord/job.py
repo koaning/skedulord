@@ -1,12 +1,13 @@
-import io
 import json
 import time
 import uuid
 import pathlib
 import subprocess
+import shlex
 import datetime as dt
 from skedulord.common import job_name_path, log_heartbeat
 from pathlib import Path
+from skedulord.db import insert_run
 
 class JobRunner:
     """
@@ -28,10 +29,11 @@ class JobRunner:
         tries = 1
         stop = False
         while not stop:
-            info = {"name": name, "command": command, "run_id": run_id, "attempt": tries, "timestamp": str(dt.datetime.now())}
+            log_command = " ".join(command) if isinstance(command, list) else command
+            info = {"name": name, "command": log_command, "run_id": run_id, "attempt": tries, "timestamp": str(dt.datetime.now())}
             self.file.writelines([json.dumps(info), "\n"])            
             output = subprocess.run(
-                command.split(" "),
+                command,
                 cwd=str(pathlib.Path().cwd()),
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
@@ -56,7 +58,7 @@ class JobRunner:
         """
         run_id = str(uuid.uuid4())[:8]
         start_time = self.start_time
-        status = self._attempt_cmd(command=self.cmd, name=self.name, run_id=run_id)
+        status = self._attempt_cmd(command=self._cmd_tokens(), name=self.name, run_id=run_id)
         endtime = str(dt.datetime.now())[:19]
         job_name_path(self.name).mkdir(parents=True, exist_ok=True)
         logpath = str(job_name_path(self.name) / f"{start_time}.txt")
@@ -69,3 +71,22 @@ class JobRunner:
             toc=endtime,
             logpath=logpath
         )
+        insert_run(
+            run_id=run_id,
+            name=self.name,
+            command=self.cmd,
+            status=status,
+            start=start_time.replace("T", " "),
+            end=endtime,
+            logpath=logpath,
+        )
+        self.file.close()
+
+    def _cmd_tokens(self) -> list[str]:
+        cmd = self.cmd.strip()
+        if cmd.startswith("uv run"):
+            return shlex.split(cmd)
+        if cmd.startswith("python "):
+            cmd = cmd.replace("python ", "", 1).strip()
+        tokens = shlex.split(cmd)
+        return ["uv", "run", "python", *tokens]

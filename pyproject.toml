@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "skedulord"
+dynamic = ["version"]
+description = "A tool that automates scheduling and logging of jobs."
+readme = "readme.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [{name = "Vincent D. Warmerdam"}]
+dependencies = [
+  "PyYAML>=5.1.1",
+  "clumper>=0.2.8",
+  "fastapi>=0.110.0",
+  "jinja2>=3.1.0",
+  "python-crontab>=2.5.1",
+  "rich>=9.10.0",
+  "typer>=0.3.2",
+  "uvicorn>=0.29.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "pytest-cov",
+  "mkdocs-material>=6.2.8",
+  "ruff>=0.5.0",
+]
+
+[project.scripts]
+skedulord = "skedulord.__main__:app"
+
+[tool.setuptools.dynamic]
+version = {attr = "skedulord.__version__"}
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.setuptools.package-data]
+skedulord = ["templates/*.html"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B"]
+ignore = ["E501"]
