@@ -101,6 +101,7 @@ export default function App() {
   const [page, setPage] = useState(0);
   const [commandOpen, setCommandOpen] = useState(false);
   const [listIndex, setListIndex] = useState(0);
+  const [shortcutOpen, setShortcutOpen] = useState(false);
 
   const commandInputRef = useRef<HTMLInputElement>(null);
   const listRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -136,6 +137,7 @@ export default function App() {
     function onKeyDown(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
+        setShortcutOpen(false);
         setCommandOpen(true);
       }
     }
@@ -252,6 +254,13 @@ export default function App() {
         type: "action",
         shortcut: "T",
         run: () => setTheme(isDark ? "light" : "dark")
+      },
+      {
+        id: "shortcuts",
+        label: "Keyboard shortcut overview",
+        type: "action",
+        shortcut: "?",
+        run: () => setShortcutOpen(true)
       }
     ];
 
@@ -365,6 +374,28 @@ export default function App() {
   const pageRuns = selectedJobData
     ? selectedJobData.runs.slice(page * RUNS_PER_PAGE, (page + 1) * RUNS_PER_PAGE)
     : [];
+  const shortcutGroups = [
+    {
+      title: "Global",
+      items: [{ label: "Open command palette", keys: "Cmd/Ctrl + K" }]
+    },
+    {
+      title: "Command palette",
+      items: [
+        { label: "Move selection", keys: "Up / Down" },
+        { label: "Open selection", keys: "Enter" },
+        { label: "Close palette", keys: "Esc" }
+      ]
+    },
+    {
+      title: "Job list",
+      items: [
+        { label: "Move selection", keys: "Up / Down" },
+        { label: "Jump to start/end", keys: "Home / End" },
+        { label: "Open job", keys: "Enter" }
+      ]
+    }
+  ];
 
   return (
     <div className="app-shell">
@@ -616,6 +647,66 @@ export default function App() {
                   </button>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {shortcutOpen ? (
+        <div
+          className="fixed inset-0 z-50 flex justify-center bg-black/30 px-4 py-20 backdrop-blur-sm dark:bg-black/60"
+          onClick={() => setShortcutOpen(false)}
+          role="presentation"
+        >
+          <div
+            className="w-full max-w-lg rounded-3xl border border-ink/10 bg-white/95 p-6 shadow-soft dark:border-white/10 dark:bg-slate-950/90"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Keyboard shortcut overview"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">
+                  Shortcuts
+                </p>
+                <h2 className="font-display text-2xl text-ink dark:text-slate-100">
+                  Keyboard shortcut overview
+                </h2>
+                <p className="mt-1 text-sm text-ink/60 dark:text-slate-300">
+                  Quick reference for navigation and palette controls.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShortcutOpen(false)}
+                className="rounded-full border border-ink/10 px-3 py-1 text-xs font-semibold text-ink transition hover:-translate-y-0.5 hover:shadow-card dark:border-white/10 dark:text-slate-100"
+              >
+                Close
+              </button>
+            </div>
+            <div className="mt-6 grid gap-4">
+              {shortcutGroups.map((group) => (
+                <div
+                  key={group.title}
+                  className="rounded-2xl border border-ink/10 bg-white/80 p-4 text-sm dark:border-white/10 dark:bg-slate-900/70"
+                >
+                  <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">
+                    {group.title}
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {group.items.map((item) => (
+                      <div key={item.label} className="flex items-center justify-between gap-3">
+                        <span className="text-ink/80 dark:text-slate-200">
+                          {item.label}
+                        </span>
+                        <span className="rounded-full border border-ink/10 bg-white/80 px-2 py-0.5 text-xs font-semibold text-ink dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100">
+                          {item.keys}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
