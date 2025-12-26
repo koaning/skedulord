@@ -13,6 +13,17 @@ Options:
   --help           Show this message and exit.
 ```
 
+## `init`
+
+Initialize a starter `.env`, `schedule.yml`, example script, and sqlite database.
+
+```text
+Options:
+  -p, --path PATH  Directory to write .env and schedule.yml.  [default: .]
+  --force          Overwrite existing files.  [default: False]
+  --help           Show this message and exit.
+```
+
 ## `schedule`  
 
 Set (or reset) cron jobs based on config.

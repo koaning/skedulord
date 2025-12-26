@@ -1,3 +1,4 @@
+import getpass
 import os
 import shutil
 import subprocess
@@ -14,7 +15,14 @@ from skedulord.auth import hash_password
 from skedulord.job import JobRunner
 from skedulord.common import SKEDULORD_PATH
 from skedulord.cron import Cron, clean_cron, parse_job_from_settings
-from skedulord.db import delete_user, fetch_runs, fetch_user, insert_user, update_user_password
+from skedulord.db import (
+    delete_user,
+    fetch_runs,
+    fetch_user,
+    init_db,
+    insert_user,
+    update_user_password,
+)
 from skedulord.templating import render_tokens
 
 app = typer.Typer(
@@ -110,6 +118,90 @@ def main(ctx: typer.Context):
 def version():
     """Show the version."""
     print(lord_version)
+
+
+@app.command()
+def init(
+    path: Path = typer.Option(
+        Path("."),
+        "--path",
+        "-p",
+        help="Directory to write .env and schedule.yml.",
+    ),
+    force: bool = typer.Option(False, help="Overwrite existing files."),
+):
+    """Initialize a starter .env, schedule.yml, and sqlite database."""
+    path = path.expanduser().resolve()
+    path.mkdir(parents=True, exist_ok=True)
+
+    user = getpass.getuser()
+    env_path = path / ".env"
+    schedule_path = path / "schedule.yml"
+    script_path = path / "example_job.py"
+    targets = [env_path, schedule_path, script_path]
+
+    if not force:
+        existing = [target for target in targets if target.exists()]
+        if existing:
+            print("[yellow]Skipped init because files already exist:[/]")
+            for target in existing:
+                print(f"[yellow]- {target}[/]")
+            print("[yellow]Re-run with --force to overwrite.[/]")
+            raise typer.Exit(code=1)
+
+    env_contents = "\n".join(
+        [
+            "# Skedulord environment (edit as needed).",
+            "# WARNING: never put secrets in frontend VITE_* variables.",
+            "SKEDULORD_NO_AUTH=0",
+            "SKEDULORD_EXAMPLE_MESSAGE=hello from skedulord",
+            "",
+        ]
+    )
+
+    schedule_contents = "\n".join(
+        [
+            "user: " + user,
+            "schedule:",
+            "  - name: example",
+            f"    command: {script_path}",
+            "    cron: \"*/5 * * * *\"",
+            "",
+        ]
+    )
+
+    script_contents = "\n".join(
+        [
+            "#!/usr/bin/env -S uv run python",
+            "# /// script",
+            "# dependencies = [\"python-dotenv\"]",
+            "# ///",
+            "from __future__ import annotations",
+            "",
+            "from pathlib import Path",
+            "import os",
+            "",
+            "from dotenv import load_dotenv",
+            "",
+            "env_path = Path(__file__).with_name(\".env\")",
+            "load_dotenv(env_path)",
+            "",
+            "message = os.getenv(\"SKEDULORD_EXAMPLE_MESSAGE\", \"hello from skedulord\")",
+            "print(message)",
+            "",
+        ]
+    )
+
+    for target, contents, label in [
+        (env_path, env_contents, ".env"),
+        (schedule_path, schedule_contents, "schedule.yml"),
+        (script_path, script_contents, "example_job.py"),
+    ]:
+        target.write_text(contents, encoding="utf8")
+        print(f"[green]Wrote {label} to {target}.[/]")
+
+    init_db()
+    print(f"[green]Initialized sqlite database at {Path(SKEDULORD_PATH) / 'skedulord.db'}.[/]")
 
 
 @app.command()
