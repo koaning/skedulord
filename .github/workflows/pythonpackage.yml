@@ -26,6 +26,7 @@ jobs:
       uses: astral-sh/setup-uv@v4
     - name: install
       run: |
+        uv venv .venv
         uv pip install -e ".[dev]"
     - name: pytest
-      run: pytest --disable-warnings
+      run: uv run pytest --disable-warnings
