@@ -59,7 +59,7 @@ demo-seed:
 
 
 demo-run: demo-reset demo-seed demo-ui-build
-	uv run python -m skedulord serve
+	uv run python -m skedulord serve --reload
 
 
 demo-web:
