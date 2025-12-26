@@ -17,12 +17,10 @@ Options:
   --help  Show this message and exit.
 
 Commands:
-  build     Builds static html files so you may view a dashboard.
   history   Shows a table with job status.
   run       Run a single command, which is logged by skedulord.
   schedule  Set (or reset) cron jobs based on config.
-  serve     Opens the dashboard in a browser.
+  serve     Serves the Skedulord API (and webapp if built).
   version   Show the version.
   wipe      Wipe the disk or schedule state.
 ```
-

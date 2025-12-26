@@ -14,13 +14,20 @@ from skedulord.common import SKEDULORD_PATH
 from skedulord.cron import Cron, clean_cron, parse_job_from_settings
 from skedulord.db import fetch_runs
 from skedulord.templating import render_tokens
-from skedulord.dashboard import build_site
 
 app = typer.Typer(
     name="SKEDULORD",
     add_completion=False,
     help="SKEDULORD: helps with cronjobs and logs.",
+    invoke_without_command=True,
 )
+
+
+@app.callback(invoke_without_command=True)
+def main(ctx: typer.Context):
+    """Show help if no command is provided."""
+    if ctx.invoked_subcommand is None:
+        typer.echo(ctx.get_help())
 
 
 @app.command()
@@ -111,14 +118,6 @@ def history(
             d["logpath"],
         )
     print(table)
-
-
-@app.command(name="build")
-def build():
-    """
-    Builds static html files so you may view a dashboard after.
-    """
-    build_site()
 
 
 @app.command(name="serve")

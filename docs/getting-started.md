@@ -29,16 +29,13 @@ will also be the name of the folder where logs can be found.
 /Users/vincent/.skedulord/
 ├── heartbeat.jsonl
 ├── jobname1
-│   ├── 2021-02-14T16:56:34.html
 │   └── 2021-02-14T16:56:34.txt
 └── jobname2
-    ├── 2021-02-14T16:56:35.html
     └── 2021-02-14T16:56:35.txt
 
 ```
 
-The logs themselves have a timestamp as the filename. There are basic `.txt` logs 
-but also fancy `.html` logs which render nicely in a dashboard.
+The logs themselves have a timestamp as the filename.
 
 ## Mechanics 
 
@@ -103,29 +100,16 @@ python -m skedulord history
 This history command has many query parameters that makes it easy for you to find the 
 logs of the jobs that failed.
 
-## Dashboard 
+## Webapp
 
-If you want, you can even use skedulord to run a small dashboard for you. It's nice and 
-minimal as to not to distract you. 
+Skedulord ships a FastAPI backend and a React webapp.
 
 ```python
 python -m skedulord serve
 ```
 
-The landing page shows an overview of all jobs. 
-
-![](dashboard1.png)
-
-You can click on the associated link to find all runs.
-
-![](dashboard2.png)
-
-From here you can explore the logs. We host both the raw .txt logs
-and a "fancy" variant that attemps some syntax highlighting.
-
-![](dashboard3.png)
-
-If you'd like to play around, we host a small demo of this dashboard [here](https://koaning.github.io/skedulord-demo/).
+The frontend lives in `webapp/` and can be run via `npm install` + `npm run dev`.
+If you run `npm run build`, the API will serve the built app from `webapp/dist`.
 
 ## Shutting Down 
 

@@ -35,9 +35,7 @@ Commands:
   schedule  Set (or reset) cron jobs based on config.
   run       Run a single command, which is logged by skedulord.
   history   Shows a table with job status.
-  summary   Shows a summary of all jobs.
-  build     Builds static html files so you may view a dashboard.
-  serve     Opens the dashboard in a browser.
+  serve     Serves the Skedulord API (and webapp if built).
   wipe      Wipe the disk or schedule state.
   version   Show the version.
 ```
@@ -139,37 +137,13 @@ Schedule commands support a few runtime tokens that are rendered when a job star
 - `{current_time}` (ISO time)
 - `{current_datetime}` (ISO datetime)
 
-### Dashboard 
+### Webapp
 
-We are migrating to a new webapp built with React + Radix + shadcn and a FastAPI
-backend. For now, you can start the API via:
+Skedulord ships a FastAPI backend and a React webapp. You can start the API via:
 
 ```text
 python -m skedulord serve
 ```
 
-The frontend lives in `webapp/` and can be run via `npm install` + `npm run dev`
-once dependencies are installed.
-
-If you want, you can even use skedulord to run a small dashboard for you to show
-all the logs from past jobs. These are all available from the terminal as well, 
-but it's nice to have an extra interface.
-
-```python
-python -m skedulord serve
-```
-
-The landing page shows an overview of all jobs. 
-
-![](docs/dashboard1.png)
-
-You can click on the associated link to find all runs.
-
-![](docs/dashboard2.png)
-
-From here you can explore the logs. We host both the raw .txt logs
-and a "fancy" variant that attemps some syntax highlighting.
-
-![](docs/dashboard3.png)
-
-If you'd like to play around, we host a small demo of this dashboard [here](https://koaning.github.io/skedulord-demo/).
+The frontend lives in `webapp/` and can be run via `npm install` + `npm run dev`.
+If you run `npm run build`, the API will serve the built app from `webapp/dist`.
