@@ -7,12 +7,13 @@ lint:
 install:
 	@if [ ! -d ".venv" ]; then uv venv .venv; fi
 	uv pip install -e ".[dev]"
+	cd webapp && npm install
 
 develop: install
 	uv pip install -e ".[dev]"
 
 test:
-	pytest tests
+	uv run pytest tests
 
 check: lint test clean
 

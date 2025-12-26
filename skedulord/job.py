@@ -29,7 +29,8 @@ class JobRunner:
         tries = 1
         stop = False
         while not stop:
-            info = {"name": name, "command": command, "run_id": run_id, "attempt": tries, "timestamp": str(dt.datetime.now())}
+            log_command = " ".join(command) if isinstance(command, list) else command
+            info = {"name": name, "command": log_command, "run_id": run_id, "attempt": tries, "timestamp": str(dt.datetime.now())}
             self.file.writelines([json.dumps(info), "\n"])            
             output = subprocess.run(
                 command,
