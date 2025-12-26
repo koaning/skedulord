@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 import { AlertCircle, Command, CornerUpLeft, Moon, RefreshCw, Search, Sun } from "lucide-react";
 
-import { fetchRuns, type RunEntry } from "./api";
+import { fetchLog, fetchRuns, type RunEntry } from "./api";
 
 const MAX_RECENT_RUNS = 20;
 const RUNS_PER_PAGE = 25;
@@ -86,6 +86,20 @@ type SuggestionItem =
     };
 
 export default function App() {
+  function readUrlState() {
+    if (typeof window === "undefined") {
+      return { job: null, run: null, page: 0 };
+    }
+    const params = new URLSearchParams(window.location.search);
+    const pageParam = Number.parseInt(params.get("page") ?? "1", 10);
+    return {
+      job: params.get("job"),
+      run: params.get("run"),
+      page: Number.isFinite(pageParam) && pageParam > 1 ? pageParam - 1 : 0
+    };
+  }
+
+  const initialUrlState = readUrlState();
   const [theme, setTheme] = useState<"light" | "dark">(() => {
     if (typeof window === "undefined") return "light";
     const stored = window.localStorage.getItem("theme");
@@ -97,13 +111,18 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [highlightIndex, setHighlightIndex] = useState(0);
-  const [selectedJob, setSelectedJob] = useState<string | null>(null);
-  const [page, setPage] = useState(0);
+  const [selectedJob, setSelectedJob] = useState<string | null>(initialUrlState.job);
+  const [page, setPage] = useState(initialUrlState.page);
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(initialUrlState.run);
+  const [logLoading, setLogLoading] = useState(false);
+  const [logError, setLogError] = useState<string | null>(null);
+  const [logData, setLogData] = useState<{ logpath: string; content: string } | null>(null);
   const [commandOpen, setCommandOpen] = useState(false);
   const [listIndex, setListIndex] = useState(0);
 
   const commandInputRef = useRef<HTMLInputElement>(null);
   const listRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const hasHydratedRef = useRef(false);
 
   async function loadRuns() {
     setLoading(true);
@@ -121,6 +140,29 @@ export default function App() {
   useEffect(() => {
     loadRuns();
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const params = url.searchParams;
+    if (selectedJob) {
+      params.set("job", selectedJob);
+    } else {
+      params.delete("job");
+    }
+    if (selectedRunId) {
+      params.set("run", selectedRunId);
+    } else {
+      params.delete("run");
+    }
+    if (selectedJob && page > 0) {
+      params.set("page", String(page + 1));
+    } else {
+      params.delete("page");
+    }
+    url.search = params.toString();
+    window.history.replaceState({}, "", url.toString());
+  }, [page, selectedJob, selectedRunId]);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -192,12 +234,53 @@ export default function App() {
   }, [jobs, selectedJob]);
 
   useEffect(() => {
+    if (!hasHydratedRef.current) {
+      hasHydratedRef.current = true;
+      return;
+    }
     setPage(0);
   }, [selectedJob]);
 
   useEffect(() => {
     setListIndex(0);
   }, [filteredJobs.length]);
+
+  useEffect(() => {
+    if (!selectedRunId) {
+      setLogData(null);
+      setLogError(null);
+      setLogLoading(false);
+      return;
+    }
+    let active = true;
+    setLogLoading(true);
+    setLogError(null);
+    setLogData(null);
+    fetchLog(selectedRunId)
+      .then((data) => {
+        if (!active) return;
+        setLogData(data);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setLogError((err as Error).message);
+      })
+      .finally(() => {
+        if (!active) return;
+        setLogLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [selectedRunId]);
+
+  useEffect(() => {
+    if (!selectedRunId || selectedJob) return;
+    const match = runs.find((run) => run.id === selectedRunId);
+    if (match) {
+      setSelectedJob(match.name);
+    }
+  }, [runs, selectedJob, selectedRunId]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -227,7 +310,10 @@ export default function App() {
       if (event.key === "Enter") {
         event.preventDefault();
         const job = filteredJobs[listIndex];
-        if (job) setSelectedJob(job.name);
+        if (job) {
+          setSelectedJob(job.name);
+          setSelectedRunId(null);
+        }
       }
     }
 
@@ -261,7 +347,11 @@ export default function App() {
         label: "Back to all jobs",
         type: "action",
         shortcut: "B",
-        run: () => setSelectedJob(null)
+        run: () => {
+          setSelectedJob(null);
+          setSelectedRunId(null);
+          setPage(0);
+        }
       });
     }
 
@@ -305,6 +395,7 @@ export default function App() {
       return;
     }
     setSelectedJob(item.jobName);
+    setSelectedRunId(null);
     setCommandOpen(false);
     setQuery("");
   }
@@ -336,6 +427,10 @@ export default function App() {
   function handleListKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (commandOpen) return;
     if (!filteredJobs.length) return;
+    const navKeys = ["ArrowDown", "ArrowUp", "Home", "End", "Enter"];
+    if (navKeys.includes(event.key)) {
+      event.stopPropagation();
+    }
     if (event.key === "ArrowDown") {
       event.preventDefault();
       focusListIndex(Math.min(filteredJobs.length - 1, listIndex + 1));
@@ -355,7 +450,10 @@ export default function App() {
     if (event.key === "Enter") {
       event.preventDefault();
       const job = filteredJobs[listIndex];
-      if (job) setSelectedJob(job.name);
+      if (job) {
+        setSelectedJob(job.name);
+        setSelectedRunId(null);
+      }
     }
   }
 
@@ -420,7 +518,11 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setSelectedJob(null)}
+                  onClick={() => {
+                    setSelectedJob(null);
+                    setSelectedRunId(null);
+                    setPage(0);
+                  }}
                   className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-3 py-2 text-xs font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
                 >
                   <CornerUpLeft className="h-3 w-3" />
@@ -451,9 +553,15 @@ export default function App() {
                 <ScrollArea.Viewport className="p-2">
                   <div className="flex flex-col gap-2">
                     {pageRuns.map((run) => (
-                      <div
+                      <button
                         key={run.id}
-                        className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-transparent px-4 py-3 text-sm transition hover:border-ink/10 hover:bg-white dark:hover:border-white/10 dark:hover:bg-slate-900"
+                        type="button"
+                        onClick={() => setSelectedRunId(run.id)}
+                        className={`flex w-full flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:focus-visible:outline-slate-100 ${
+                          selectedRunId === run.id
+                            ? "border-ink/20 bg-white shadow-soft dark:border-white/10 dark:bg-slate-900"
+                            : "border-transparent hover:border-ink/10 hover:bg-white dark:hover:border-white/10 dark:hover:bg-slate-900"
+                        }`}
                       >
                         <div>
                           <p className="font-medium text-ink dark:text-slate-100">Run {run.id.slice(0, 6)}</p>
@@ -464,8 +572,11 @@ export default function App() {
                             {formatDuration(getDurationMs(run))}
                           </span>
                           <StatusPill status={run.status} />
+                          <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[11px] font-semibold text-ink/50 dark:border-white/10 dark:text-slate-300">
+                            Logs
+                          </span>
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </ScrollArea.Viewport>
@@ -491,6 +602,50 @@ export default function App() {
                   Next
                 </button>
               </div>
+            </div>
+
+            <div className="rounded-2xl border border-ink/10 bg-white/80 p-4 dark:border-white/10 dark:bg-slate-900/70">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Run log</p>
+                  <h3 className="font-display text-xl text-ink dark:text-slate-100">
+                    {selectedRunId ? `Run ${selectedRunId.slice(0, 8)}` : "Select a run"}
+                  </h3>
+                </div>
+                {selectedRunId ? (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRunId(null)}
+                    className="rounded-full border border-ink/10 px-3 py-1 text-xs font-semibold text-ink transition dark:border-white/10 dark:text-slate-100"
+                  >
+                    Close
+                  </button>
+                ) : null}
+              </div>
+              {selectedRunId ? (
+                <div className="mt-4 space-y-3 text-sm">
+                  {logError ? (
+                    <p className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200">
+                      {logError}
+                    </p>
+                  ) : null}
+                  {logLoading ? (
+                    <p className="text-ink/60 dark:text-slate-300">Loading log…</p>
+                  ) : null}
+                  {logData ? (
+                    <>
+                      <p className="text-xs text-ink/60 dark:text-slate-300">{logData.logpath}</p>
+                      <pre className="max-h-[320px] overflow-auto rounded-2xl border border-ink/10 bg-white px-4 py-3 text-xs text-ink dark:border-white/10 dark:bg-slate-950 dark:text-slate-100">
+                        {logData.content || "Log is empty."}
+                      </pre>
+                    </>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-ink/60 dark:text-slate-300">
+                  Click a run to open its logs and share the URL if you need help debugging.
+                </p>
+              )}
             </div>
           </section>
         ) : (
@@ -528,7 +683,10 @@ export default function App() {
                         ref={(node) => {
                           listRefs.current[index] = node;
                         }}
-                        onClick={() => setSelectedJob(job.name)}
+                        onClick={() => {
+                          setSelectedJob(job.name);
+                          setSelectedRunId(null);
+                        }}
                         className={`rounded-2xl border px-4 py-3 text-left text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:focus-visible:outline-slate-100 ${
                           index === listIndex
                             ? "border-ink/20 bg-white shadow-soft dark:border-white/10 dark:bg-slate-900"
