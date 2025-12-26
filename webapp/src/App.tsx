@@ -100,6 +100,7 @@ export default function App() {
   const [selectedJob, setSelectedJob] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [isFocused, setIsFocused] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
 
   const commandInputRef = useRef<HTMLInputElement>(null);
 
@@ -134,6 +135,7 @@ export default function App() {
     function onKeyDown(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
+        setCommandOpen(true);
         commandInputRef.current?.focus();
         commandInputRef.current?.select();
       }
@@ -244,9 +246,12 @@ export default function App() {
   function handleSuggestionSelect(item: SuggestionItem) {
     if (item.type === "action") {
       item.run();
+      setCommandOpen(false);
+      setQuery("");
       return;
     }
     setSelectedJob(item.jobName);
+    setCommandOpen(false);
     setQuery("");
   }
 
@@ -269,6 +274,9 @@ export default function App() {
     }
     if (event.key === "Escape") {
       event.preventDefault();
+      if (!query) {
+        setCommandOpen(false);
+      }
       setQuery("");
     }
   }
@@ -309,61 +317,63 @@ export default function App() {
           </div>
         </header>
 
-        <section className="frost-card flex flex-col gap-5 rounded-3xl p-6 shadow-card">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Command bar</p>
-            <div className="mt-2 flex items-center gap-3 rounded-2xl border border-ink/10 bg-white/70 px-4 py-3 text-sm text-ink shadow-sm dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100">
-              <Search className="h-4 w-4 text-ink/40 dark:text-slate-400" />
-              <input
-                ref={commandInputRef}
-                type="search"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                onKeyDown={handleCommandKeyDown}
-                onFocus={() => setIsFocused(true)}
-                onBlur={() => setIsFocused(false)}
-                placeholder="Type a command or job name…"
-                className="w-full bg-transparent text-sm outline-none placeholder:text-ink/40 dark:placeholder:text-slate-400"
-                role="combobox"
-                aria-expanded={isFocused || query.length > 0}
-                aria-controls="command-suggestions"
-              />
-              <span className="text-xs text-ink/40 dark:text-slate-400">⌘K</span>
-            </div>
-            {(isFocused || query.length > 0) && suggestionItems.length > 0 ? (
-              <div
-                id="command-suggestions"
-                role="listbox"
-                className="mt-3 grid gap-2 rounded-2xl border border-ink/10 bg-white/80 p-3 text-sm shadow-soft dark:border-white/10 dark:bg-slate-950/80"
-              >
-                {suggestionItems.map((item, index) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => handleSuggestionSelect(item)}
-                    className={`flex items-center justify-between rounded-xl px-3 py-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:focus-visible:outline-slate-100 ${
-                      index === highlightIndex
-                        ? "bg-ink/5 text-ink dark:bg-white/10 dark:text-slate-100"
-                        : "text-ink/70 hover:bg-ink/5 hover:text-ink dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-slate-100"
-                    }`}
-                    role="option"
-                    aria-selected={index === highlightIndex}
-                  >
-                    <span>{item.label}</span>
-                    {item.type === "action" ? (
-                      <span className="rounded-full border border-ink/10 px-2 py-0.5 text-xs text-ink/40 dark:border-white/10 dark:text-slate-400">
-                        {item.shortcut ?? ""}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-ink/40 dark:text-slate-400">Job</span>
-                    )}
-                  </button>
-                ))}
+        {commandOpen ? (
+          <section className="frost-card flex flex-col gap-5 rounded-3xl p-6 shadow-card">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Command bar</p>
+              <div className="mt-2 flex items-center gap-3 rounded-2xl border border-ink/10 bg-white/70 px-4 py-3 text-sm text-ink shadow-sm dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100">
+                <Search className="h-4 w-4 text-ink/40 dark:text-slate-400" />
+                <input
+                  ref={commandInputRef}
+                  type="search"
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={handleCommandKeyDown}
+                  onFocus={() => setIsFocused(true)}
+                  onBlur={() => setIsFocused(false)}
+                  placeholder="Type a command or job name…"
+                  className="w-full bg-transparent text-sm outline-none placeholder:text-ink/40 dark:placeholder:text-slate-400"
+                  role="combobox"
+                  aria-expanded={isFocused || query.length > 0}
+                  aria-controls="command-suggestions"
+                />
+                <span className="text-xs text-ink/40 dark:text-slate-400">Esc</span>
               </div>
-            ) : null}
-          </div>
-        </section>
+              {(isFocused || query.length > 0) && suggestionItems.length > 0 ? (
+                <div
+                  id="command-suggestions"
+                  role="listbox"
+                  className="mt-3 grid gap-2 rounded-2xl border border-ink/10 bg-white/80 p-3 text-sm shadow-soft dark:border-white/10 dark:bg-slate-950/80"
+                >
+                  {suggestionItems.map((item, index) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => handleSuggestionSelect(item)}
+                      className={`flex items-center justify-between rounded-xl px-3 py-2 text-left transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:focus-visible:outline-slate-100 ${
+                        index === highlightIndex
+                          ? "bg-ink/5 text-ink dark:bg-white/10 dark:text-slate-100"
+                          : "text-ink/70 hover:bg-ink/5 hover:text-ink dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-slate-100"
+                      }`}
+                      role="option"
+                      aria-selected={index === highlightIndex}
+                    >
+                      <span>{item.label}</span>
+                      {item.type === "action" ? (
+                        <span className="rounded-full border border-ink/10 px-2 py-0.5 text-xs text-ink/40 dark:border-white/10 dark:text-slate-400">
+                          {item.shortcut ?? ""}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-ink/40 dark:text-slate-400">Job</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
 
         {error ? (
           <div className="flex items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200">
@@ -402,7 +412,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-ink/10 bg-white/80 dark:border-white/10 dark:bg-slate-900/70">
+            <div className="overflow-hidden rounded-2xl border border-ink/10 bg-white/80 dark:border-white/10 dark:bg-slate-900/70">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/5 px-4 py-3 text-xs uppercase tracking-[0.2em] text-clay dark:border-white/10 dark:text-slate-400">
                 <span>Runs</span>
                 <span>
@@ -435,7 +445,7 @@ export default function App() {
                   <ScrollArea.Thumb className="relative flex-1 rounded-full bg-ink/20 dark:bg-white/20" />
                 </ScrollArea.Scrollbar>
               </ScrollArea.Root>
-              <div className="flex items-center justify-between border-t border-ink/5 px-4 py-3 text-sm dark:border-white/10">
+              <div className="flex items-center justify-between border-t border-ink/5 bg-white/80 px-4 py-3 text-sm dark:border-white/10 dark:bg-slate-900/70">
                 <button
                   type="button"
                   onClick={() => setPage((current) => Math.max(0, current - 1))}
