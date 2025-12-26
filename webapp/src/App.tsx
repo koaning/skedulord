@@ -7,6 +7,7 @@ import {
   Copy,
   CornerUpLeft,
   Filter,
+  Search,
   Moon,
   RefreshCw,
   Sun
