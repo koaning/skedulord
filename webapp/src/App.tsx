@@ -17,7 +17,6 @@ import { fetchLog, fetchRuns, type RunEntry } from "./api";
 
 const MAX_RECENT_RUNS = 20;
 const RUNS_PER_PAGE = 25;
-const SUGGESTION_LIMIT = 10;
 
 function statusColor(status: string) {
   if (status === "success") return "bg-emerald-500";
@@ -142,6 +141,13 @@ type SuggestionItem =
       label: string;
       type: "job";
       jobName: string;
+    }
+  | {
+      id: string;
+      label: string;
+      type: "route";
+      description: string;
+      view: "jobs" | "actions";
     };
 
 export default function App() {
@@ -178,6 +184,7 @@ export default function App() {
   const [logData, setLogData] = useState<{ logpath: string; content: string } | null>(null);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "error">("idle");
   const [commandOpen, setCommandOpen] = useState(false);
+  const [commandView, setCommandView] = useState<"root" | "jobs" | "actions">("root");
   const [listIndex, setListIndex] = useState(0);
   const [shortcutOpen, setShortcutOpen] = useState(false);
   const [failedOnly, setFailedOnly] = useState(false);
@@ -190,6 +197,8 @@ export default function App() {
   const listRefs = useRef<Array<HTMLDivElement | null>>([]);
   const runListRefs = useRef<Array<HTMLDivElement | null>>([]);
   const listboxRef = useRef<HTMLDivElement | null>(null);
+  const commandListRef = useRef<HTMLDivElement | null>(null);
+  const commandItemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const hasHydratedRef = useRef(false);
   const copyResetRef = useRef<number | null>(null);
 
@@ -253,6 +262,8 @@ export default function App() {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         setShortcutOpen(false);
+        setCommandView("root");
+        setQuery("");
         setCommandOpen(true);
       }
     }
@@ -690,29 +701,77 @@ export default function App() {
     return actions;
   }, [failedOnly, isDark, query, selectedJob]);
 
-  const suggestionItems = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    const filteredActions = normalized
-      ? actionItems.filter((action) => action.label.toLowerCase().includes(normalized))
-      : actionItems;
-    const filteredJobItems = (normalized ? filteredJobs : jobs).map((job) => ({
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const filteredActionItems = useMemo(() => {
+    if (!normalizedQuery) return actionItems;
+    return actionItems.filter((action) =>
+      action.label.toLowerCase().includes(normalizedQuery)
+    );
+  }, [actionItems, normalizedQuery]);
+
+  const filteredJobItems = useMemo(() => {
+    const base = normalizedQuery
+      ? jobs.filter((job) => job.name.toLowerCase().includes(normalizedQuery))
+      : jobs;
+    return base.map((job) => ({
       id: `job-${job.name}`,
       label: job.name,
       type: "job" as const,
       jobName: job.name
     }));
+  }, [jobs, normalizedQuery]);
 
-    return [...filteredActions, ...filteredJobItems].slice(0, SUGGESTION_LIMIT);
-  }, [actionItems, filteredJobs, jobs, query]);
+  const commandItems: SuggestionItem[] = useMemo(() => {
+    if (normalizedQuery) {
+      return [...filteredActionItems, ...filteredJobItems];
+    }
+    if (commandView === "root") {
+      return [
+        {
+          id: "route-jobs",
+          label: "Search jobs",
+          type: "route",
+          description: `${jobs.length} jobs available`,
+          view: "jobs"
+        },
+        {
+          id: "route-actions",
+          label: "Quick actions",
+          type: "route",
+          description: `${actionItems.length} actions`,
+          view: "actions"
+        }
+      ];
+    }
+    if (commandView === "actions") {
+      return filteredActionItems;
+    }
+    return filteredJobItems;
+  }, [commandView, filteredActionItems, filteredJobItems, jobs.length, normalizedQuery]);
 
   useEffect(() => {
     setHighlightIndex(0);
-  }, [query, suggestionItems.length]);
+  }, [commandItems.length, commandView, query]);
+
+  useEffect(() => {
+    if (!commandOpen) return;
+    const node = commandItemRefs.current[highlightIndex];
+    if (node) {
+      node.scrollIntoView({ block: "nearest" });
+    }
+  }, [commandOpen, commandItems.length, commandView, highlightIndex]);
 
   function handleSuggestionSelect(item: SuggestionItem) {
+    if (item.type === "route") {
+      setCommandView(item.view);
+      setQuery("");
+      return;
+    }
     if (item.type === "action") {
       item.run();
       setCommandOpen(false);
+      setCommandView("root");
       setQuery("");
       return;
     }
@@ -720,30 +779,35 @@ export default function App() {
     setSelectedRunId(null);
     updateUrl(item.jobName, null);
     setCommandOpen(false);
+    setCommandView("root");
     setQuery("");
   }
 
   function handleCommandKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (!suggestionItems.length) return;
+    if (event.key === "Escape") {
+      event.preventDefault();
+      if (commandView !== "root") {
+        setCommandView("root");
+        setQuery("");
+        return;
+      }
+      setQuery("");
+      setCommandOpen(false);
+      return;
+    }
+    if (!commandItems.length) return;
     if (event.key === "ArrowDown") {
       event.preventDefault();
-      setHighlightIndex((index) => (index + 1) % suggestionItems.length);
+      setHighlightIndex((index) => (index + 1) % commandItems.length);
     }
     if (event.key === "ArrowUp") {
       event.preventDefault();
-      setHighlightIndex((index) =>
-        (index - 1 + suggestionItems.length) % suggestionItems.length
-      );
+      setHighlightIndex((index) => (index - 1 + commandItems.length) % commandItems.length);
     }
     if (event.key === "Enter") {
       event.preventDefault();
-      const item = suggestionItems[highlightIndex];
+      const item = commandItems[highlightIndex];
       if (item) handleSuggestionSelect(item);
-    }
-    if (event.key === "Escape") {
-      event.preventDefault();
-      setQuery("");
-      setCommandOpen(false);
     }
   }
 
@@ -958,7 +1022,11 @@ export default function App() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setCommandOpen(true)}
+              onClick={() => {
+                setCommandView("root");
+                setQuery("");
+                setCommandOpen(true);
+              }}
               className={headerButtonClass}
               aria-label="Open command palette"
             >
@@ -1425,6 +1493,7 @@ export default function App() {
           className="fixed inset-0 z-50 flex justify-center bg-black/30 px-4 py-20 backdrop-blur-sm dark:bg-black/60"
           onClick={() => {
             setCommandOpen(false);
+            setCommandView("root");
             setQuery("");
           }}
           role="presentation"
@@ -1444,21 +1513,36 @@ export default function App() {
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 onKeyDown={handleCommandKeyDown}
-                placeholder="Type a command or job name…"
+                placeholder={
+                  normalizedQuery
+                    ? "Search jobs or actions…"
+                    : commandView === "actions"
+                      ? "Type an action…"
+                      : "Type a job name…"
+                }
                 className="w-full bg-transparent text-sm outline-none placeholder:text-ink/40 dark:placeholder:text-slate-400"
               />
-              <span className="text-xs text-ink/40 dark:text-slate-400">Esc</span>
+              <span className="text-xs text-ink/40 dark:text-slate-400">
+                {commandView === "root" ? "Esc" : "Esc · Back"}
+              </span>
             </div>
-            <div className="mt-3 max-h-64 overflow-auto" role="listbox">
-              {suggestionItems.length === 0 ? (
+            <div className="mt-3 max-h-[60vh] overflow-auto" role="listbox" ref={commandListRef}>
+              {commandItems.length === 0 ? (
                 <p className="px-3 py-4 text-sm text-ink/50 dark:text-slate-400">No matching commands.</p>
               ) : (
-                suggestionItems.map((item, index) => (
+                commandItems.map((item, index) => (
                   <button
                     key={item.id}
                     type="button"
                     onClick={() => handleSuggestionSelect(item)}
+                    ref={(node) => {
+                      commandItemRefs.current[index] = node;
+                    }}
                     className={`flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:focus-visible:outline-slate-100 ${
+                      item.type === "route"
+                        ? "gap-4 border border-ink/10 bg-white/80 px-4 py-3 text-ink shadow-card dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+                        : ""
+                    } ${
                       index === highlightIndex
                         ? "bg-ink/5 text-ink dark:bg-white/10 dark:text-slate-100"
                         : "text-ink/70 hover:bg-ink/5 hover:text-ink dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-slate-100"
@@ -1466,13 +1550,22 @@ export default function App() {
                     aria-selected={index === highlightIndex}
                     role="option"
                   >
-                    <span>{item.label}</span>
+                    <div>
+                      <span className="block">{item.label}</span>
+                      {item.type === "route" ? (
+                        <span className="mt-1 block text-xs text-ink/50 dark:text-slate-400">
+                          {item.description}
+                        </span>
+                      ) : null}
+                    </div>
                     {item.type === "action" ? (
                       <span className="rounded-full border border-ink/10 px-2 py-0.5 text-xs text-ink/40 dark:border-white/10 dark:text-slate-400">
                         {item.shortcut ?? ""}
                       </span>
-                    ) : (
+                    ) : item.type === "job" ? (
                       <span className="text-xs text-ink/40 dark:text-slate-400">Job</span>
+                    ) : (
+                      <span className="text-xs text-ink/40 dark:text-slate-400">Enter</span>
                     )}
                   </button>
                 ))
