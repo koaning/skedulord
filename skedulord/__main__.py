@@ -65,8 +65,8 @@ def schedule(
 @app.command()
 def wipe(
     what: str = typer.Argument(..., help="What to wipe. Either `disk` or `schedule`."),
-    yes: bool = typer.Option(False, is_flag=True, prompt=True, help="Are you sure?"),
-    really: bool = typer.Option(False, is_flag=True, prompt=True, help="Really sure?"),
+    yes: bool = typer.Option(False, prompt=True, help="Are you sure?"),
+    really: bool = typer.Option(False, prompt=True, help="Really sure?"),
     user: str = typer.Option(None, help="The name of the user. Default: curent user."),
 ):
     """Wipe the disk or schedule state."""
@@ -88,7 +88,7 @@ def wipe(
 @app.command()
 def history(
     n: int = typer.Option(10, help="How many rows should the table show."),
-    only_failures: bool = typer.Option(False, is_flag=True, help="Only show failures."),
+    only_failures: bool = typer.Option(False, help="Only show failures."),
     date: str = typer.Option(None, help="Only show specific date."),
     name: str = typer.Option(None, "--name", "--jobname", help="Only show jobs with specific name."),
 ):
