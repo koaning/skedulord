@@ -1009,8 +1009,8 @@ export default function App() {
               tabIndex={stackDepth === 0 ? 0 : -1}
               ref={listboxRef}
             >
-              <ScrollArea.Root className="h-[520px]">
-                <ScrollArea.Viewport className="p-2">
+              <ScrollArea.Root className="h-[520px] overflow-hidden" type="scroll">
+                <ScrollArea.Viewport className="h-full w-full p-2">
                   <div className="flex flex-col gap-2">
                     {loading ? (
                       <p className="px-4 py-6 text-sm text-ink/50 dark:text-slate-400">Loading jobs...</p>
@@ -1089,8 +1089,11 @@ export default function App() {
                     })}
                   </div>
                 </ScrollArea.Viewport>
-                <ScrollArea.Scrollbar orientation="vertical" className="flex touch-none select-none p-1">
-                  <ScrollArea.Thumb className="relative flex-1 rounded-full bg-ink/20 dark:bg-white/20" />
+                <ScrollArea.Scrollbar
+                  orientation="vertical"
+                  className="flex w-2 touch-none select-none rounded-full bg-ink/5 p-0.5 opacity-0 transition-opacity duration-200 data-[state=visible]:opacity-100 dark:bg-white/10"
+                >
+                  <ScrollArea.Thumb className="relative flex-1 rounded-full bg-ink/30 dark:bg-white/30" />
                 </ScrollArea.Scrollbar>
               </ScrollArea.Root>
             </div>
@@ -1160,8 +1163,8 @@ export default function App() {
                       Page {page + 1} of {pageCount}
                     </span>
                   </div>
-                  <ScrollArea.Root className="h-[420px]">
-                    <ScrollArea.Viewport className="p-2">
+                  <ScrollArea.Root className="h-[420px] overflow-hidden" type="scroll">
+                    <ScrollArea.Viewport className="h-full w-full p-2">
                       <div className="flex flex-col gap-2">
                         {pageRuns.length === 0 ? (
                           <p className="px-4 py-6 text-sm text-ink/50 dark:text-slate-400">
@@ -1200,8 +1203,11 @@ export default function App() {
                         )}
                       </div>
                     </ScrollArea.Viewport>
-                    <ScrollArea.Scrollbar orientation="vertical" className="flex touch-none select-none p-1">
-                      <ScrollArea.Thumb className="relative flex-1 rounded-full bg-ink/20 dark:bg-white/20" />
+                    <ScrollArea.Scrollbar
+                      orientation="vertical"
+                      className="flex w-2 touch-none select-none rounded-full bg-ink/5 p-0.5 opacity-0 transition-opacity duration-200 data-[state=visible]:opacity-100 dark:bg-white/10"
+                    >
+                      <ScrollArea.Thumb className="relative flex-1 rounded-full bg-ink/30 dark:bg-white/30" />
                     </ScrollArea.Scrollbar>
                   </ScrollArea.Root>
                 </div>

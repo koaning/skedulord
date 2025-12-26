@@ -10,7 +10,7 @@ export interface RunEntry {
   logpath: string;
 }
 
-const apiBase = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000";
+const apiBase = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 
 export async function fetchRuns(params: {
   limit?: number;
