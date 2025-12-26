@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
-import { AlertCircle, Command, CornerUpLeft, Moon, RefreshCw, Search, Sun } from "lucide-react";
+import { AlertCircle, Command, CornerUpLeft, Filter, Moon, RefreshCw, Search, Sun } from "lucide-react";
 
 import { fetchRuns, type RunEntry } from "./api";
 
@@ -101,6 +101,7 @@ export default function App() {
   const [page, setPage] = useState(0);
   const [commandOpen, setCommandOpen] = useState(false);
   const [listIndex, setListIndex] = useState(0);
+  const [failedOnly, setFailedOnly] = useState(false);
 
   const commandInputRef = useRef<HTMLInputElement>(null);
   const listRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -143,6 +144,28 @@ export default function App() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (commandOpen) return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) {
+        return;
+      }
+      if (event.key.toLowerCase() === "d") {
+        event.preventDefault();
+        setTheme((current) => (current === "dark" ? "light" : "dark"));
+      }
+      if (event.key.toLowerCase() === "r") {
+        event.preventDefault();
+        loadRuns();
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [commandOpen, loadRuns]);
 
   useEffect(() => {
     if (!commandOpen) return;
@@ -193,7 +216,13 @@ export default function App() {
 
   useEffect(() => {
     setPage(0);
+    setFailedOnly(false);
   }, [selectedJob]);
+
+  useEffect(() => {
+    if (!selectedJob) return;
+    setPage(0);
+  }, [failedOnly, selectedJob]);
 
   useEffect(() => {
     setListIndex(0);
@@ -235,6 +264,49 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [commandOpen, filteredJobs, listIndex, selectedJob]);
 
+  const filteredRuns = selectedJobData
+    ? failedOnly
+      ? selectedJobData.runs.filter((run) => run.status === "fail")
+      : selectedJobData.runs
+    : [];
+  const pageCount = selectedJobData
+    ? Math.max(1, Math.ceil(filteredRuns.length / RUNS_PER_PAGE))
+    : 1;
+  const pageRuns = selectedJobData
+    ? filteredRuns.slice(page * RUNS_PER_PAGE, (page + 1) * RUNS_PER_PAGE)
+    : [];
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (!selectedJob) return;
+      if (commandOpen) return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) {
+        return;
+      }
+      if (event.key.toLowerCase() === "b") {
+        event.preventDefault();
+        setSelectedJob(null);
+      }
+      if (event.key.toLowerCase() === "f") {
+        event.preventDefault();
+        setFailedOnly((current) => !current);
+      }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        setPage((current) => Math.max(0, current - 1));
+      }
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        setPage((current) => Math.min(pageCount - 1, current + 1));
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [commandOpen, pageCount, selectedJob]);
+
   const isDark = theme === "dark";
 
   const actionItems: SuggestionItem[] = useMemo(() => {
@@ -250,7 +322,7 @@ export default function App() {
         id: "theme",
         label: isDark ? "Switch to light mode" : "Switch to dark mode",
         type: "action",
-        shortcut: "T",
+        shortcut: "D",
         run: () => setTheme(isDark ? "light" : "dark")
       }
     ];
@@ -262,6 +334,13 @@ export default function App() {
         type: "action",
         shortcut: "B",
         run: () => setSelectedJob(null)
+      });
+      actions.push({
+        id: "failed-only",
+        label: failedOnly ? "Show all runs" : "Show failed runs",
+        type: "action",
+        shortcut: "F",
+        run: () => setFailedOnly((current) => !current)
       });
     }
 
@@ -359,13 +438,6 @@ export default function App() {
     }
   }
 
-  const pageCount = selectedJobData
-    ? Math.max(1, Math.ceil(selectedJobData.runs.length / RUNS_PER_PAGE))
-    : 1;
-  const pageRuns = selectedJobData
-    ? selectedJobData.runs.slice(page * RUNS_PER_PAGE, (page + 1) * RUNS_PER_PAGE)
-    : [];
-
   return (
     <div className="app-shell">
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 px-6 py-10">
@@ -392,6 +464,9 @@ export default function App() {
             >
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               {isDark ? "Light" : "Dark"}
+              <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
+                D
+              </span>
             </button>
             <button
               onClick={loadRuns}
@@ -399,6 +474,9 @@ export default function App() {
             >
               <RefreshCw className="h-4 w-4" />
               Refresh
+              <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
+                R
+              </span>
             </button>
           </div>
         </header>
@@ -425,6 +503,20 @@ export default function App() {
                 >
                   <CornerUpLeft className="h-3 w-3" />
                   Back
+                  <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
+                    B
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFailedOnly((current) => !current)}
+                  className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-3 py-2 text-xs font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+                >
+                  <Filter className="h-3 w-3" />
+                  {failedOnly ? "Show all" : "Failed only"}
+                  <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
+                    F
+                  </span>
                 </button>
                 {selectedJobData.latest ? <StatusPill status={selectedJobData.latest.status} /> : null}
               </div>
@@ -433,16 +525,18 @@ export default function App() {
             <div className="rounded-2xl border border-ink/10 bg-white/80 p-4 dark:border-white/10 dark:bg-slate-900/70">
               <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
                 <p className="font-semibold text-ink dark:text-slate-100">Recent run durations</p>
-                <p className="text-xs text-ink/60 dark:text-slate-300">Last {MAX_RECENT_RUNS} runs</p>
+                <p className="text-xs text-ink/60 dark:text-slate-300">
+                  {failedOnly ? "Failed runs only" : `Last ${MAX_RECENT_RUNS} runs`}
+                </p>
               </div>
               <div className="mt-4">
-                <RunBars runs={selectedJobData.runs} />
+                <RunBars runs={filteredRuns} />
               </div>
             </div>
 
             <div className="overflow-hidden rounded-2xl border border-ink/10 bg-white/80 dark:border-white/10 dark:bg-slate-900/70">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/5 px-4 py-3 text-xs uppercase tracking-[0.2em] text-clay dark:border-white/10 dark:text-slate-400">
-                <span>Runs</span>
+                <span>{failedOnly ? "Failed runs" : "Runs"}</span>
                 <span>
                   Page {page + 1} of {pageCount}
                 </span>
@@ -450,47 +544,59 @@ export default function App() {
               <ScrollArea.Root className="h-[420px]">
                 <ScrollArea.Viewport className="p-2">
                   <div className="flex flex-col gap-2">
-                    {pageRuns.map((run) => (
-                      <div
-                        key={run.id}
-                        className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-transparent px-4 py-3 text-sm transition hover:border-ink/10 hover:bg-white dark:hover:border-white/10 dark:hover:bg-slate-900"
-                      >
-                        <div>
-                          <p className="font-medium text-ink dark:text-slate-100">Run {run.id.slice(0, 6)}</p>
-                          <p className="text-xs text-ink/50 dark:text-slate-400">{run.command}</p>
+                    {pageRuns.length === 0 ? (
+                      <p className="px-4 py-6 text-sm text-ink/50 dark:text-slate-400">
+                        {failedOnly ? "No failed runs for this job." : "No runs for this job."}
+                      </p>
+                    ) : (
+                      pageRuns.map((run) => (
+                        <div
+                          key={run.id}
+                          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-transparent px-4 py-3 text-sm transition hover:border-ink/10 hover:bg-white dark:hover:border-white/10 dark:hover:bg-slate-900"
+                        >
+                          <div>
+                            <p className="font-medium text-ink dark:text-slate-100">Run {run.id.slice(0, 6)}</p>
+                            <p className="text-xs text-ink/50 dark:text-slate-400">{run.command}</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-ink/60 dark:text-slate-300">
+                              {formatDuration(getDurationMs(run))}
+                            </span>
+                            <StatusPill status={run.status} />
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs text-ink/60 dark:text-slate-300">
-                            {formatDuration(getDurationMs(run))}
-                          </span>
-                          <StatusPill status={run.status} />
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </ScrollArea.Viewport>
                 <ScrollArea.Scrollbar orientation="vertical" className="flex touch-none select-none p-1">
                   <ScrollArea.Thumb className="relative flex-1 rounded-full bg-ink/20 dark:bg-white/20" />
                 </ScrollArea.Scrollbar>
               </ScrollArea.Root>
-              <div className="flex items-center justify-between border-t border-ink/5 bg-white/80 px-4 py-3 text-sm dark:border-white/10 dark:bg-slate-900/70">
-                <button
-                  type="button"
-                  onClick={() => setPage((current) => Math.max(0, current - 1))}
-                  disabled={page === 0}
-                  className="rounded-full border border-ink/10 px-3 py-1 text-xs font-semibold text-ink transition disabled:opacity-40 dark:border-white/10 dark:text-slate-100"
-                >
-                  Previous
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
-                  disabled={page + 1 >= pageCount}
-                  className="rounded-full border border-ink/10 px-3 py-1 text-xs font-semibold text-ink transition disabled:opacity-40 dark:border-white/10 dark:text-slate-100"
-                >
-                  Next
-                </button>
-              </div>
+            </div>
+            <div className="flex items-center justify-between px-2 text-sm">
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.max(0, current - 1))}
+                disabled={page === 0}
+                className="rounded-full border border-ink/10 bg-white/80 px-3 py-1 text-xs font-semibold text-ink shadow-sm transition disabled:opacity-40 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+              >
+                Previous
+                <span className="ml-2 rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
+                  ←
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
+                disabled={page + 1 >= pageCount}
+                className="rounded-full border border-ink/10 bg-white/80 px-3 py-1 text-xs font-semibold text-ink shadow-sm transition disabled:opacity-40 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+              >
+                Next
+                <span className="ml-2 rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
+                  →
+                </span>
+              </button>
             </div>
           </section>
         ) : (
