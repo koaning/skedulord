@@ -398,6 +398,10 @@ export default function App() {
   }, [commandOpen, pageCount, selectedJob]);
 
   const isDark = theme === "dark";
+  const headerButtonClass =
+    "inline-flex h-8 items-center gap-1.5 rounded-full border border-ink/10 bg-white/80 px-3 text-xs font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100";
+  const headerKeycapClass =
+    "rounded-full border border-ink/10 px-1.5 py-0.5 text-[9px] text-ink/40 dark:border-white/10 dark:text-slate-400";
 
   const actionItems: SuggestionItem[] = useMemo(() => {
     const actions: SuggestionItem[] = [
@@ -590,7 +594,7 @@ export default function App() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setCommandOpen(true)}
-              className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-4 py-2 text-xs font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+              className={headerButtonClass}
               aria-label="Open command palette"
             >
               <Command className="h-4 w-4" />
@@ -598,24 +602,20 @@ export default function App() {
             </button>
             <button
               onClick={() => setTheme(isDark ? "light" : "dark")}
-              className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-4 py-2 text-sm font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+              className={headerButtonClass}
               aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
             >
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               {isDark ? "Light" : "Dark"}
-              <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
-                D
-              </span>
+              <span className={headerKeycapClass}>D</span>
             </button>
             <button
               onClick={loadRuns}
-              className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-4 py-2 text-sm font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+              className={headerButtonClass}
             >
               <RefreshCw className="h-4 w-4" />
               Refresh
-              <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
-                R
-              </span>
+              <span className={headerKeycapClass}>R</span>
             </button>
           </div>
         </header>
