@@ -130,7 +130,21 @@ def serve(
     """
     Serves the skedulord API.
     """
+    import socket
     import uvicorn
+
+    desired_port = port
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.bind((host, port))
+    except OSError:
+        sock.bind((host, 0))
+        port = sock.getsockname()[1]
+        typer.echo(
+            f"Port {desired_port} is in use, switching to http://{host}:{port}"
+        )
+    finally:
+        sock.close()
 
     uvicorn.run("skedulord.api:app", host=host, port=port, reload=reload)
 
