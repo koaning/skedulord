@@ -3,8 +3,9 @@ import random
 import uuid
 from pathlib import Path
 
+from skedulord.auth import hash_password
 from skedulord.common import job_name_path
-from skedulord.db import insert_run
+from skedulord.db import fetch_user, insert_run, insert_user, update_user_password
 
 
 def _isoformat(value: dt.datetime) -> str:
@@ -19,6 +20,12 @@ def _write_log(path: Path, lines: list[str]) -> None:
 def main() -> None:
     random.seed(42)
     now = dt.datetime.now(dt.timezone.utc)
+
+    admin_hash = hash_password("admin")
+    if fetch_user("admin"):
+        update_user_password("admin", admin_hash)
+    else:
+        insert_user("admin", admin_hash)
 
     job_names = [
         "billing-rollup",

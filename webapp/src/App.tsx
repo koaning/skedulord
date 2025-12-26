@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 import {
   AlertCircle,
@@ -7,16 +7,25 @@ import {
   Copy,
   CornerUpLeft,
   Filter,
+  LogOut,
   Search,
   Moon,
   RefreshCw,
   Sun
 } from "lucide-react";
 
-import { fetchLog, fetchRuns, type RunEntry } from "./api";
+import {
+  ApiError,
+  clearAuthHeader,
+  fetchLog,
+  fetchRuns,
+  setAuthHeader,
+  type RunEntry
+} from "./api";
 
 const MAX_RECENT_RUNS = 20;
 const RUNS_PER_PAGE = 25;
+const AUTH_STORAGE_KEY = "skedulord_basic_auth";
 
 function statusColor(status: string) {
   if (status === "success") return "bg-emerald-500";
@@ -128,6 +137,95 @@ function RunBars({
   );
 }
 
+function LoginScreen({
+  theme,
+  onToggleTheme,
+  onSubmit,
+  error,
+  busy,
+  username,
+  password,
+  onUsernameChange,
+  onPasswordChange
+}: {
+  theme: "light" | "dark";
+  onToggleTheme: () => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  error: string | null;
+  busy: boolean;
+  username: string;
+  password: string;
+  onUsernameChange: (value: string) => void;
+  onPasswordChange: (value: string) => void;
+}) {
+  const isDark = theme === "dark";
+  return (
+    <div className="app-shell">
+      <div className="mx-auto flex min-h-screen max-w-xl flex-col gap-8 px-6 py-12">
+        <header className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.4em] text-plum dark:text-orange-300">Skedulord</p>
+            <h1 className="mt-2 text-3xl font-semibold text-ink dark:text-slate-100">Sign in</h1>
+          </div>
+          <button
+            onClick={onToggleTheme}
+            className="inline-flex h-9 items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-4 text-xs font-semibold text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+            type="button"
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {isDark ? "Light" : "Dark"}
+          </button>
+        </header>
+
+        <section className="rounded-3xl border border-ink/10 bg-white/80 p-8 shadow-card dark:border-white/10 dark:bg-slate-900/70">
+          <form onSubmit={onSubmit} className="flex flex-col gap-4">
+            <label className="flex flex-col gap-2 text-sm font-semibold text-ink dark:text-slate-100">
+              Username
+              <input
+                value={username}
+                onChange={(event) => onUsernameChange(event.target.value)}
+                type="text"
+                name="username"
+                autoComplete="username"
+                autoFocus
+                className="h-11 rounded-2xl border border-ink/10 bg-white/90 px-4 text-sm font-normal text-ink shadow-sm focus:border-ink/40 focus:outline-none focus:ring-2 focus:ring-ink/10 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100 dark:focus:border-white/40 dark:focus:ring-white/10"
+                required
+              />
+            </label>
+            <label className="flex flex-col gap-2 text-sm font-semibold text-ink dark:text-slate-100">
+              Password
+              <input
+                value={password}
+                onChange={(event) => onPasswordChange(event.target.value)}
+                type="password"
+                name="password"
+                autoComplete="current-password"
+                className="h-11 rounded-2xl border border-ink/10 bg-white/90 px-4 text-sm font-normal text-ink shadow-sm focus:border-ink/40 focus:outline-none focus:ring-2 focus:ring-ink/10 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100 dark:focus:border-white/40 dark:focus:ring-white/10"
+                required
+              />
+            </label>
+            {error ? (
+              <div className="flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200">
+                <AlertCircle className="h-4 w-4" />
+                {error}
+              </div>
+            ) : null}
+            <button
+              type="submit"
+              disabled={busy}
+              className="mt-2 inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-ink px-4 text-sm font-semibold text-white shadow-soft transition hover:-translate-y-0.5 hover:shadow-card disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-ink"
+            >
+              {busy ? "Signing in..." : "Login"}
+              <CornerUpLeft className="h-4 w-4" />
+            </button>
+          </form>
+        </section>
+      </div>
+    </div>
+  );
+}
+
 type SuggestionItem =
   | {
       id: string;
@@ -171,6 +269,11 @@ export default function App() {
     if (stored === "light" || stored === "dark") return stored;
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
+  const [authRequired, setAuthRequired] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [authBusy, setAuthBusy] = useState(false);
+  const [loginUsername, setLoginUsername] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   const [runs, setRuns] = useState<RunEntry[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -202,6 +305,22 @@ export default function App() {
   const hasHydratedRef = useRef(false);
   const copyResetRef = useRef<number | null>(null);
 
+  function clearStoredAuth() {
+    clearAuthHeader();
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    }
+    setLoginPassword("");
+  }
+
+  function saveStoredAuth(username: string, password: string) {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.setItem(
+      AUTH_STORAGE_KEY,
+      JSON.stringify({ username, password })
+    );
+  }
+
   async function handleCopyPath(path?: string | null) {
     if (!path) return;
     try {
@@ -221,12 +340,74 @@ export default function App() {
     try {
       const data = await fetchRuns({ limit: 500 });
       setRuns(data);
+      setAuthRequired(false);
+      setAuthError(null);
     } catch (err) {
-      setError((err as Error).message);
+      if (err instanceof ApiError && err.status === 401) {
+        clearStoredAuth();
+        setAuthRequired(true);
+        setAuthError(null);
+      } else {
+        setError((err as Error).message);
+      }
     } finally {
       setLoading(false);
     }
   }
+
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!loginUsername || !loginPassword) {
+      setAuthError("Username and password are required.");
+      return;
+    }
+    setAuthBusy(true);
+    setAuthError(null);
+    setAuthHeader(loginUsername, loginPassword);
+    try {
+      await fetchRuns({ limit: 1 });
+      saveStoredAuth(loginUsername, loginPassword);
+      setAuthRequired(false);
+      await loadRuns();
+    } catch (err) {
+      clearStoredAuth();
+      if (err instanceof ApiError && err.status === 401) {
+        setAuthError("Invalid username or password.");
+      } else {
+        setAuthError("Unable to reach the server.");
+      }
+    } finally {
+      setAuthBusy(false);
+    }
+  }
+
+  function handleLogout() {
+    clearStoredAuth();
+    setAuthRequired(true);
+    setRuns([]);
+    setSelectedJob(null);
+    setSelectedRunId(null);
+    setFocusedRunId(null);
+    setFocusedRun(null);
+    setLogData(null);
+    setLogError(null);
+  }
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.sessionStorage.getItem(AUTH_STORAGE_KEY);
+    if (!stored) return;
+    try {
+      const parsed = JSON.parse(stored) as { username?: string; password?: string };
+      if (parsed.username && parsed.password) {
+        setAuthHeader(parsed.username, parsed.password);
+        setLoginUsername(parsed.username);
+        setLoginPassword(parsed.password);
+      }
+    } catch {
+      window.sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    }
+  }, []);
 
   useEffect(() => {
     loadRuns();
@@ -383,6 +564,12 @@ export default function App() {
       })
       .catch((err) => {
         if (!active) return;
+        if (err instanceof ApiError && err.status === 401) {
+          clearStoredAuth();
+          setAuthRequired(true);
+          setAuthError(null);
+          return;
+        }
         setLogError((err as Error).message);
       })
       .finally(() => {
@@ -783,7 +970,7 @@ export default function App() {
     setQuery("");
   }
 
-  function handleCommandKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+  function handleCommandKeyDown(event: KeyboardEvent<HTMLElement>) {
     if (event.key === "Escape") {
       event.preventDefault();
       if (commandView !== "root") {
@@ -959,6 +1146,22 @@ export default function App() {
       ]
     }
   ];
+
+  if (authRequired) {
+    return (
+      <LoginScreen
+        theme={theme}
+        onToggleTheme={() => setTheme(isDark ? "light" : "dark")}
+        onSubmit={handleLogin}
+        error={authError}
+        busy={authBusy}
+        username={loginUsername}
+        password={loginPassword}
+        onUsernameChange={setLoginUsername}
+        onPasswordChange={setLoginPassword}
+      />
+    );
+  }
   return (
     <div className="app-shell">
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 px-6 py-10">
@@ -1049,6 +1252,13 @@ export default function App() {
               <RefreshCw className="h-4 w-4" />
               Refresh
               <span className={headerKeycapClass}>R</span>
+            </button>
+            <button
+              onClick={handleLogout}
+              className={headerButtonClass}
+            >
+              <LogOut className="h-4 w-4" />
+              Sign out
             </button>
           </div>
         </header>
@@ -1504,6 +1714,7 @@ export default function App() {
             aria-modal="true"
             aria-label="Command palette"
             onClick={(event) => event.stopPropagation()}
+            onKeyDown={handleCommandKeyDown}
           >
             <div className="flex items-center gap-2 rounded-2xl border border-ink/10 bg-white/70 px-3 py-2 text-sm text-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100">
               <Search className="h-4 w-4 text-ink/40 dark:text-slate-400" />
@@ -1512,7 +1723,6 @@ export default function App() {
                 type="search"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                onKeyDown={handleCommandKeyDown}
                 placeholder={
                   normalizedQuery
                     ? "Search jobs or actions…"
@@ -1530,45 +1740,51 @@ export default function App() {
               {commandItems.length === 0 ? (
                 <p className="px-3 py-4 text-sm text-ink/50 dark:text-slate-400">No matching commands.</p>
               ) : (
-                commandItems.map((item, index) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => handleSuggestionSelect(item)}
-                    ref={(node) => {
-                      commandItemRefs.current[index] = node;
-                    }}
-                    className={`flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:focus-visible:outline-slate-100 ${
-                      item.type === "route"
-                        ? "gap-4 border border-ink/10 bg-white/80 px-4 py-3 text-ink shadow-card dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
-                        : ""
-                    } ${
-                      index === highlightIndex
-                        ? "bg-ink/5 text-ink dark:bg-white/10 dark:text-slate-100"
-                        : "text-ink/70 hover:bg-ink/5 hover:text-ink dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-slate-100"
-                    }`}
-                    aria-selected={index === highlightIndex}
-                    role="option"
-                  >
-                    <div>
-                      <span className="block">{item.label}</span>
-                      {item.type === "route" ? (
-                        <span className="mt-1 block text-xs text-ink/50 dark:text-slate-400">
-                          {item.description}
+                commandItems.map((item, index) => {
+                  const isSelected = index === highlightIndex;
+                  const isRoute = item.type === "route";
+                  const selectedClass = isSelected
+                    ? isRoute
+                      ? "bg-ink/10 text-ink border-2 border-ink/40 dark:bg-white/10 dark:text-slate-100 dark:border-white/30"
+                      : "text-ink border border-ink/35 font-semibold dark:border-white/20 dark:text-slate-100"
+                    : "text-ink/70 hover:bg-ink/5 hover:text-ink dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-slate-100";
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => handleSuggestionSelect(item)}
+                      ref={(node) => {
+                        commandItemRefs.current[index] = node;
+                      }}
+                      className={`flex w-full items-center justify-between rounded-2xl px-3 py-2 text-left text-sm transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:focus-visible:outline-slate-100 ${
+                        isRoute
+                          ? "gap-4 border border-ink/10 bg-white/80 px-4 py-3 text-ink shadow-card dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+                          : ""
+                      } ${selectedClass}`}
+                      aria-selected={isSelected}
+                      role="option"
+                    >
+                      <div>
+                        <span className="block">{item.label}</span>
+                        {item.type === "route" ? (
+                          <span className="mt-1 block text-xs text-ink/50 dark:text-slate-400">
+                            {item.description}
+                          </span>
+                        ) : null}
+                      </div>
+                      {item.type === "action" ? (
+                        <span className="rounded-full border border-ink/10 px-2 py-0.5 text-xs text-ink/40 dark:border-white/10 dark:text-slate-400">
+                          {item.shortcut ?? ""}
                         </span>
-                      ) : null}
-                    </div>
-                    {item.type === "action" ? (
-                      <span className="rounded-full border border-ink/10 px-2 py-0.5 text-xs text-ink/40 dark:border-white/10 dark:text-slate-400">
-                        {item.shortcut ?? ""}
-                      </span>
-                    ) : item.type === "job" ? (
-                      <span className="text-xs text-ink/40 dark:text-slate-400">Job</span>
-                    ) : (
-                      <span className="text-xs text-ink/40 dark:text-slate-400">Enter</span>
-                    )}
-                  </button>
-                ))
+                      ) : item.type === "job" ? (
+                        <span className="text-xs text-ink/40 dark:text-slate-400">Job</span>
+                      ) : (
+                        <span className="text-xs text-ink/40 dark:text-slate-400">Enter</span>
+                      )}
+                    </button>
+                  );
+                })
               )}
             </div>
           </div>

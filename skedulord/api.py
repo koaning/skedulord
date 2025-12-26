@@ -1,11 +1,30 @@
+import base64
+import os
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from skedulord.db import fetch_run, fetch_runs
+from skedulord.auth import verify_password
+from skedulord.db import fetch_run, fetch_runs, fetch_user
+
+
+def _basic_credentials(auth_header: str | None) -> tuple[str, str] | None:
+    if not auth_header:
+        return None
+    if not auth_header.lower().startswith("basic "):
+        return None
+    encoded = auth_header.split(" ", 1)[1].strip()
+    try:
+        decoded = base64.b64decode(encoded).decode("utf-8")
+    except (ValueError, UnicodeDecodeError):
+        return None
+    username, sep, password = decoded.partition(":")
+    if not sep:
+        return None
+    return username, password
 
 
 def create_app() -> FastAPI:
@@ -17,6 +36,27 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @app.middleware("http")
+    async def auth_middleware(request, call_next):
+        if os.getenv("SKEDULORD_NO_AUTH") == "1":
+            return await call_next(request)
+        path = request.url.path
+        if path in ("/api/health",):
+            return await call_next(request)
+        requires_auth = path.startswith("/api") or path.startswith("/docs") or path == "/openapi.json"
+        if not requires_auth:
+            return await call_next(request)
+        credentials = _basic_credentials(request.headers.get("authorization"))
+        if not credentials:
+            headers = {"WWW-Authenticate": "Basic"} if path.startswith("/docs") or path == "/openapi.json" else None
+            return Response(status_code=401, headers=headers)
+        username, password = credentials
+        row = fetch_user(username)
+        if not row or not verify_password(password, row["password_hash"]):
+            headers = {"WWW-Authenticate": "Basic"} if path.startswith("/docs") or path == "/openapi.json" else None
+            return Response(status_code=401, headers=headers)
+        return await call_next(request)
 
     @app.get("/api/health")
     def health() -> dict:
