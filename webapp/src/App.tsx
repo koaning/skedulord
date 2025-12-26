@@ -498,7 +498,7 @@ export default function App() {
       if (target?.tagName === "INPUT" || target?.tagName === "TEXTAREA" || target?.isContentEditable) {
         return;
       }
-      if (event.key.toLowerCase() === "b") {
+      if (event.key === "Escape") {
         event.preventDefault();
         if (selectedRunId && selectedJob) {
           setSelectedRunId(null);
@@ -619,7 +619,7 @@ export default function App() {
         id: "back",
         label: "Back to all jobs",
         type: "action",
-        shortcut: "B",
+        shortcut: "Esc",
         run: () => {
           setSelectedJob(null);
           setSelectedRunId(null);
@@ -847,7 +847,7 @@ export default function App() {
     {
       title: "Job detail",
       items: [
-        { label: "Back to list", keys: "B" },
+        { label: "Back to list", keys: "Esc" },
         { label: "Toggle failed runs", keys: "F" },
         { label: "Move run focus", keys: "Up / Down" },
         { label: "Move bar focus", keys: "Left / Right" },
@@ -885,9 +885,34 @@ export default function App() {
                     </li>
                   </>
                 ) : null}
-                <li aria-current="page" className="font-semibold uppercase text-ink dark:text-slate-100">
-                  {selectedJobData ? selectedJobData.name : "All jobs"}
-                </li>
+                {selectedJobData && selectedRunId ? (
+                  <>
+                    <li>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedRunId(null);
+                          setFocusedRunId(null);
+                          setFocusedRun(null);
+                          updateUrl(selectedJobData.name, null);
+                        }}
+                        className="uppercase text-ink/50 transition hover:text-ink dark:text-slate-400 dark:hover:text-slate-200"
+                      >
+                        {selectedJobData.name}
+                      </button>
+                    </li>
+                    <li aria-hidden="true" className="text-ink/30 dark:text-slate-500">
+                      /
+                    </li>
+                    <li aria-current="page" className="font-semibold uppercase text-ink dark:text-slate-100">
+                      Run {selectedRunId.slice(0, 8)}
+                    </li>
+                  </>
+                ) : (
+                  <li aria-current="page" className="font-semibold uppercase text-ink dark:text-slate-100">
+                    {selectedJobData ? selectedJobData.name : "All jobs"}
+                  </li>
+                )}
               </ol>
             </nav>
           </div>
@@ -955,7 +980,7 @@ export default function App() {
                   <CornerUpLeft className="h-3 w-3" />
                   Back to runs
                   <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
-                    B
+                    Esc
                   </span>
                 </button>
               </div>
@@ -1014,7 +1039,7 @@ export default function App() {
                   <CornerUpLeft className="h-3 w-3" />
                   Back
                   <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
-                    B
+                    Esc
                   </span>
                 </button>
                 <button
