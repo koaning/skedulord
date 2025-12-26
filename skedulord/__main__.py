@@ -1,3 +1,4 @@
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -9,10 +10,11 @@ from rich.table import Table
 from clumper import Clumper
 
 from skedulord import __version__ as lord_version
+from skedulord.auth import hash_password
 from skedulord.job import JobRunner
 from skedulord.common import SKEDULORD_PATH
 from skedulord.cron import Cron, clean_cron, parse_job_from_settings
-from skedulord.db import fetch_runs
+from skedulord.db import delete_user, fetch_runs, fetch_user, insert_user, update_user_password
 from skedulord.templating import render_tokens
 from skedulord.dashboard import build_site
 
@@ -21,6 +23,80 @@ app = typer.Typer(
     add_completion=False,
     help="SKEDULORD: helps with cronjobs and logs.",
 )
+
+users_app = typer.Typer(help="Manage users for the API/dashboard.")
+app.add_typer(users_app, name="users")
+
+
+@users_app.command("add")
+def add_user(
+    username: str = typer.Option(..., "--username", help="Username to add."),
+    password: str = typer.Option(
+        None,
+        "--password",
+        help="Password for the user (prompted if omitted).",
+    ),
+):
+    """Create a new user."""
+    if fetch_user(username):
+        print(f"[red]User '{username}' already exists.[/]")
+        raise typer.Exit(code=1)
+    if password is None:
+        password = typer.prompt(
+            "Password",
+            hide_input=True,
+            confirmation_prompt=True,
+        )
+    try:
+        password_hash = hash_password(password)
+    except ValueError as exc:
+        print(f"[red]{exc}[/]")
+        raise typer.Exit(code=1)
+    if not insert_user(username, password_hash):
+        print(f"[red]User '{username}' already exists.[/]")
+        raise typer.Exit(code=1)
+    print(f"[green]User '{username}' added.[/]")
+
+
+@users_app.command("update")
+def update_user(
+    username: str = typer.Option(..., "--username", help="Username to update."),
+    password: str = typer.Option(
+        None,
+        "--password",
+        help="New password (prompted if omitted).",
+    ),
+):
+    """Update an existing user's password."""
+    if not fetch_user(username):
+        print(f"[red]User '{username}' does not exist.[/]")
+        raise typer.Exit(code=1)
+    if password is None:
+        password = typer.prompt(
+            "Password",
+            hide_input=True,
+            confirmation_prompt=True,
+        )
+    try:
+        password_hash = hash_password(password)
+    except ValueError as exc:
+        print(f"[red]{exc}[/]")
+        raise typer.Exit(code=1)
+    if not update_user_password(username, password_hash):
+        print(f"[red]User '{username}' does not exist.[/]")
+        raise typer.Exit(code=1)
+    print(f"[green]User '{username}' updated.[/]")
+
+
+@users_app.command("remove")
+def remove_user(
+    username: str = typer.Option(..., "--username", help="Username to remove."),
+):
+    """Remove an existing user."""
+    if not delete_user(username):
+        print(f"[red]User '{username}' does not exist.[/]")
+        raise typer.Exit(code=1)
+    print(f"[green]User '{username}' removed.[/]")
 
 
 @app.command()
@@ -126,6 +202,12 @@ def serve(
     host: str = typer.Option("127.0.0.1", help="The host to bind."),
     port: int = typer.Option(8000, help="The port number to use."),
     reload: bool = typer.Option(False, help="Enable auto-reload."),
+    no_auth: bool = typer.Option(
+        False,
+        "--no-auth",
+        hidden=True,
+        help="Disable authentication for local testing.",
+    ),
     ):
     """
     Serves the skedulord API.
@@ -145,6 +227,11 @@ def serve(
         )
     finally:
         sock.close()
+
+    if no_auth:
+        os.environ["SKEDULORD_NO_AUTH"] = "1"
+    else:
+        os.environ.pop("SKEDULORD_NO_AUTH", None)
 
     uvicorn.run("skedulord.api:app", host=host, port=port, reload=reload)
 

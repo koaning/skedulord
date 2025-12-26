@@ -1,4 +1,5 @@
 import sqlite3
+from contextlib import contextmanager
 from typing import Iterable, Optional
 
 from skedulord.common import db_path
@@ -18,6 +19,11 @@ CREATE TABLE IF NOT EXISTS runs (
 CREATE INDEX IF NOT EXISTS idx_runs_name ON runs(name);
 CREATE INDEX IF NOT EXISTS idx_runs_status ON runs(status);
 CREATE INDEX IF NOT EXISTS idx_runs_start ON runs(start);
+CREATE TABLE IF NOT EXISTS users (
+    username TEXT PRIMARY KEY,
+    password_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 """
 
 
@@ -27,13 +33,19 @@ def _connect() -> sqlite3.Connection:
     return conn
 
 
-def init_db() -> None:
+@contextmanager
+def _connection() -> Iterable[sqlite3.Connection]:
     conn = _connect()
     try:
-        conn.executescript(SCHEMA)
-        conn.commit()
+        yield conn
     finally:
         conn.close()
+
+
+def init_db() -> None:
+    with _connection() as conn:
+        conn.executescript(SCHEMA)
+        conn.commit()
 
 
 def insert_run(
@@ -46,8 +58,7 @@ def insert_run(
     logpath: str,
 ) -> None:
     init_db()
-    conn = _connect()
-    try:
+    with _connection() as conn:
         conn.execute(
             """
             INSERT OR REPLACE INTO runs (id, name, command, status, start, end, logpath)
@@ -56,8 +67,6 @@ def insert_run(
             (run_id, name, command, status, start, end, logpath),
         )
         conn.commit()
-    finally:
-        conn.close()
 
 
 def fetch_runs(
@@ -67,8 +76,7 @@ def fetch_runs(
     date: Optional[str] = None,
 ) -> Iterable[sqlite3.Row]:
     init_db()
-    conn = _connect()
-    try:
+    with _connection() as conn:
         clauses = []
         params = []
         if name:
@@ -90,14 +98,11 @@ def fetch_runs(
         {limit_clause}
         """
         return conn.execute(query, params).fetchall()
-    finally:
-        conn.close()
 
 
 def fetch_run(run_id: str) -> Optional[sqlite3.Row]:
     init_db()
-    conn = _connect()
-    try:
+    with _connection() as conn:
         return conn.execute(
             """
             SELECT id, name, command, status, start, end, logpath
@@ -106,5 +111,59 @@ def fetch_run(run_id: str) -> Optional[sqlite3.Row]:
             """,
             (run_id,),
         ).fetchone()
-    finally:
-        conn.close()
+
+
+def fetch_user(username: str) -> Optional[sqlite3.Row]:
+    init_db()
+    with _connection() as conn:
+        return conn.execute(
+            """
+            SELECT username, password_hash, created_at
+            FROM users
+            WHERE username = ?
+            """,
+            (username,),
+        ).fetchone()
+
+
+def insert_user(username: str, password_hash: str) -> bool:
+    init_db()
+    with _connection() as conn:
+        cursor = conn.execute(
+            """
+            INSERT OR IGNORE INTO users (username, password_hash)
+            VALUES (?, ?)
+            """,
+            (username, password_hash),
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+
+
+def update_user_password(username: str, password_hash: str) -> bool:
+    init_db()
+    with _connection() as conn:
+        cursor = conn.execute(
+            """
+            UPDATE users
+            SET password_hash = ?
+            WHERE username = ?
+            """,
+            (password_hash, username),
+        )
+        conn.commit()
+        return cursor.rowcount > 0
+
+
+def delete_user(username: str) -> bool:
+    init_db()
+    with _connection() as conn:
+        cursor = conn.execute(
+            """
+            DELETE FROM users
+            WHERE username = ?
+            """,
+            (username,),
+        )
+        conn.commit()
+        return cursor.rowcount > 0
