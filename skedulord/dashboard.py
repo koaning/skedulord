@@ -4,7 +4,7 @@ from pathlib import Path
 from clumper import Clumper
 from rich.console import Console
 from skedulord.common import skedulord_path
-from pkg_resources import resource_filename
+from importlib.resources import files
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 
@@ -32,7 +32,7 @@ def build_site():
              .sort(lambda d: d['start_time'], reverse=True))
 
     env = Environment(
-        loader=FileSystemLoader(resource_filename('skedulord', 'templates')),
+        loader=FileSystemLoader(str(files("skedulord").joinpath("templates"))),
         autoescape=select_autoescape(['html', 'xml'])
     )
 

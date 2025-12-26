@@ -123,6 +123,7 @@ skedulord/dashboard/build/*
 
 package-lock.json
 node_modules/*
+webapp/node_modules/*
 .vite/
 webapp/dist/
 cypress/videos/*

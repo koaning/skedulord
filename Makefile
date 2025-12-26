@@ -1,7 +1,11 @@
+.PHONY: lint install develop test check clean reset reset-big pypi \
+	demo-reset demo-seed demo-run demo-web demo-clean demo-install demo-ui-build demo-check
+
 lint:
 	ruff check skedulord tests
 
 install:
+	@if [ ! -d ".venv" ]; then uv venv .venv; fi
 	uv pip install -e ".[dev]"
 
 develop: install
@@ -44,3 +48,37 @@ pypi:
 	rm -rf dist
 	uv build
 	twine upload dist/*
+
+demo-reset:
+	uv run python -m skedulord wipe disk --really --yes
+
+
+demo-seed:
+	uv run python -m skedulord run demo-ok "jobs/pyjob.py" --retry 1 --wait 0
+	uv run python -m skedulord run demo-ok "jobs/pyjob.py" --retry 1 --wait 0
+	uv run python -m skedulord run demo-bad "jobs/badpyjob.py" --retry 1 --wait 0
+	uv run python -m skedulord run demo-printer "jobs/printer.py" --retry 1 --wait 0
+
+
+demo-run: demo-reset demo-seed demo-ui-build
+	uv run python -m skedulord serve
+
+
+demo-web:
+	cd webapp && npm install && npm run dev
+
+
+demo-ui-build:
+	cd webapp && npm install && npm run build
+
+
+demo-clean:
+	uv run python -m skedulord wipe disk --really --yes
+
+
+demo-install:
+	uv pip install -e ".[dev]"
+
+
+demo-check:
+	uv run python -m skedulord history --n 5
