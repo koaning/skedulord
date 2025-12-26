@@ -584,6 +584,13 @@ export default function App() {
   }, [commandOpen, filteredRuns, focusedRunId, pageCount, pageRuns.length, runListIndex, selectedJob, selectedRunId]);
 
   const isDark = theme === "dark";
+  const stackDepth = selectedJobData ? (selectedRunId ? 2 : 1) : 0;
+  const cardState = (level: number) => {
+    if (level === stackDepth) return "active";
+    if (level === stackDepth - 1) return "back-1";
+    if (level === stackDepth - 2) return "back-2";
+    return "hidden";
+  };
   const headerButtonClass =
     "inline-flex h-8 items-center gap-1.5 rounded-full border border-ink/10 bg-white/80 px-3 text-xs font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100";
   const headerKeycapClass =
@@ -952,250 +959,12 @@ export default function App() {
           </div>
         ) : null}
 
-        {selectedJobData && selectedRunId ? (
-          <section className="frost-card flex flex-col gap-5 rounded-3xl p-6 shadow-card">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Run details</p>
-                <h2 className="font-display text-2xl text-ink dark:text-slate-100">
-                  {selectedJobData.name}
-                </h2>
-                {selectedRun ? (
-                  <p className="mt-1 text-xs text-ink/60 dark:text-slate-300">
-                    Run {selectedRun.id.slice(0, 8)} · {formatDuration(getDurationMs(selectedRun))} · {selectedRun.status}
-                  </p>
-                ) : null}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedRunId(null);
-                    setFocusedRunId(null);
-                    setFocusedRun(null);
-                    updateUrl(selectedJobData.name, null);
-                  }}
-                  className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-3 py-2 text-xs font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
-                >
-                  <CornerUpLeft className="h-3 w-3" />
-                  Back to runs
-                  <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
-                    Esc
-                  </span>
-                </button>
-              </div>
-            </div>
-
-            <div className="overflow-hidden rounded-2xl border border-ink/10 bg-white/80 dark:border-white/10 dark:bg-slate-900/70">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/5 px-4 py-3 text-xs uppercase tracking-[0.2em] text-clay dark:border-white/10 dark:text-slate-400">
-                <span>Run log</span>
-                {selectedRun ? (
-                  <span className="normal-case text-xs text-ink/60 dark:text-slate-300">
-                    {selectedRun.logpath}
-                  </span>
-                ) : null}
-              </div>
-              <ScrollArea.Root className="h-[520px]">
-                <ScrollArea.Viewport className="p-4">
-                  {selectedRun ? (
-                    logLoading ? (
-                      <p className="text-sm text-ink/50 dark:text-slate-400">Loading log…</p>
-                    ) : logError ? (
-                      <p className="text-sm text-rose-600 dark:text-rose-300">{logError}</p>
-                    ) : logData ? (
-                      <pre className="whitespace-pre-wrap text-xs leading-relaxed text-ink dark:text-slate-100">
-                        {logData.content || "Log is empty."}
-                      </pre>
-                    ) : (
-                      <p className="text-sm text-ink/50 dark:text-slate-400">No log available.</p>
-                    )
-                  ) : (
-                    <p className="text-sm text-ink/50 dark:text-slate-400">
-                      Select a run to view its logs.
-                    </p>
-                  )}
-                </ScrollArea.Viewport>
-                <ScrollArea.Scrollbar orientation="vertical" className="flex touch-none select-none p-1">
-                  <ScrollArea.Thumb className="relative flex-1 rounded-full bg-ink/20 dark:bg-white/20" />
-                </ScrollArea.Scrollbar>
-              </ScrollArea.Root>
-            </div>
-          </section>
-        ) : selectedJobData ? (
-          <section className="frost-card flex flex-col gap-5 rounded-3xl p-6 shadow-card">
-            <div className="flex flex-wrap items-center justify-end gap-4">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedJob(null);
-                    setSelectedRunId(null);
-                    setFocusedRunId(null);
-                    setFocusedRun(null);
-                    updateUrl(null, null);
-                  }}
-                  className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-3 py-2 text-xs font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
-                >
-                  <CornerUpLeft className="h-3 w-3" />
-                  Back
-                  <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
-                    Esc
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFailedOnly((current) => !current)}
-                  className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-3 py-2 text-xs font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
-                >
-                  <Filter className="h-3 w-3" />
-                  {failedOnly ? "Show all" : "Failed only"}
-                  <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
-                    F
-                  </span>
-                </button>
-                {selectedJobData.latest ? <StatusPill status={selectedJobData.latest.status} /> : null}
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-ink/10 bg-white/80 p-4 dark:border-white/10 dark:bg-slate-900/70">
-              <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
-                <p className="font-semibold text-ink dark:text-slate-100">Recent run durations</p>
-                <p className="text-xs text-ink/60 dark:text-slate-300">
-                  {failedOnly ? "Failed runs only" : `Last ${MAX_RECENT_RUNS} runs`}
-                </p>
-              </div>
-              <div className="mt-4">
-                <RunBars
-                  runs={filteredRuns}
-                  onSelectRun={handleSelectRunWithinJob}
-                  highlightRunId={focusedRunId ?? selectedRunId}
-                />
-              </div>
-            </div>
-
-            <div className="overflow-hidden rounded-2xl border border-ink/10 bg-white/80 dark:border-white/10 dark:bg-slate-900/70">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/5 px-4 py-3 text-xs uppercase tracking-[0.2em] text-clay dark:border-white/10 dark:text-slate-400">
-                <span>{failedOnly ? "Failed runs" : "Runs"}</span>
-                <span>
-                  Page {page + 1} of {pageCount}
-                </span>
-              </div>
-              <ScrollArea.Root className="h-[420px]">
-                <ScrollArea.Viewport className="p-2">
-                  <div className="flex flex-col gap-2">
-                    {pageRuns.length === 0 ? (
-                      <p className="px-4 py-6 text-sm text-ink/50 dark:text-slate-400">
-                        {failedOnly ? "No failed runs for this job." : "No runs for this job."}
-                      </p>
-                    ) : (
-                      pageRuns.map((run, index) => (
-                        <div
-                          key={run.id}
-                          ref={(node) => {
-                            runListRefs.current[index] = node;
-                          }}
-                          tabIndex={-1}
-                          className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-sm transition ${
-                            run.id === selectedRunId || run.id === focusedRunId
-                              ? "border-ink/20 bg-white shadow-soft dark:border-white/10 dark:bg-slate-900"
-                              : "border-transparent hover:border-ink/10 hover:bg-white dark:hover:border-white/10 dark:hover:bg-slate-900"
-                          }`}
-                          onClick={() => handleSelectRunWithinJob(run)}
-                        >
-                          <div>
-                            <p className="font-medium text-ink dark:text-slate-100">Run {run.id.slice(0, 6)}</p>
-                            <p className="text-xs text-ink/50 dark:text-slate-400">{run.command}</p>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs text-ink/60 dark:text-slate-300">
-                              {formatDuration(getDurationMs(run))}
-                            </span>
-                            <StatusPill status={run.status} />
-                            <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[11px] font-semibold text-ink/50 dark:border-white/10 dark:text-slate-300">
-                              Logs
-                            </span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </ScrollArea.Viewport>
-                <ScrollArea.Scrollbar orientation="vertical" className="flex touch-none select-none p-1">
-                  <ScrollArea.Thumb className="relative flex-1 rounded-full bg-ink/20 dark:bg-white/20" />
-                </ScrollArea.Scrollbar>
-              </ScrollArea.Root>
-            </div>
-            <div className="flex items-center justify-between px-2 text-sm">
-              <button
-                type="button"
-                onClick={() => setPage((current) => Math.max(0, current - 1))}
-                disabled={page === 0}
-                className="rounded-full border border-ink/10 bg-white/80 px-3 py-1 text-xs font-semibold text-ink shadow-sm transition disabled:opacity-40 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
-              >
-                Previous
-                <span className="ml-2 rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
-                  ←
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
-                disabled={page + 1 >= pageCount}
-                className="rounded-full border border-ink/10 bg-white/80 px-3 py-1 text-xs font-semibold text-ink shadow-sm transition disabled:opacity-40 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
-              >
-                Next
-                <span className="ml-2 rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
-                  →
-                </span>
-              </button>
-            </div>
-
-            <div className="rounded-2xl border border-ink/10 bg-white/80 p-4 dark:border-white/10 dark:bg-slate-900/70">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Run log</p>
-                  <h3 className="font-display text-xl text-ink dark:text-slate-100">
-                    {selectedRunId ? `Run ${selectedRunId.slice(0, 8)}` : "Select a run"}
-                  </h3>
-                </div>
-                {selectedRunId ? (
-                  <button
-                    type="button"
-                    onClick={() => setSelectedRunId(null)}
-                    className="rounded-full border border-ink/10 px-3 py-1 text-xs font-semibold text-ink transition dark:border-white/10 dark:text-slate-100"
-                  >
-                    Close
-                  </button>
-                ) : null}
-              </div>
-              {selectedRunId ? (
-                <div className="mt-4 space-y-3 text-sm">
-                  {logError ? (
-                    <p className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200">
-                      {logError}
-                    </p>
-                  ) : null}
-                  {logLoading ? (
-                    <p className="text-ink/60 dark:text-slate-300">Loading log…</p>
-                  ) : null}
-                  {logData ? (
-                    <>
-                      <p className="text-xs text-ink/60 dark:text-slate-300">{logData.logpath}</p>
-                      <pre className="max-h-[320px] overflow-auto rounded-2xl border border-ink/10 bg-white px-4 py-3 text-xs text-ink dark:border-white/10 dark:bg-slate-950 dark:text-slate-100">
-                        {logData.content || "Log is empty."}
-                      </pre>
-                    </>
-                  ) : null}
-                </div>
-              ) : (
-                <p className="mt-3 text-sm text-ink/60 dark:text-slate-300">
-                  Click a run to open its logs and share the URL if you need help debugging.
-                </p>
-              )}
-            </div>
-          </section>
-        ) : (
-          <section className="frost-card flex flex-col gap-5 rounded-3xl p-6 shadow-card">
+        <div className="card-stack">
+          <section
+            className="card-layer frost-card flex flex-col gap-5 rounded-3xl p-6 shadow-card"
+            data-state={cardState(0)}
+            aria-hidden={stackDepth !== 0}
+          >
             <div className="flex items-center justify-end">
               <p className="text-xs text-ink/60 dark:text-slate-300">{filteredJobs.length} jobs</p>
             </div>
@@ -1205,7 +974,7 @@ export default function App() {
               role="listbox"
               aria-label="Jobs"
               onKeyDown={handleListKeyDown}
-              tabIndex={0}
+              tabIndex={stackDepth === 0 ? 0 : -1}
               ref={listboxRef}
             >
               <ScrollArea.Root className="h-[520px]">
@@ -1294,7 +1063,281 @@ export default function App() {
               </ScrollArea.Root>
             </div>
           </section>
-        )}
+
+          <section
+            className="card-layer frost-card flex flex-col gap-5 rounded-3xl p-6 shadow-card"
+            data-state={cardState(1)}
+            aria-hidden={stackDepth !== 1}
+          >
+            {selectedJobData ? (
+              <>
+                <div className="flex flex-wrap items-center justify-end gap-4">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedJob(null);
+                        setSelectedRunId(null);
+                        setFocusedRunId(null);
+                        setFocusedRun(null);
+                        updateUrl(null, null);
+                      }}
+                      className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-3 py-2 text-xs font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+                    >
+                      <CornerUpLeft className="h-3 w-3" />
+                      Back
+                      <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
+                        Esc
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFailedOnly((current) => !current)}
+                      className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-3 py-2 text-xs font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+                    >
+                      <Filter className="h-3 w-3" />
+                      {failedOnly ? "Show all" : "Failed only"}
+                      <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
+                        F
+                      </span>
+                    </button>
+                    {selectedJobData.latest ? <StatusPill status={selectedJobData.latest.status} /> : null}
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-ink/10 bg-white/80 p-4 dark:border-white/10 dark:bg-slate-900/70">
+                  <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
+                    <p className="font-semibold text-ink dark:text-slate-100">Recent run durations</p>
+                    <p className="text-xs text-ink/60 dark:text-slate-300">
+                      {failedOnly ? "Failed runs only" : `Last ${MAX_RECENT_RUNS} runs`}
+                    </p>
+                  </div>
+                  <div className="mt-4">
+                    <RunBars
+                      runs={filteredRuns}
+                      onSelectRun={handleSelectRunWithinJob}
+                      highlightRunId={focusedRunId ?? selectedRunId}
+                    />
+                  </div>
+                </div>
+
+                <div className="overflow-hidden rounded-2xl border border-ink/10 bg-white/80 dark:border-white/10 dark:bg-slate-900/70">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/5 px-4 py-3 text-xs uppercase tracking-[0.2em] text-clay dark:border-white/10 dark:text-slate-400">
+                    <span>{failedOnly ? "Failed runs" : "Runs"}</span>
+                    <span>
+                      Page {page + 1} of {pageCount}
+                    </span>
+                  </div>
+                  <ScrollArea.Root className="h-[420px]">
+                    <ScrollArea.Viewport className="p-2">
+                      <div className="flex flex-col gap-2">
+                        {pageRuns.length === 0 ? (
+                          <p className="px-4 py-6 text-sm text-ink/50 dark:text-slate-400">
+                            {failedOnly ? "No failed runs for this job." : "No runs for this job."}
+                          </p>
+                        ) : (
+                          pageRuns.map((run, index) => (
+                            <div
+                              key={run.id}
+                              ref={(node) => {
+                                runListRefs.current[index] = node;
+                              }}
+                              tabIndex={-1}
+                              className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-sm transition ${
+                                run.id === selectedRunId || run.id === focusedRunId
+                                  ? "border-ink/20 bg-white shadow-soft dark:border-white/10 dark:bg-slate-900"
+                                  : "border-transparent hover:border-ink/10 hover:bg-white dark:hover:border-white/10 dark:hover:bg-slate-900"
+                              }`}
+                              onClick={() => handleSelectRunWithinJob(run)}
+                            >
+                              <div>
+                                <p className="font-medium text-ink dark:text-slate-100">Run {run.id.slice(0, 6)}</p>
+                                <p className="text-xs text-ink/50 dark:text-slate-400">{run.command}</p>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs text-ink/60 dark:text-slate-300">
+                                  {formatDuration(getDurationMs(run))}
+                                </span>
+                                <StatusPill status={run.status} />
+                                <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[11px] font-semibold text-ink/50 dark:border-white/10 dark:text-slate-300">
+                                  Logs
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </ScrollArea.Viewport>
+                    <ScrollArea.Scrollbar orientation="vertical" className="flex touch-none select-none p-1">
+                      <ScrollArea.Thumb className="relative flex-1 rounded-full bg-ink/20 dark:bg-white/20" />
+                    </ScrollArea.Scrollbar>
+                  </ScrollArea.Root>
+                </div>
+                <div className="flex items-center justify-between px-2 text-sm">
+                  <button
+                    type="button"
+                    onClick={() => setPage((current) => Math.max(0, current - 1))}
+                    disabled={page === 0}
+                    className="rounded-full border border-ink/10 bg-white/80 px-3 py-1 text-xs font-semibold text-ink shadow-sm transition disabled:opacity-40 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+                  >
+                    Previous
+                    <span className="ml-2 rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
+                      ←
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
+                    disabled={page + 1 >= pageCount}
+                    className="rounded-full border border-ink/10 bg-white/80 px-3 py-1 text-xs font-semibold text-ink shadow-sm transition disabled:opacity-40 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+                  >
+                    Next
+                    <span className="ml-2 rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
+                      →
+                    </span>
+                  </button>
+                </div>
+
+                <div className="rounded-2xl border border-ink/10 bg-white/80 p-4 dark:border-white/10 dark:bg-slate-900/70">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Run log</p>
+                      <h3 className="font-display text-xl text-ink dark:text-slate-100">
+                        {selectedRunId ? `Run ${selectedRunId.slice(0, 8)}` : "Select a run"}
+                      </h3>
+                    </div>
+                    {selectedRunId ? (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedRunId(null)}
+                        className="rounded-full border border-ink/10 px-3 py-1 text-xs font-semibold text-ink transition dark:border-white/10 dark:text-slate-100"
+                      >
+                        Close
+                      </button>
+                    ) : null}
+                  </div>
+                  {selectedRunId ? (
+                    <div className="mt-4 space-y-3 text-sm">
+                      {logError ? (
+                        <p className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-rose-700 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200">
+                          {logError}
+                        </p>
+                      ) : null}
+                      {logLoading ? (
+                        <p className="text-ink/60 dark:text-slate-300">Loading log…</p>
+                      ) : null}
+                      {logData ? (
+                        <>
+                          <p className="text-xs text-ink/60 dark:text-slate-300">{logData.logpath}</p>
+                          <pre className="max-h-[320px] overflow-auto rounded-2xl border border-ink/10 bg-white px-4 py-3 text-xs text-ink dark:border-white/10 dark:bg-slate-950 dark:text-slate-100">
+                            {logData.content || "Log is empty."}
+                          </pre>
+                        </>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-sm text-ink/60 dark:text-slate-300">
+                      Click a run to open its logs and share the URL if you need help debugging.
+                    </p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-ink/10 px-6 py-20 text-center text-sm text-ink/60 dark:border-white/10 dark:text-slate-300">
+                <p className="text-xs uppercase tracking-[0.3em] text-plum dark:text-orange-300">Job overview</p>
+                <p className="text-lg font-display text-ink dark:text-slate-100">Pick a job to stack forward.</p>
+                <p className="max-w-md text-xs text-ink/60 dark:text-slate-400">
+                  Use the list, recent run bars, or the command palette to jump straight into a run.
+                </p>
+              </div>
+            )}
+          </section>
+
+          <section
+            className="card-layer frost-card flex flex-col gap-5 rounded-3xl p-6 shadow-card"
+            data-state={cardState(2)}
+            aria-hidden={stackDepth !== 2}
+          >
+            {selectedJobData && selectedRunId ? (
+              <>
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Run details</p>
+                    <h2 className="font-display text-2xl text-ink dark:text-slate-100">
+                      {selectedJobData.name}
+                    </h2>
+                    {selectedRun ? (
+                      <p className="mt-1 text-xs text-ink/60 dark:text-slate-300">
+                        Run {selectedRun.id.slice(0, 8)} · {formatDuration(getDurationMs(selectedRun))} · {selectedRun.status}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedRunId(null);
+                        setFocusedRunId(null);
+                        setFocusedRun(null);
+                        updateUrl(selectedJobData.name, null);
+                      }}
+                      className="inline-flex items-center gap-2 rounded-full border border-ink/10 bg-white/80 px-3 py-2 text-xs font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
+                    >
+                      <CornerUpLeft className="h-3 w-3" />
+                      Back to runs
+                      <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
+                        Esc
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="overflow-hidden rounded-2xl border border-ink/10 bg-white/80 dark:border-white/10 dark:bg-slate-900/70">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink/5 px-4 py-3 text-xs uppercase tracking-[0.2em] text-clay dark:border-white/10 dark:text-slate-400">
+                    <span>Run log</span>
+                    {selectedRun ? (
+                      <span className="normal-case text-xs text-ink/60 dark:text-slate-300">
+                        {selectedRun.logpath}
+                      </span>
+                    ) : null}
+                  </div>
+                  <ScrollArea.Root className="h-[520px]">
+                    <ScrollArea.Viewport className="p-4">
+                      {selectedRun ? (
+                        logLoading ? (
+                          <p className="text-sm text-ink/50 dark:text-slate-400">Loading log…</p>
+                        ) : logError ? (
+                          <p className="text-sm text-rose-600 dark:text-rose-300">{logError}</p>
+                        ) : logData ? (
+                          <pre className="whitespace-pre-wrap text-xs leading-relaxed text-ink dark:text-slate-100">
+                            {logData.content || "Log is empty."}
+                          </pre>
+                        ) : (
+                          <p className="text-sm text-ink/50 dark:text-slate-400">No log available.</p>
+                        )
+                      ) : (
+                        <p className="text-sm text-ink/50 dark:text-slate-400">
+                          Select a run to view its logs.
+                        </p>
+                      )}
+                    </ScrollArea.Viewport>
+                    <ScrollArea.Scrollbar orientation="vertical" className="flex touch-none select-none p-1">
+                      <ScrollArea.Thumb className="relative flex-1 rounded-full bg-ink/20 dark:bg-white/20" />
+                    </ScrollArea.Scrollbar>
+                  </ScrollArea.Root>
+                </div>
+              </>
+            ) : (
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-ink/10 px-6 py-20 text-center text-sm text-ink/60 dark:border-white/10 dark:text-slate-300">
+                <p className="text-xs uppercase tracking-[0.3em] text-plum dark:text-orange-300">Run detail</p>
+                <p className="text-lg font-display text-ink dark:text-slate-100">Select a run to see logs.</p>
+                <p className="max-w-md text-xs text-ink/60 dark:text-slate-400">
+                  Use the arrow keys to focus a run, then hit Enter to drill into logs.
+                </p>
+              </div>
+            )}
+          </section>
+        </div>
       </div>
 
       {commandOpen ? (
