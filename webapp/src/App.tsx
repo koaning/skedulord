@@ -1090,7 +1090,7 @@ export default function App() {
                               Logs
                             </span>
                           </div>
-                        </button>
+                        </div>
                       ))
                     )}
                   </div>
