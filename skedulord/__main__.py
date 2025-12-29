@@ -323,8 +323,12 @@ def serve(
         typer.echo("Disabling reload because --no-auth requires an in-memory app instance.")
         reload = False
 
+    if reload:
+        uvicorn.run("skedulord.api:app", host=host, port=port, reload=True)
+        return
+
     app = create_app(no_auth=no_auth)
-    uvicorn.run(app, host=host, port=port, reload=reload)
+    uvicorn.run(app, host=host, port=port, reload=False)
 
 
 if __name__ == "__main__":
