@@ -24,6 +24,11 @@ This will:
 - run a handful of demo jobs (including a failing one)
 - build the webapp and serve it from FastAPI at `http://127.0.0.1:8000` (API is under `/api/*`, docs at `/docs`)
 
+The demo server uses the following credentials:
+
+- **Username:** `admin`
+- **Password:** `admin`
+
 In another terminal, you can also run the webapp dev server:
 
 ```bash

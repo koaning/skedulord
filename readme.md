@@ -148,3 +148,8 @@ python -m skedulord serve
 
 The frontend lives in `webapp/` and can be run via `npm install` + `npm run dev`.
 If you run `npm run build`, the API will serve the built app from `webapp/dist`.
+
+The demo server uses the following credentials:
+
+- **Username:** `admin`
+- **Password:** `admin`
