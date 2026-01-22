@@ -8,6 +8,7 @@ export interface RunEntry {
   start: string;
   end: string;
   logpath: string;
+  attempt: number;
 }
 
 export class ApiError extends Error {

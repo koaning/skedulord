@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS runs (
     start TEXT NOT NULL,
     end TEXT NOT NULL,
     logpath TEXT NOT NULL,
+    attempt INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_runs_name ON runs(name);
@@ -56,15 +57,16 @@ def insert_run(
     start: str,
     end: str,
     logpath: str,
+    attempt: int = 1,
 ) -> None:
     init_db()
     with _connection() as conn:
         conn.execute(
             """
-            INSERT OR REPLACE INTO runs (id, name, command, status, start, end, logpath)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO runs (id, name, command, status, start, end, logpath, attempt)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (run_id, name, command, status, start, end, logpath),
+            (run_id, name, command, status, start, end, logpath, attempt),
         )
         conn.commit()
 
@@ -91,7 +93,7 @@ def fetch_runs(
         where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
         limit_clause = f"LIMIT {int(limit)}" if limit else ""
         query = f"""
-        SELECT id, name, command, status, start, end, logpath
+        SELECT id, name, command, status, start, end, logpath, attempt
         FROM runs
         {where}
         ORDER BY start DESC
@@ -105,7 +107,7 @@ def fetch_run(run_id: str) -> Optional[sqlite3.Row]:
     with _connection() as conn:
         return conn.execute(
             """
-            SELECT id, name, command, status, start, end, logpath
+            SELECT id, name, command, status, start, end, logpath, attempt
             FROM runs
             WHERE id = ?
             """,
