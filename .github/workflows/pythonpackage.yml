@@ -17,15 +17,13 @@ jobs:
         python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
-      - name: setup ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
       - name: setup uv
         uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+      - name: setup python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
       - name: install
-        run: |
-          uv venv .venv
-          uv pip install -e ".[dev]"
+        run: uv sync --extra dev --python ${{ matrix.python-version }}
       - name: pytest
         run: uv run pytest --disable-warnings
