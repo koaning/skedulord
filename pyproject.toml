@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skedulord"
-dynamic = ["version"]
+version = "3.0.0"
 description = "A tool that automates scheduling and logging of jobs."
 readme = "readme.md"
 requires-python = ">=3.9"
@@ -32,9 +32,6 @@ dev = [
 
 [project.scripts]
 skedulord = "skedulord.__main__:app"
-
-[tool.setuptools.dynamic]
-version = {attr = "skedulord.__version__"}
 
 [tool.setuptools]
 include-package-data = true
