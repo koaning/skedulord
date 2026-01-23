@@ -19,6 +19,7 @@ import {
   clearAuthHeader,
   fetchLog,
   fetchRuns,
+  isStaticMode,
   setAuthHeader,
   type RunEntry
 } from "./api";
@@ -1149,7 +1150,7 @@ export default function App() {
     }
   ];
 
-  if (authRequired) {
+  if (authRequired && !isStaticMode()) {
     return (
       <LoginScreen
         theme={theme}
@@ -1255,13 +1256,15 @@ export default function App() {
               Refresh
               <span className={headerKeycapClass}>R</span>
             </button>
-            <button
-              onClick={handleLogout}
-              className={headerButtonClass}
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </button>
+            {!isStaticMode() && (
+              <button
+                onClick={handleLogout}
+                className={headerButtonClass}
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </button>
+            )}
           </div>
         </header>
 
