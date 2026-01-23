@@ -110,7 +110,6 @@ venv.bak/
 .dmypy.json
 dmypy.json
 .ruff_cache/
-uv.lock
 
 # IDE
 .idea
