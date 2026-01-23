@@ -19,6 +19,7 @@ import {
   clearAuthHeader,
   fetchLog,
   fetchRuns,
+  isStaticMode,
   setAuthHeader,
   type RunEntry
 } from "./api";
@@ -27,17 +28,18 @@ const MAX_RECENT_RUNS = 20;
 const RUNS_PER_PAGE = 25;
 const AUTH_STORAGE_KEY = "skedulord_basic_auth";
 
-function statusColor(status: string) {
+function statusColor(status: string, attempt: number = 1) {
+  if (status === "success" && attempt > 1) return "bg-amber-400";
   if (status === "success") return "bg-emerald-500";
   if (status === "fail") return "bg-rose-500";
   return "bg-amber-400";
 }
 
-function StatusPill({ status }: { status: string }) {
+function StatusPill({ status, attempt = 1 }: { status: string; attempt?: number }) {
   return (
     <span className="inline-flex items-center gap-2 rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-ink shadow-sm dark:bg-slate-900/70 dark:text-slate-100">
-      <span className={`h-2 w-2 rounded-full ${statusColor(status)}`} />
-      {status}
+      <span className={`h-2 w-2 rounded-full ${statusColor(status, attempt)}`} />
+      {status}{attempt > 1 ? ` (${attempt} attempts)` : ""}
     </span>
   );
 }
@@ -103,7 +105,7 @@ function RunBars({
         const height = maxDuration
           ? Math.max(minHeight, Math.round((duration / maxDuration) * maxHeight))
           : minHeight;
-        const label = `Run ${run.id.slice(0, 8)} · ${formatDuration(duration)} · ${run.status}`;
+        const label = `Run ${run.id.slice(0, 8)} · ${formatDuration(duration)} · ${run.status}${run.attempt > 1 ? ` (${run.attempt} attempts)` : ""}`;
         const isHighlighted = highlightRunId === run.id;
 
         return (
@@ -111,8 +113,9 @@ function RunBars({
             key={run.id}
             type="button"
             className={`group relative ${barWidth} rounded-full ${statusColor(
-              run.status
-            )} transition ${interactive ? "cursor-pointer" : "cursor-default"} hover:-translate-y-0.5 hover:shadow-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
+              run.status,
+              run.attempt
+            )} transition-transform ${interactive ? "cursor-pointer" : "cursor-default"} hover:-translate-y-0.5 hover:shadow-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink ${
               isHighlighted
                 ? "ring-2 ring-ink/40 ring-offset-2 ring-offset-white/80 dark:ring-white/40 dark:ring-offset-slate-900/70"
                 : ""
@@ -1147,7 +1150,7 @@ export default function App() {
     }
   ];
 
-  if (authRequired) {
+  if (authRequired && !isStaticMode()) {
     return (
       <LoginScreen
         theme={theme}
@@ -1253,13 +1256,15 @@ export default function App() {
               Refresh
               <span className={headerKeycapClass}>R</span>
             </button>
-            <button
-              onClick={handleLogout}
-              className={headerButtonClass}
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </button>
+            {!isStaticMode() && (
+              <button
+                onClick={handleLogout}
+                className={headerButtonClass}
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </button>
+            )}
           </div>
         </header>
 
@@ -1331,11 +1336,11 @@ export default function App() {
                                 <span>{job.runs.length} runs in view</span>
                                 {detailRun ? (
                                   <span className="flex items-center gap-1">
-                                    <span className={`h-1.5 w-1.5 rounded-full ${statusColor(detailRun.status)}`} />
+                                    <span className={`h-1.5 w-1.5 rounded-full ${statusColor(detailRun.status, detailRun.attempt)}`} />
                                     {hoveredForJob || focusedForJob ? "Run" : "Last run"}{" "}
                                     {formatDuration(getDurationMs(detailRun))}
                                     {hoveredForJob || focusedForJob
-                                      ? ` · ${detailRun.id.slice(0, 6)} · ${detailRun.status}`
+                                      ? ` · ${detailRun.id.slice(0, 6)} · ${detailRun.status}${detailRun.attempt > 1 ? ` (${detailRun.attempt} attempts)` : ""}`
                                       : ""}
                                   </span>
                                 ) : null}
@@ -1415,7 +1420,7 @@ export default function App() {
                         F
                       </span>
                     </button>
-                    {selectedJobData.latest ? <StatusPill status={selectedJobData.latest.status} /> : null}
+                    {selectedJobData.latest ? <StatusPill status={selectedJobData.latest.status} attempt={selectedJobData.latest.attempt} /> : null}
                   </div>
                 </div>
 
@@ -1472,7 +1477,7 @@ export default function App() {
                                 <span className="text-xs text-ink/60 dark:text-slate-300">
                                   {formatDuration(getDurationMs(run))}
                                 </span>
-                                <StatusPill status={run.status} />
+                                <StatusPill status={run.status} attempt={run.attempt} />
                                 <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[11px] font-semibold text-ink/50 dark:border-white/10 dark:text-slate-300">
                                   Logs
                                 </span>

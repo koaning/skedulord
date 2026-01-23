@@ -465,6 +465,17 @@ def main() -> None:
             start_text = _isoformat(start)
             end_text = _isoformat(end)
 
+            # Determine attempt count
+            if status == "fail":
+                # Failed runs exhausted retries (3-4 attempts)
+                attempt = random.randint(3, 4)
+            elif random.random() < 0.15:
+                # ~15% of successful runs succeeded after retry
+                attempt = random.randint(2, 3)
+            else:
+                # Most successful runs: first attempt
+                attempt = 1
+
             command = f"python jobs/{'badpyjob.py' if status == 'fail' else 'pyjob.py'}"
             log_path = Path(job_name_path(name)) / f"{start.strftime('%Y-%m-%dT%H-%M-%S')}-{run_id[:6]}.txt"
 
@@ -481,6 +492,7 @@ def main() -> None:
                 start=start_text,
                 end=end_text,
                 logpath=str(log_path),
+                attempt=attempt,
             )
 
 

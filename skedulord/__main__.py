@@ -22,6 +22,7 @@ from skedulord.db import (
     insert_user,
     update_user_password,
 )
+from skedulord.dashboard import export_static_site
 from skedulord.templating import render_tokens
 from skedulord.api import create_app
 
@@ -130,7 +131,7 @@ def init(
     ),
     force: bool = typer.Option(False, help="Overwrite existing files."),
 ):
-    """Initialize a starter .env, schedule.yml, and sqlite database."""
+    """Initialize .env, schedule.yml, and sqlite."""
     path = path.expanduser().resolve()
     path.mkdir(parents=True, exist_ok=True)
 
@@ -286,6 +287,23 @@ def history(
             d["logpath"],
         )
     print(table)
+
+
+@app.command()
+def export(
+    output: Path = typer.Option(
+        Path(".") / "skedulord-export",
+        "--output",
+        "-o",
+        help="Output directory for the static site.",
+    ),
+):
+    """Export dashboard to a static site."""
+    output = output.expanduser().resolve()
+    print(f"Exporting static site to [green]{output}[/]...")
+    count = export_static_site(output)
+    print(f"[green]Exported {count} runs to {output}[/]")
+    print(f"[dim]Serve with: python -m http.server -d {output}[/]")
 
 
 @app.command(name="serve")
