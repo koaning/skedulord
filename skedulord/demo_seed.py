@@ -18,6 +18,15 @@ def _ts(base: dt.datetime, offset_seconds: int) -> str:
     return t.strftime("[%Y-%m-%dT%H:%M:%SZ]")
 
 
+def _generate_retry_block(start: dt.datetime, attempt: int, max_attempts: int, retry_delay: int, time_offset: int) -> list[str]:
+    """Generate log lines for a retry attempt."""
+    lines = []
+    lines.append(f"{_ts(start, time_offset)} Attempt {attempt}/{max_attempts} failed")
+    lines.append(f"{_ts(start, time_offset + 1)} Waiting {retry_delay}s before retry...")
+    lines.append(f"{_ts(start, time_offset + retry_delay)} Retrying (attempt {attempt + 1}/{max_attempts})...")
+    return lines
+
+
 def _generate_data_job_logs(name: str, start: dt.datetime, duration: int, status: str) -> list[str]:
     """Generate logs for data processing jobs (daily-ingest, warehouse-load, pipeline-backfill)."""
     lines = []
@@ -30,12 +39,29 @@ def _generate_data_job_logs(name: str, start: dt.datetime, duration: int, status
     lines.append(f"{_ts(start, 2)} Fetching records from {table_name} table...")
 
     if status == "fail":
-        fail_time = random.randint(3, min(duration - 1, 30))
-        lines.append(f"{_ts(start, fail_time)} ERROR: Connection timeout after {fail_time}s")
-        lines.append(f"{_ts(start, fail_time)} Traceback (most recent call last):")
-        lines.append(f'{_ts(start, fail_time)}   File "jobs/{name.replace("-", "_")}.py", line 42, in fetch_records')
-        lines.append(f"{_ts(start, fail_time)}     cursor.execute(query)")
-        lines.append(f"{_ts(start, fail_time)} TimeoutError: Connection to database timed out")
+        max_attempts = random.randint(2, 3)
+        retry_delay = random.randint(5, 15)
+        attempt_duration = duration // max_attempts
+
+        for attempt in range(1, max_attempts + 1):
+            attempt_start = (attempt - 1) * attempt_duration
+            fail_time = attempt_start + random.randint(3, min(attempt_duration - 5, 30))
+
+            if attempt > 1:
+                lines.append(f"{_ts(start, attempt_start)} Connecting to source database...")
+                lines.append(f"{_ts(start, attempt_start + 1)} Connection established (pool_size=5)")
+                lines.append(f"{_ts(start, attempt_start + 2)} Fetching records from {table_name} table...")
+
+            lines.append(f"{_ts(start, fail_time)} ERROR: Connection timeout after {fail_time - attempt_start}s")
+            lines.append(f"{_ts(start, fail_time)} Traceback (most recent call last):")
+            lines.append(f'{_ts(start, fail_time)}   File "jobs/{name.replace("-", "_")}.py", line 42, in fetch_records')
+            lines.append(f"{_ts(start, fail_time)}     cursor.execute(query)")
+            lines.append(f"{_ts(start, fail_time)} TimeoutError: Connection to database timed out")
+
+            if attempt < max_attempts:
+                lines.extend(_generate_retry_block(start, attempt, max_attempts, retry_delay, fail_time))
+
+        lines.append(f"{_ts(start, duration - 1)} Max retries ({max_attempts}) exceeded")
         lines.append(f"{_ts(start, duration)} Job failed after {duration}s")
     else:
         fetch_time = int(duration * 0.3)
@@ -65,17 +91,32 @@ def _generate_sync_job_logs(name: str, start: dt.datetime, duration: int, status
     lines.append(f"{_ts(start, 1)} Fetching delta since last sync...")
 
     if status == "fail":
-        fail_time = random.randint(2, min(duration - 1, 20))
+        max_attempts = random.randint(2, 3)
+        retry_delay = random.randint(5, 15)
+        attempt_duration = duration // max_attempts
         error = random.choice([
             "ConnectionRefusedError: Unable to reach source",
             "AuthenticationError: Invalid API credentials",
             "RateLimitError: Too many requests (429)",
         ])
-        lines.append(f"{_ts(start, fail_time)} ERROR: {error}")
-        lines.append(f"{_ts(start, fail_time)} Traceback (most recent call last):")
-        lines.append(f'{_ts(start, fail_time)}   File "jobs/{name.replace("-", "_")}.py", line 78, in sync')
-        lines.append(f"{_ts(start, fail_time)}     response = client.fetch(endpoint)")
-        lines.append(f"{_ts(start, fail_time)} {error.split(':')[0]}: {error.split(':')[1].strip()}")
+
+        for attempt in range(1, max_attempts + 1):
+            attempt_start = (attempt - 1) * attempt_duration
+            fail_time = attempt_start + random.randint(2, min(attempt_duration - 5, 20))
+
+            if attempt > 1:
+                lines.append(f"{_ts(start, attempt_start)} Fetching delta since last sync...")
+
+            lines.append(f"{_ts(start, fail_time)} ERROR: {error}")
+            lines.append(f"{_ts(start, fail_time)} Traceback (most recent call last):")
+            lines.append(f'{_ts(start, fail_time)}   File "jobs/{name.replace("-", "_")}.py", line 78, in sync')
+            lines.append(f"{_ts(start, fail_time)}     response = client.fetch(endpoint)")
+            lines.append(f"{_ts(start, fail_time)} {error.split(':')[0]}: {error.split(':')[1].strip()}")
+
+            if attempt < max_attempts:
+                lines.extend(_generate_retry_block(start, attempt, max_attempts, retry_delay, fail_time))
+
+        lines.append(f"{_ts(start, duration - 1)} Max retries ({max_attempts}) exceeded")
         lines.append(f"{_ts(start, duration)} Job failed after {duration}s")
     else:
         mid = int(duration * 0.5)
@@ -103,12 +144,27 @@ def _generate_export_job_logs(name: str, start: dt.datetime, duration: int, stat
     lines.append(f"{_ts(start, 1)} Querying data for export...")
 
     if status == "fail":
-        fail_time = random.randint(2, min(duration - 1, 15))
-        lines.append(f"{_ts(start, fail_time)} ERROR: Disk quota exceeded")
-        lines.append(f"{_ts(start, fail_time)} Traceback (most recent call last):")
-        lines.append(f'{_ts(start, fail_time)}   File "jobs/{name.replace("-", "_")}.py", line 55, in write_export')
-        lines.append(f"{_ts(start, fail_time)}     f.write(chunk)")
-        lines.append(f"{_ts(start, fail_time)} OSError: [Errno 28] No space left on device")
+        max_attempts = random.randint(2, 3)
+        retry_delay = random.randint(5, 15)
+        attempt_duration = duration // max_attempts
+
+        for attempt in range(1, max_attempts + 1):
+            attempt_start = (attempt - 1) * attempt_duration
+            fail_time = attempt_start + random.randint(2, min(attempt_duration - 5, 15))
+
+            if attempt > 1:
+                lines.append(f"{_ts(start, attempt_start)} Querying data for export...")
+
+            lines.append(f"{_ts(start, fail_time)} ERROR: Disk quota exceeded")
+            lines.append(f"{_ts(start, fail_time)} Traceback (most recent call last):")
+            lines.append(f'{_ts(start, fail_time)}   File "jobs/{name.replace("-", "_")}.py", line 55, in write_export')
+            lines.append(f"{_ts(start, fail_time)}     f.write(chunk)")
+            lines.append(f"{_ts(start, fail_time)} OSError: [Errno 28] No space left on device")
+
+            if attempt < max_attempts:
+                lines.extend(_generate_retry_block(start, attempt, max_attempts, retry_delay, fail_time))
+
+        lines.append(f"{_ts(start, duration - 1)} Max retries ({max_attempts}) exceeded")
         lines.append(f"{_ts(start, duration)} Job failed after {duration}s")
     else:
         query_time = int(duration * 0.4)
@@ -133,7 +189,23 @@ def _generate_maintenance_job_logs(name: str, start: dt.datetime, duration: int,
         lines.append(f"{_ts(start, 1)} Scanning for expired items...")
         lines.append(f"{_ts(start, int(duration * 0.3))} Found {items:,} items older than 30 days")
         if status == "fail":
-            lines.append(f"{_ts(start, int(duration * 0.5))} ERROR: Permission denied on /var/log/app/")
+            max_attempts = random.randint(2, 3)
+            retry_delay = random.randint(5, 10)
+            attempt_duration = int(duration * 0.7) // max_attempts
+
+            for attempt in range(1, max_attempts + 1):
+                attempt_start = int(duration * 0.3) + (attempt - 1) * attempt_duration
+                fail_time = attempt_start + random.randint(2, max(3, attempt_duration - 5))
+
+                if attempt > 1:
+                    lines.append(f"{_ts(start, attempt_start)} Deleting expired items...")
+
+                lines.append(f"{_ts(start, fail_time)} ERROR: Permission denied on /var/log/app/")
+
+                if attempt < max_attempts:
+                    lines.extend(_generate_retry_block(start, attempt, max_attempts, retry_delay, fail_time))
+
+            lines.append(f"{_ts(start, duration - 1)} Max retries ({max_attempts}) exceeded")
             lines.append(f"{_ts(start, duration)} Job failed after {duration}s")
         else:
             lines.append(f"{_ts(start, int(duration * 0.5))} Deleting expired items...")
@@ -144,7 +216,23 @@ def _generate_maintenance_job_logs(name: str, start: dt.datetime, duration: int,
         lines.append(f"{_ts(start, 1)} Loading cache configuration...")
         lines.append(f"{_ts(start, 2)} Warming {endpoints} endpoints...")
         if status == "fail":
-            lines.append(f"{_ts(start, int(duration * 0.5))} ERROR: Redis connection refused")
+            max_attempts = random.randint(2, 3)
+            retry_delay = random.randint(5, 10)
+            attempt_duration = int(duration * 0.9) // max_attempts
+
+            for attempt in range(1, max_attempts + 1):
+                attempt_start = 3 + (attempt - 1) * attempt_duration
+                fail_time = attempt_start + random.randint(2, max(3, attempt_duration - 5))
+
+                if attempt > 1:
+                    lines.append(f"{_ts(start, attempt_start)} Warming {endpoints} endpoints...")
+
+                lines.append(f"{_ts(start, fail_time)} ERROR: Redis connection refused")
+
+                if attempt < max_attempts:
+                    lines.extend(_generate_retry_block(start, attempt, max_attempts, retry_delay, fail_time))
+
+            lines.append(f"{_ts(start, duration - 1)} Max retries ({max_attempts}) exceeded")
             lines.append(f"{_ts(start, duration)} Job failed after {duration}s")
         else:
             lines.append(f"{_ts(start, int(duration * 0.5))} Progress: 50% ({endpoints // 2}/{endpoints})")
@@ -166,14 +254,39 @@ def _generate_ml_job_logs(name: str, start: dt.datetime, duration: int, status: 
     lines.append(f"{_ts(start, 4)} Initializing model...")
 
     if status == "fail":
-        fail_epoch = random.randint(1, min(epochs, 3))
-        fail_time = int(duration * fail_epoch / epochs)
-        lines.append(f"{_ts(start, fail_time)} Epoch {fail_epoch}/{epochs} - loss: NaN")
-        lines.append(f"{_ts(start, fail_time)} ERROR: Training diverged - loss became NaN")
-        lines.append(f"{_ts(start, fail_time)} Traceback (most recent call last):")
-        lines.append(f'{_ts(start, fail_time)}   File "jobs/{name.replace("-", "_")}.py", line 112, in train')
-        lines.append(f"{_ts(start, fail_time)}     loss.backward()")
-        lines.append(f"{_ts(start, fail_time)} RuntimeError: Loss is NaN, stopping training")
+        max_attempts = random.randint(2, 3)
+        retry_delay = random.randint(10, 30)
+        attempt_duration = duration // max_attempts
+
+        for attempt in range(1, max_attempts + 1):
+            attempt_start = (attempt - 1) * attempt_duration
+            fail_epoch = random.randint(1, min(epochs, 3))
+            fail_time = attempt_start + int(attempt_duration * fail_epoch / epochs)
+
+            if attempt > 1:
+                lines.append(f"{_ts(start, attempt_start)} Loading training data...")
+                lines.append(f"{_ts(start, attempt_start + 2)} Loaded {samples:,} samples")
+                lines.append(f"{_ts(start, attempt_start + 3)} Initializing model with new random seed...")
+
+            # Show some epochs before failure
+            epoch_time = attempt_start + 4
+            for i in range(1, fail_epoch):
+                loss = 0.8 / i + random.uniform(-0.05, 0.05)
+                acc = min(0.5 + 0.04 * i + random.uniform(-0.02, 0.02), 0.98)
+                lines.append(f"{_ts(start, epoch_time)} Epoch {i}/{epochs} - loss: {loss:.4f}, accuracy: {acc:.4f}")
+                epoch_time += (attempt_duration - 10) // epochs
+
+            lines.append(f"{_ts(start, fail_time)} Epoch {fail_epoch}/{epochs} - loss: NaN")
+            lines.append(f"{_ts(start, fail_time)} ERROR: Training diverged - loss became NaN")
+            lines.append(f"{_ts(start, fail_time)} Traceback (most recent call last):")
+            lines.append(f'{_ts(start, fail_time)}   File "jobs/{name.replace("-", "_")}.py", line 112, in train')
+            lines.append(f"{_ts(start, fail_time)}     loss.backward()")
+            lines.append(f"{_ts(start, fail_time)} RuntimeError: Loss is NaN, stopping training")
+
+            if attempt < max_attempts:
+                lines.extend(_generate_retry_block(start, attempt, max_attempts, retry_delay, fail_time))
+
+        lines.append(f"{_ts(start, duration - 1)} Max retries ({max_attempts}) exceeded")
         lines.append(f"{_ts(start, duration)} Job failed after {duration}s")
     else:
         epoch_duration = duration // epochs
@@ -199,12 +312,27 @@ def _generate_alert_job_logs(name: str, start: dt.datetime, duration: int, statu
     lines.append(f"{_ts(start, 2)} Running {checks} checks...")
 
     if status == "fail":
-        fail_time = random.randint(3, min(duration - 1, 20))
-        lines.append(f"{_ts(start, fail_time)} ERROR: Unable to fetch metrics from monitoring service")
-        lines.append(f"{_ts(start, fail_time)} Traceback (most recent call last):")
-        lines.append(f'{_ts(start, fail_time)}   File "jobs/{name.replace("-", "_")}.py", line 34, in check')
-        lines.append(f"{_ts(start, fail_time)}     metrics = client.query(query)")
-        lines.append(f"{_ts(start, fail_time)} ConnectionError: Failed to connect to metrics.internal:9090")
+        max_attempts = random.randint(2, 3)
+        retry_delay = random.randint(5, 15)
+        attempt_duration = duration // max_attempts
+
+        for attempt in range(1, max_attempts + 1):
+            attempt_start = (attempt - 1) * attempt_duration
+            fail_time = attempt_start + random.randint(3, min(attempt_duration - 5, 20))
+
+            if attempt > 1:
+                lines.append(f"{_ts(start, attempt_start)} Running {checks} checks...")
+
+            lines.append(f"{_ts(start, fail_time)} ERROR: Unable to fetch metrics from monitoring service")
+            lines.append(f"{_ts(start, fail_time)} Traceback (most recent call last):")
+            lines.append(f'{_ts(start, fail_time)}   File "jobs/{name.replace("-", "_")}.py", line 34, in check')
+            lines.append(f"{_ts(start, fail_time)}     metrics = client.query(query)")
+            lines.append(f"{_ts(start, fail_time)} ConnectionError: Failed to connect to metrics.internal:9090")
+
+            if attempt < max_attempts:
+                lines.extend(_generate_retry_block(start, attempt, max_attempts, retry_delay, fail_time))
+
+        lines.append(f"{_ts(start, duration - 1)} Max retries ({max_attempts}) exceeded")
         lines.append(f"{_ts(start, duration)} Job failed after {duration}s")
     else:
         mid = int(duration * 0.6)
@@ -231,12 +359,29 @@ def _generate_generic_job_logs(name: str, start: dt.datetime, duration: int, sta
     lines.append(f"{_ts(start, 1)} Initializing...")
 
     if status == "fail":
+        max_attempts = random.randint(2, 3)
+        retry_delay = random.randint(5, 15)
+        attempt_duration = duration // max_attempts
         fail_step = random.randint(1, steps)
-        fail_time = int(duration * fail_step / steps)
-        for i in range(1, fail_step):
-            lines.append(f"{_ts(start, int(duration * i / steps))} Step {i}/{steps} complete")
-        lines.append(f"{_ts(start, fail_time)} Step {fail_step}/{steps} failed")
-        lines.append(f"{_ts(start, fail_time)} ERROR: Unexpected error during execution")
+
+        for attempt in range(1, max_attempts + 1):
+            attempt_start = (attempt - 1) * attempt_duration
+            fail_time = attempt_start + int(attempt_duration * fail_step / steps)
+
+            if attempt > 1:
+                lines.append(f"{_ts(start, attempt_start)} Initializing...")
+
+            for i in range(1, fail_step):
+                step_time = attempt_start + int(attempt_duration * i / steps)
+                lines.append(f"{_ts(start, step_time)} Step {i}/{steps} complete")
+
+            lines.append(f"{_ts(start, fail_time)} Step {fail_step}/{steps} failed")
+            lines.append(f"{_ts(start, fail_time)} ERROR: Unexpected error during execution")
+
+            if attempt < max_attempts:
+                lines.extend(_generate_retry_block(start, attempt, max_attempts, retry_delay, fail_time))
+
+        lines.append(f"{_ts(start, duration - 1)} Max retries ({max_attempts}) exceeded")
         lines.append(f"{_ts(start, duration)} Job failed after {duration}s")
     else:
         for i in range(1, steps + 1):
