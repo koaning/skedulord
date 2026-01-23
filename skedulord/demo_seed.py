@@ -1,4 +1,5 @@
 import datetime as dt
+import json
 import random
 import uuid
 from pathlib import Path
@@ -68,20 +69,39 @@ def main() -> None:
             start_text = _isoformat(start)
             end_text = _isoformat(end)
 
+            # Determine attempt count
+            if status == "fail":
+                # Failed runs exhausted retries (3-4 attempts)
+                attempt = random.randint(3, 4)
+            elif random.random() < 0.15:
+                # ~15% of successful runs succeeded after retry
+                attempt = random.randint(2, 3)
+            else:
+                # Most successful runs: first attempt
+                attempt = 1
+
             command = f"python jobs/{'badpyjob.py' if status == 'fail' else 'pyjob.py'}"
             log_path = Path(job_name_path(name)) / f"{start.strftime('%Y-%m-%dT%H-%M-%S')}-{run_id[:6]}.txt"
 
-            _write_log(
-                log_path,
-                [
-                    f"job={name}",
-                    f"run_id={run_id}",
-                    f"status={status}",
-                    f"duration={duration}s",
-                    f"command={command}",
-                    "Log output is synthetic for demo purposes.",
-                ],
-            )
+            # Generate log content with attempt JSON entries (matching job.py format)
+            log_lines = []
+            attempt_time = start
+            for i in range(1, attempt + 1):
+                info = {
+                    "name": name,
+                    "command": command,
+                    "run_id": run_id[:8],
+                    "attempt": i,
+                    "timestamp": str(attempt_time),
+                }
+                log_lines.append(json.dumps(info))
+                if i < attempt:
+                    log_lines.append(f"Attempt {i} failed, retrying...")
+                    attempt_time += dt.timedelta(seconds=random.randint(5, 30))
+                else:
+                    log_lines.append("Log output is synthetic for demo purposes.")
+
+            _write_log(log_path, log_lines)
 
             insert_run(
                 run_id=run_id,
@@ -91,6 +111,7 @@ def main() -> None:
                 start=start_text,
                 end=end_text,
                 logpath=str(log_path),
+                attempt=attempt,
             )
 
 

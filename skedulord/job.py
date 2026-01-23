@@ -31,7 +31,7 @@ class JobRunner:
         while not stop:
             log_command = " ".join(command) if isinstance(command, list) else command
             info = {"name": name, "command": log_command, "run_id": run_id, "attempt": tries, "timestamp": str(dt.datetime.now())}
-            self.file.writelines([json.dumps(info), "\n"])            
+            self.file.writelines([json.dumps(info), "\n"])
             output = subprocess.run(
                 command,
                 cwd=str(pathlib.Path().cwd()),
@@ -50,7 +50,8 @@ class JobRunner:
                     stop = True
                 else:
                     time.sleep(self.wait)
-        return "fail" if tries > self.retry else "success"
+        status = "fail" if tries > self.retry else "success"
+        return status, tries
 
     def run(self):
         """
@@ -58,7 +59,7 @@ class JobRunner:
         """
         run_id = str(uuid.uuid4())[:8]
         start_time = self.start_time
-        status = self._attempt_cmd(command=self._cmd_tokens(), name=self.name, run_id=run_id)
+        status, attempts = self._attempt_cmd(command=self._cmd_tokens(), name=self.name, run_id=run_id)
         endtime = str(dt.datetime.now())[:19]
         job_name_path(self.name).mkdir(parents=True, exist_ok=True)
         logpath = str(job_name_path(self.name) / f"{start_time}.txt")
@@ -79,6 +80,7 @@ class JobRunner:
             start=start_time.replace("T", " "),
             end=endtime,
             logpath=logpath,
+            attempt=attempts,
         )
         self.file.close()
 
