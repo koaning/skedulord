@@ -45,10 +45,10 @@ reset-big:
 	python -m skedulord run badpyjob "python jobs/badpyjob.py" --retry 3 --wait 1
 	python -m skedulord run another-pyjob "python jobs/pyjob.py" --retry 1 --wait 0
 
-pypi:
+pypi: test
 	rm -rf dist
 	uv build
-	twine upload dist/*
+	uv publish
 
 demo-reset:
 	uv run python -m skedulord wipe disk --really --yes
