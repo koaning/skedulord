@@ -231,10 +231,14 @@ def run(
 @app.command()
 def schedule(
     config: Path = typer.Argument(
-        ..., help="The config file containing the schedule.", exists=True
+        Path("schedule.yml"), help="The config file containing the schedule."
     )
 ):
     """Set (or reset) cron jobs based on config."""
+    config = config.expanduser().resolve()
+    if not config.exists():
+        print(f"[red]Config file not found: {config}[/]")
+        raise typer.Exit(code=1)
     Cron(config).set_new_cron()
 
 
@@ -248,6 +252,12 @@ def add(
         "--config",
         "-f",
         help="Path to schedule.yml file.",
+    ),
+    update_schedule: bool = typer.Option(
+        True,
+        "--schedule/--no-schedule",
+        "-s",
+        help="Update crontab after adding job.",
     ),
 ):
     """Add a job to the schedule config file."""
@@ -284,6 +294,53 @@ def add(
         yaml.dump(data, f, default_flow_style=False, sort_keys=False)
 
     print(f"[green]Added job '{job_name}' to {config}.[/]")
+
+    if update_schedule:
+        Cron(config).set_new_cron()
+        print("[green]Crontab updated.[/]")
+
+
+@app.command()
+def rm(
+    name: str = typer.Argument(..., help="The job name to remove."),
+    config: Path = typer.Option(
+        Path("schedule.yml"),
+        "--config",
+        "-f",
+        help="Path to schedule.yml file.",
+    ),
+    update_schedule: bool = typer.Option(
+        True,
+        "--schedule/--no-schedule",
+        "-s",
+        help="Update crontab after removing job.",
+    ),
+):
+    """Remove a job from the schedule config file."""
+    config = config.expanduser().resolve()
+
+    if not config.exists():
+        print(f"[red]Config file not found: {config}[/]")
+        raise typer.Exit(code=1)
+
+    with open(config) as f:
+        data = yaml.safe_load(f)
+
+    existing_names = [job["name"] for job in data.get("schedule", [])]
+    if name not in existing_names:
+        print(f"[red]Job '{name}' not found in {config}.[/]")
+        raise typer.Exit(code=1)
+
+    data["schedule"] = [job for job in data["schedule"] if job["name"] != name]
+
+    with open(config, "w") as f:
+        yaml.dump(data, f, default_flow_style=False, sort_keys=False)
+
+    print(f"[green]Removed job '{name}' from {config}.[/]")
+
+    if update_schedule:
+        Cron(config).set_new_cron()
+        print("[green]Crontab updated.[/]")
 
 
 @app.command()

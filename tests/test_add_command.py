@@ -13,7 +13,7 @@ def test_add_job_to_schedule(tmp_path):
     runner = CliRunner()
     result = runner.invoke(
         app,
-        ["add", str(script_path), "--cron", "0 * * * *", "--config", str(schedule_path)],
+        ["add", str(script_path), "--cron", "0 * * * *", "--config", str(schedule_path), "--no-schedule"],
     )
 
     assert result.exit_code == 0
@@ -35,7 +35,7 @@ def test_add_with_custom_name(tmp_path):
     runner = CliRunner()
     result = runner.invoke(
         app,
-        ["add", str(script_path), "--cron", "*/5 * * * *", "--name", "my-custom-job", "--config", str(schedule_path)],
+        ["add", str(script_path), "--cron", "*/5 * * * *", "--name", "my-custom-job", "--config", str(schedule_path), "--no-schedule"],
     )
 
     assert result.exit_code == 0
@@ -90,3 +90,48 @@ def test_add_fails_when_job_name_exists(tmp_path):
 
     assert result.exit_code != 0
     assert "already exists" in result.output
+
+
+def test_rm_job_from_schedule(tmp_path):
+    schedule_path = tmp_path / "schedule.yml"
+    schedule_path.write_text(
+        "user: testuser\nschedule:\n  - name: my-job\n    command: /path/to/script.py\n    cron: '0 * * * *'\n",
+        encoding="utf8",
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        ["rm", "my-job", "--config", str(schedule_path), "--no-schedule"],
+    )
+
+    assert result.exit_code == 0
+    assert "Removed job 'my-job'" in result.output
+
+    data = yaml.safe_load(schedule_path.read_text(encoding="utf8"))
+    assert len(data["schedule"]) == 0
+
+
+def test_rm_fails_when_job_not_found(tmp_path):
+    schedule_path = tmp_path / "schedule.yml"
+    schedule_path.write_text("user: testuser\nschedule: []\n", encoding="utf8")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        ["rm", "nonexistent-job", "--config", str(schedule_path)],
+    )
+
+    assert result.exit_code != 0
+    assert "not found" in result.output
+
+
+def test_rm_fails_when_config_not_found(tmp_path):
+    runner = CliRunner()
+    result = runner.invoke(
+        app,
+        ["rm", "some-job", "--config", str(tmp_path / "missing.yml")],
+    )
+
+    assert result.exit_code != 0
+    assert "Config file not found" in result.output
