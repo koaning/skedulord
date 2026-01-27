@@ -47,7 +47,7 @@ def create_app(no_auth: bool = False, cors_origins: list[str] | None = None) -> 
         if no_auth:
             return await call_next(request)
         path = request.url.path
-        if path in ("/api/health",):
+        if path in ("/api/health", "/api/config"):
             return await call_next(request)
         requires_auth = path.startswith("/api") or path.startswith("/docs") or path == "/openapi.json"
         if not requires_auth:
@@ -66,6 +66,10 @@ def create_app(no_auth: bool = False, cors_origins: list[str] | None = None) -> 
     @app.get("/api/health")
     def health() -> dict:
         return {"status": "ok"}
+
+    @app.get("/api/config")
+    def config() -> dict:
+        return {"no_auth": no_auth}
 
     @app.get("/api")
     def api_root() -> dict:

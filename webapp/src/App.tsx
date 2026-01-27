@@ -17,8 +17,10 @@ import {
 import {
   ApiError,
   clearAuthHeader,
+  detectNoAuthMode,
   fetchLog,
   fetchRuns,
+  isNoAuthMode,
   isStaticMode,
   setAuthHeader,
   type RunEntry
@@ -341,6 +343,7 @@ export default function App() {
     setLoading(true);
     setError(null);
     try {
+      await detectNoAuthMode();
       const data = await fetchRuns({ limit: 500 });
       setRuns(data);
       setAuthRequired(false);
@@ -1256,7 +1259,7 @@ export default function App() {
               Refresh
               <span className={headerKeycapClass}>R</span>
             </button>
-            {!isStaticMode() && (
+            {!isStaticMode() && !isNoAuthMode() && (
               <button
                 onClick={handleLogout}
                 className={headerButtonClass}

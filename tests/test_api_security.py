@@ -70,3 +70,25 @@ def test_logs_endpoint_limits_lines(clean_slate, tmp_path):
     assert payload["content"] == "line-3\nline-4"
     assert payload["truncated"] is True
     assert payload["max_lines"] == 2
+
+
+def test_config_endpoint_returns_no_auth_false_by_default(clean_slate):
+    client = TestClient(create_app(no_auth=False))
+    response = client.get("/api/config")
+    assert response.status_code == 200
+    assert response.json() == {"no_auth": False}
+
+
+def test_config_endpoint_returns_no_auth_true_when_enabled(clean_slate):
+    client = TestClient(create_app(no_auth=True))
+    response = client.get("/api/config")
+    assert response.status_code == 200
+    assert response.json() == {"no_auth": True}
+
+
+def test_config_endpoint_accessible_without_auth(clean_slate):
+    # When auth is required, /api/config should still be accessible
+    client = TestClient(create_app(no_auth=False))
+    # No auth headers provided
+    response = client.get("/api/config")
+    assert response.status_code == 200
