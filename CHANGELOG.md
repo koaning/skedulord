@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.5] - 2025-01-27
+
+### Changed
+
+- Removed log truncation - full log content is now displayed instead of being limited to 2000 lines
+
 ## [3.0.4] - 2025-01-27
 
 ### Fixed

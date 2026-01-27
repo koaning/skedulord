@@ -94,24 +94,16 @@ def export_static_site(output_dir: Path) -> None:
         run_id = run["id"]
         logpath = run["logpath"]
         log_content = ""
-        truncated = False
 
         if logpath and Path(logpath).exists():
             try:
-                lines = Path(logpath).read_text().split("\n")
-                max_lines = 2000
-                if len(lines) > max_lines:
-                    lines = lines[:max_lines]
-                    truncated = True
-                log_content = "\n".join(lines)
+                log_content = Path(logpath).read_text()
             except Exception:
                 log_content = f"Error reading log file: {logpath}"
 
         log_data = {
             "logpath": logpath,
             "content": log_content,
-            "truncated": truncated,
-            "max_lines": 2000,
         }
         (logs_dir / f"{run_id}.json").write_text(json.dumps(log_data, indent=2))
 

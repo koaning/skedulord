@@ -82,8 +82,6 @@ def test_export_creates_log_files(clean_start_with_runs):
             log_data = json.loads(log_file.read_text())
             assert "logpath" in log_data
             assert "content" in log_data
-            assert "truncated" in log_data
-            assert "max_lines" in log_data
 
 
 def test_export_empty_database(empty_start):
