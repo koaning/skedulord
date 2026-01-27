@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.2] - 2025-01-27
+
+### Added
+
+- New `skedulord rm` command to remove jobs from the schedule config file
+- `--schedule/--no-schedule` flag on `add` and `rm` commands to update crontab automatically (default: on)
+
+### Changed
+
+- `skedulord schedule` now defaults to `schedule.yml` in the current directory (no argument required)
+
 ## [3.0.1] - 2025-01-27
 
 ### Added
