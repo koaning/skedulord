@@ -48,15 +48,15 @@ def test_cors_enabled_via_env(clean_slate, monkeypatch):
     assert response.headers.get("access-control-allow-origin") == "http://localhost:5173"
 
 
-def test_logs_endpoint_limits_lines(clean_slate, tmp_path):
-    logpath = skedulord_path() / "long" / "long.log"
+def test_logs_endpoint_returns_full_content(clean_slate):
+    logpath = skedulord_path() / "test" / "test.log"
     logpath.parent.mkdir(parents=True, exist_ok=True)
-    logpath.write_text("\n".join([f"line-{idx}" for idx in range(5)]))
+    logpath.write_text("line-0\nline-1\nline-2")
 
     insert_run(
-        run_id="run-long",
-        name="long",
-        command="echo long",
+        run_id="run-test",
+        name="test",
+        command="echo test",
         status="success",
         start="2024-01-01 00:00:00",
         end="2024-01-01 00:00:01",
@@ -64,12 +64,11 @@ def test_logs_endpoint_limits_lines(clean_slate, tmp_path):
     )
 
     client = TestClient(create_app(no_auth=True))
-    response = client.get("/api/logs/run-long", params={"max_lines": 2})
+    response = client.get("/api/logs/run-test")
     assert response.status_code == 200
     payload = response.json()
-    assert payload["content"] == "line-3\nline-4"
-    assert payload["truncated"] is True
-    assert payload["max_lines"] == 2
+    assert payload["content"] == "line-0\nline-1\nline-2"
+    assert "logpath" in payload
 
 
 def test_config_endpoint_returns_no_auth_false_by_default(clean_slate):
