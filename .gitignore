@@ -125,6 +125,7 @@ node_modules/*
 webapp/node_modules/*
 .vite/
 webapp/dist/
+skedulord/static/
 cypress/videos/*
 cypress/screenshots/*
 cov_html/*

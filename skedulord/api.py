@@ -120,8 +120,9 @@ def create_app(no_auth: bool = False, cors_origins: list[str] | None = None) -> 
             "max_lines": max_lines,
         }
 
-    repo_root = Path(__file__).resolve().parents[1]
-    dist_path = repo_root / "webapp" / "dist"
+    package_static = Path(__file__).resolve().parent / "static"
+    repo_dist = Path(__file__).resolve().parents[1] / "webapp" / "dist"
+    dist_path = package_static if package_static.exists() else repo_dist
     if dist_path.exists():
         app.mount("/", StaticFiles(directory=str(dist_path), html=True), name="static")
     else:
