@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Union
 
 import typer
+import yaml
 from rich import print
 from rich.table import Table
 from clumper import Clumper
@@ -153,7 +154,6 @@ def init(
     env_contents = "\n".join(
         [
             "# Skedulord environment (edit as needed).",
-            "# WARNING: never put secrets in frontend VITE_* variables.",
             "SKEDULORD_NO_AUTH=0",
             "SKEDULORD_EXAMPLE_MESSAGE=hello from skedulord",
             "",
@@ -236,6 +236,54 @@ def schedule(
 ):
     """Set (or reset) cron jobs based on config."""
     Cron(config).set_new_cron()
+
+
+@app.command()
+def add(
+    file: Path = typer.Argument(..., help="The file/command to schedule."),
+    cron: str = typer.Option(..., "--cron", "-c", help="Cron expression (e.g. '0 * * * *')."),
+    name: str = typer.Option(None, "--name", "-n", help="Job name (defaults to filename)."),
+    config: Path = typer.Option(
+        Path("schedule.yml"),
+        "--config",
+        "-f",
+        help="Path to schedule.yml file.",
+    ),
+):
+    """Add a job to the schedule config file."""
+    file = file.expanduser().resolve()
+    config = config.expanduser().resolve()
+
+    if not file.exists():
+        print(f"[red]File not found: {file}[/]")
+        raise typer.Exit(code=1)
+
+    if not config.exists():
+        print(f"[red]Config file not found: {config}[/]")
+        print("[yellow]Run 'skedulord init' first or specify a config file with --config.[/]")
+        raise typer.Exit(code=1)
+
+    job_name = name if name else file.stem.replace("_", "-").replace(" ", "-")
+
+    with open(config) as f:
+        data = yaml.safe_load(f)
+
+    existing_names = [job["name"] for job in data.get("schedule", [])]
+    if job_name in existing_names:
+        print(f"[red]Job '{job_name}' already exists in {config}.[/]")
+        raise typer.Exit(code=1)
+
+    new_job = {
+        "name": job_name,
+        "command": str(file),
+        "cron": cron,
+    }
+    data["schedule"].append(new_job)
+
+    with open(config, "w") as f:
+        yaml.dump(data, f, default_flow_style=False, sort_keys=False)
+
+    print(f"[green]Added job '{job_name}' to {config}.[/]")
 
 
 @app.command()
