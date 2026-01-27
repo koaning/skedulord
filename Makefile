@@ -45,7 +45,9 @@ reset-big:
 	python -m skedulord run badpyjob "python jobs/badpyjob.py" --retry 3 --wait 1
 	python -m skedulord run another-pyjob "python jobs/pyjob.py" --retry 1 --wait 0
 
-pypi: test
+pypi: demo-ui-build
+	rm -rf skedulord/static
+	cp -r webapp/dist skedulord/static
 	rm -rf dist
 	uv build
 	uv publish

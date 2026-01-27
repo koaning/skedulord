@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.4] - 2025-01-27
+
+### Fixed
+
+- Frontend assets are now bundled with the Python package, so `skedulord serve` works out of the box after pip install
+
+## [3.0.3] - 2025-01-27
+
+- Broken release (frontend not bundled)
+
 ## [3.0.2] - 2025-01-27
 
 ### Added
