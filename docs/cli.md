@@ -24,7 +24,7 @@ Options:
   --help           Show this message and exit.
 ```
 
-## `schedule`  
+## `schedule`
 
 Set (or reset) cron jobs based on config.
 
@@ -34,6 +34,21 @@ Arguments:
 
 Options:
   --help  Show this message and exit.
+```
+
+## `add`
+
+Add a job to the schedule config file.
+
+```text
+Arguments:
+  FILE  The file/command to schedule.  [required]
+
+Options:
+  -c, --cron TEXT    Cron expression (e.g. '0 * * * *').  [required]
+  -n, --name TEXT    Job name (defaults to filename).
+  -f, --config PATH  Path to schedule.yml file.  [default: schedule.yml]
+  --help             Show this message and exit.
 ```
 
 ## `history`   

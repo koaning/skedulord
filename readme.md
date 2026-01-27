@@ -33,6 +33,7 @@ Options:
 
 Commands:
   schedule  Set (or reset) cron jobs based on config.
+  add       Add a job to the schedule config file.
   run       Run a single command, which is logged by skedulord.
   history   Shows a table with job status.
   init      Initialize a starter .env, schedule.yml, and sqlite database.
