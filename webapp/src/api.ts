@@ -27,8 +27,33 @@ let authHeader: string | null = null;
 let staticModeDetected: boolean | null = null;
 let cachedRuns: RunEntry[] | null = null;
 
+// No-auth mode is detected from server config
+let noAuthModeDetected: boolean | null = null;
+
 export function isStaticMode(): boolean {
   return staticModeDetected === true;
+}
+
+export function isNoAuthMode(): boolean {
+  return noAuthModeDetected === true;
+}
+
+export async function detectNoAuthMode(): Promise<boolean> {
+  if (noAuthModeDetected !== null) {
+    return noAuthModeDetected;
+  }
+  try {
+    const response = await fetch(`${apiBase}/api/config`);
+    if (response.ok) {
+      const data = await response.json();
+      noAuthModeDetected = data.no_auth === true;
+    } else {
+      noAuthModeDetected = false;
+    }
+  } catch {
+    noAuthModeDetected = false;
+  }
+  return noAuthModeDetected;
 }
 
 function authHeaders() {
