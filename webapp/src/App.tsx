@@ -831,7 +831,7 @@ export default function App() {
   const headerButtonClass =
     "inline-flex h-8 items-center gap-1.5 rounded-full border border-ink/10 bg-white/80 px-3 text-xs font-medium text-ink shadow-sm transition hover:-translate-y-0.5 hover:shadow-card focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100";
   const headerKeycapClass =
-    "rounded-full border border-ink/10 px-1.5 py-0.5 text-[9px] text-ink/40 dark:border-white/10 dark:text-slate-400";
+    "hidden sm:inline-block rounded-full border border-ink/10 px-1.5 py-0.5 text-[9px] text-ink/40 dark:border-white/10 dark:text-slate-400";
 
   const actionItems: SuggestionItem[] = useMemo(() => {
     const actions: SuggestionItem[] = [
@@ -1170,8 +1170,8 @@ export default function App() {
   }
   return (
     <div className="app-shell">
-      <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-6 px-6 py-10">
-        <header className="flex flex-wrap items-center justify-between gap-4">
+      <div className="mx-auto flex min-h-screen max-w-6xl flex-col gap-4 px-3 py-6 sm:gap-6 sm:px-6 sm:py-10">
+        <header className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
           <div>
             <p className="text-sm uppercase tracking-[0.3em] text-plum dark:text-orange-300">Skedulord</p>
             <nav aria-label="Breadcrumb">
@@ -1229,7 +1229,7 @@ export default function App() {
               </ol>
             </nav>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
             <button
               onClick={() => {
                 setCommandView("root");
@@ -1240,7 +1240,7 @@ export default function App() {
               aria-label="Open command palette"
             >
               <Command className="h-4 w-4" />
-              Cmd + K
+              <span className="hidden sm:inline">Cmd + K</span>
             </button>
             <button
               onClick={() => setTheme(isDark ? "light" : "dark")}
@@ -1296,7 +1296,7 @@ export default function App() {
               tabIndex={stackDepth === 0 ? 0 : -1}
               ref={listboxRef}
             >
-              <ScrollArea.Root className="h-[520px] overflow-hidden" type="scroll">
+              <ScrollArea.Root className="h-[320px] sm:h-[420px] lg:h-[520px] overflow-hidden" type="scroll">
                 <ScrollArea.Viewport className="h-full w-full p-2">
                   <div className="flex flex-col gap-2">
                     {loading ? (
@@ -1332,7 +1332,7 @@ export default function App() {
                           role="option"
                           tabIndex={-1}
                         >
-                          <div className="flex items-center justify-between gap-4">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                             <div className="min-w-0">
                               <p className="truncate font-medium text-ink dark:text-slate-100">{job.name}</p>
                               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink/50 dark:text-slate-400">
@@ -1349,7 +1349,7 @@ export default function App() {
                                 ) : null}
                               </div>
                             </div>
-                            <div className="shrink-0">
+                            <div className="w-full overflow-x-auto sm:w-auto sm:shrink-0 sm:overflow-visible">
                               <RunBars
                                 runs={job.runs}
                                 variant="compact"
@@ -1408,7 +1408,7 @@ export default function App() {
                     >
                       <CornerUpLeft className="h-3 w-3" />
                       Back
-                      <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
+                      <span className="hidden sm:inline-block rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
                         Esc
                       </span>
                     </button>
@@ -1419,7 +1419,7 @@ export default function App() {
                     >
                       <Filter className="h-3 w-3" />
                       {failedOnly ? "Show all" : "Failed only"}
-                      <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
+                      <span className="hidden sm:inline-block rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
                         F
                       </span>
                     </button>
@@ -1450,7 +1450,7 @@ export default function App() {
                       Page {page + 1} of {pageCount}
                     </span>
                   </div>
-                  <ScrollArea.Root className="h-[420px] overflow-hidden" type="scroll">
+                  <ScrollArea.Root className="h-[280px] sm:h-[350px] lg:h-[420px] overflow-hidden" type="scroll">
                     <ScrollArea.Viewport className="h-full w-full p-2">
                       <div className="flex flex-col gap-2">
                         {pageRuns.length === 0 ? (
@@ -1465,7 +1465,7 @@ export default function App() {
                                 runListRefs.current[index] = node;
                               }}
                               tabIndex={-1}
-                              className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-sm transition ${
+                              className={`flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3 rounded-2xl border px-4 py-3 text-sm transition ${
                                 run.id === selectedRunId || run.id === focusedRunId
                                   ? "border-ink/20 bg-white shadow-soft dark:border-white/10 dark:bg-slate-900"
                                   : "border-transparent hover:border-ink/10 hover:bg-white dark:hover:border-white/10 dark:hover:bg-slate-900"
@@ -1506,7 +1506,7 @@ export default function App() {
                     className="rounded-full border border-ink/10 bg-white/80 px-3 py-1 text-xs font-semibold text-ink shadow-sm transition disabled:opacity-40 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
                   >
                     Previous
-                    <span className="ml-2 rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
+                    <span className="ml-2 hidden sm:inline-block rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
                       ←
                     </span>
                   </button>
@@ -1517,7 +1517,7 @@ export default function App() {
                     className="rounded-full border border-ink/10 bg-white/80 px-3 py-1 text-xs font-semibold text-ink shadow-sm transition disabled:opacity-40 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100"
                   >
                     Next
-                    <span className="ml-2 rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
+                    <span className="ml-2 hidden sm:inline-block rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
                       →
                     </span>
                   </button>
@@ -1573,7 +1573,7 @@ export default function App() {
                               {copyStatus === "copied" ? "Copied" : "Copy"}
                             </button>
                           </div>
-                          <pre className="max-h-[320px] overflow-auto rounded-2xl border border-ink/10 bg-white px-4 py-3 text-xs text-ink dark:border-white/10 dark:bg-slate-950 dark:text-slate-100">
+                          <pre className="max-h-[200px] sm:max-h-[280px] lg:max-h-[320px] overflow-auto rounded-2xl border border-ink/10 bg-white px-4 py-3 text-xs text-ink dark:border-white/10 dark:bg-slate-950 dark:text-slate-100">
                             {logData.content || "Log is empty."}
                           </pre>
                         </>
@@ -1604,7 +1604,7 @@ export default function App() {
           >
             {selectedJobData && selectedRunId ? (
               <>
-                <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4">
                   <div>
                     <p className="text-xs uppercase tracking-[0.2em] text-clay dark:text-slate-400">Run details</p>
                     <h2 className="font-display text-2xl text-ink dark:text-slate-100">
@@ -1629,7 +1629,7 @@ export default function App() {
                     >
                       <CornerUpLeft className="h-3 w-3" />
                       Back to runs
-                      <span className="rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
+                      <span className="hidden sm:inline-block rounded-full border border-ink/10 px-2 py-0.5 text-[10px] text-ink/40 dark:border-white/10 dark:text-slate-400">
                         Esc
                       </span>
                     </button>
@@ -1667,7 +1667,7 @@ export default function App() {
                       ) : null}
                     </div>
                   </div>
-                  <ScrollArea.Root className="h-[520px]">
+                  <ScrollArea.Root className="h-[320px] sm:h-[420px] lg:h-[520px]">
                     <ScrollArea.Viewport className="p-4">
                       {selectedRun ? (
                         logLoading ? (
@@ -1708,7 +1708,7 @@ export default function App() {
 
       {commandOpen ? (
         <div
-          className="fixed inset-0 z-50 flex justify-center bg-black/30 px-4 py-20 backdrop-blur-sm dark:bg-black/60"
+          className="fixed inset-0 z-50 flex justify-center bg-black/30 px-3 py-8 sm:px-4 sm:py-20 backdrop-blur-sm dark:bg-black/60"
           onClick={() => {
             setCommandOpen(false);
             setCommandView("root");
@@ -1717,7 +1717,7 @@ export default function App() {
           role="presentation"
         >
           <div
-            className="w-full max-w-xl rounded-3xl border border-ink/10 bg-white/95 p-4 shadow-soft dark:border-white/10 dark:bg-slate-950/90"
+            className="w-full max-w-[calc(100%-1rem)] sm:max-w-xl rounded-3xl border border-ink/10 bg-white/95 p-4 shadow-soft dark:border-white/10 dark:bg-slate-950/90"
             role="dialog"
             aria-modal="true"
             aria-label="Command palette"
@@ -1740,7 +1740,7 @@ export default function App() {
                 }
                 className="w-full bg-transparent text-sm outline-none placeholder:text-ink/40 dark:placeholder:text-slate-400"
               />
-              <span className="text-xs text-ink/40 dark:text-slate-400">
+              <span className="hidden sm:inline text-xs text-ink/40 dark:text-slate-400">
                 {commandView === "root" ? "Esc" : "Esc · Back"}
               </span>
             </div>
@@ -1800,12 +1800,12 @@ export default function App() {
       ) : null}
       {shortcutOpen ? (
         <div
-          className="fixed inset-0 z-50 flex justify-center bg-black/30 px-4 py-20 backdrop-blur-sm dark:bg-black/60"
+          className="fixed inset-0 z-50 flex justify-center bg-black/30 px-3 py-8 sm:px-4 sm:py-20 backdrop-blur-sm dark:bg-black/60"
           onClick={() => setShortcutOpen(false)}
           role="presentation"
         >
           <div
-            className="w-full max-w-lg rounded-3xl border border-ink/10 bg-white/95 p-6 shadow-soft dark:border-white/10 dark:bg-slate-950/90"
+            className="w-full max-w-[calc(100%-1rem)] sm:max-w-lg rounded-3xl border border-ink/10 bg-white/95 p-6 shadow-soft dark:border-white/10 dark:bg-slate-950/90"
             role="dialog"
             aria-modal="true"
             aria-label="Keyboard shortcut overview"
