@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.6] - 2025-01-31
+
+### Changed
+
+- Dashboard is now responsive for mobile, tablet, and desktop screens
+- Header and list items stack vertically on small screens
+- Scroll areas adjust height based on screen size
+- Modals display full-width on mobile devices
+- Keyboard shortcuts and keycaps are hidden on touch devices
+
 ## [3.0.5] - 2025-01-27
 
 ### Changed

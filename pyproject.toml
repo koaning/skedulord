@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skedulord"
-version = "3.0.5"
+version = "3.0.6"
 description = "A tool that automates scheduling and logging of jobs."
 readme = "readme.md"
 requires-python = ">=3.9"
