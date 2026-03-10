@@ -149,3 +149,5 @@ python -m skedulord serve
 
 The frontend lives in `webapp/` and can be run via `npm install` + `npm run dev`.
 If you run `npm run build`, the API will serve the built app from `webapp/dist`.
+
+For local development with demo data, see the [contributing guide](contrib.md).

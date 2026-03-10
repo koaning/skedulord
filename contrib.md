@@ -2,15 +2,6 @@
 
 ## Local demo server
 
-This repo ships with a small end‑to‑end demo that seeds a few runs, starts the API, and lets
-you launch the React webapp against it.
-
-### Prerequisites
-
-- Python 3.9+
-- `uv`
-- Node.js 18+
-
 ### Quickstart
 
 ```bash
@@ -18,16 +9,26 @@ make demo-install
 make demo-run
 ```
 
-This will:
+This starts the API at `http://127.0.0.1:8000` with demo data and no authentication.
 
-- wipe `~/.skedulord` state
-- run a handful of demo jobs (including a failing one)
-- build the webapp and serve it from FastAPI at `http://127.0.0.1:8000` (API is under `/api/*`, docs at `/docs`)
-
-In another terminal, you can also run the webapp dev server:
+Run the webapp dev server in another terminal:
 
 ```bash
-make demo-web
+cd webapp && npm install && npm run dev
+```
+
+### Testing with authentication
+
+To test authentication:
+
+```bash
+uv run python -m skedulord serve --reload
+```
+
+Add a user:
+
+```bash
+uv run python -m skedulord users add --username myuser
 ```
 
 ### Cleanup
@@ -35,8 +36,3 @@ make demo-web
 ```bash
 make demo-clean
 ```
-
-## Notes
-
-- The API is read‑only for now; job triggering will require auth.
-- Demo jobs are defined in `jobs/` and run via `uv run python`.
