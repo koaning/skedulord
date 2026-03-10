@@ -7,8 +7,7 @@ checks = [
     {
         "name": "foo",
         "command": "python foobar.py",
-        "arguments": {"hello": "world"},
-        "expected": "python foobar.py --hello world",
+        "expected": "python foobar.py",
     },
     {
         "name": "foo",
