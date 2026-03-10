@@ -7,7 +7,7 @@ checks = [
     {
         "name": "foo",
         "command": "python foobar.py",
-        "expected": "python foobar.py --hello world",
+        "expected": "python foobar.py",
     },
     {
         "name": "foo",
@@ -18,6 +18,7 @@ checks = [
     {
         "name": "download",
         "command": "python -m gitwit download apache/airflow",
+        "expected": "python -m gitwit download apache/airflow",
     }
 ]
 
@@ -36,6 +37,7 @@ def test_cron_obj_parsing():
     c = Cron("tests/schedule.yml")
     expected_path = Path("tests/schedule.yml").resolve()
     for s in c.settings:
+        parsed_command = c.parse_cmd(s)
         assert parsed_command.rstrip() == parsed_command
         assert "uv run python -m skedulord run" in parsed_command
         assert "--settings-path" in parsed_command
