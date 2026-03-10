@@ -61,7 +61,7 @@ demo-seed:
 
 
 demo-run: demo-reset demo-seed demo-ui-build
-	uv run python -m skedulord serve --reload
+	uv run python -m skedulord serve --reload --no-auth
 
 demo-run-dev: demo-reset demo-seed
 	SKEDULORD_CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173 \

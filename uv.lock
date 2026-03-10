@@ -1297,7 +1297,7 @@ wheels = [
 
 [[package]]
 name = "skedulord"
-version = "3.0.5"
+version = "3.0.6"
 source = { editable = "." }
 dependencies = [
     { name = "clumper" },
