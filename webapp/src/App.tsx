@@ -63,6 +63,18 @@ function formatDuration(ms: number) {
   return `${hours}h`;
 }
 
+function formatRunTime(isoString: string) {
+  const date = new Date(Date.parse(isoString));
+  if (!Number.isFinite(date.getTime())) return "unknown";
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true
+  });
+}
+
 function filenameOnly(path?: string | null) {
   if (!path) return "";
   const normalized = path.replace(/\\/g, "/");
@@ -1341,7 +1353,7 @@ export default function App() {
                                   <span className="flex items-center gap-1">
                                     <span className={`h-1.5 w-1.5 rounded-full ${statusColor(detailRun.status, detailRun.attempt)}`} />
                                     {hoveredForJob || focusedForJob ? "Run" : "Last run"}{" "}
-                                    {formatDuration(getDurationMs(detailRun))}
+                                    {formatRunTime(detailRun.start)}
                                     {hoveredForJob || focusedForJob
                                       ? ` · ${detailRun.id.slice(0, 6)} · ${detailRun.status}${detailRun.attempt > 1 ? ` (${detailRun.attempt} attempts)` : ""}`
                                       : ""}
